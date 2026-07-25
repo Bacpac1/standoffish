@@ -1,170 +1,336 @@
-<!DOCTYPE HTML>
-<html>
-	<head>
-		<title>STANDOFFISH LLC</title>
-		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-		<meta name="description" content="STANDOFFISH LLC — a small, niche design studio." />
-		<link rel="stylesheet" href="assets/css/main.css" />
-		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
-	</head>
-	<body class="is-preload">
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Standoffish is a U.S. design studio for websites, software product design, and digital brand systems."
+    />
+    <meta name="theme-color" content="#0a0a0a" />
+    <title>Standoffish — Website &amp; Software Design Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/css/styles.css" />
+  </head>
+  <body>
+    <div class="noise" aria-hidden="true"></div>
+    <div class="cursor" aria-hidden="true"></div>
 
-		<!-- Wrapper -->
-			<div id="wrapper">
+    <header class="nav" data-nav>
+      <a class="nav__logo" href="#top">Standoffish</a>
+      <nav class="nav__links" aria-label="Primary">
+        <a href="#work">Work</a>
+        <a href="#services">Services</a>
+        <a href="#process">Process</a>
+        <a href="#about">About</a>
+        <a class="nav__cta" href="#contact">Start a project</a>
+      </nav>
+      <button class="nav__toggle" type="button" aria-label="Open menu" data-menu-toggle>
+        <span></span><span></span>
+      </button>
+    </header>
 
-				<!-- Header -->
-					<header id="header">
-						<h1><a href="index.html"><strong>STANDOFFISH LLC</strong> — a niche design studio</a></h1>
-						<nav>
-							<ul>
-								<li><a href="#footer" class="icon fa-info-circle">About</a></li>
-							</ul>
-						</nav>
-					</header>
+    <div class="mobile-menu" data-mobile-menu hidden>
+      <a href="#work">Work</a>
+      <a href="#services">Services</a>
+      <a href="#process">Process</a>
+      <a href="#about">About</a>
+      <a href="#contact">Start a project</a>
+    </div>
 
-				<!-- Main -->
-					<div id="main">
-						<article class="thumb">
-							<a href="images/fulls/01.jpg" class="image"><img src="images/thumbs/01.jpg" alt="Quote card image 01" /></a>
-							<h2>“Simplicity is the ultimate sophistication.”</h2>
-							<p>— Leonardo da Vinci</p>
-						</article>
+    <main id="top">
+      <section class="hero">
+        <div class="hero__copy">
+          <p class="eyebrow reveal">U.S. design studio · Digital craft</p>
+          <h1 class="hero__title reveal">
+            Digital experiences<br />
+            <em>worth staying for</em>
+          </h1>
+          <p class="hero__lead reveal">
+            Standoffish designs websites and software products for ambitious teams.
+            Restrained visuals, clear structure, and engineering-ready systems—
+            so ideas ship as products people trust.
+          </p>
+          <div class="hero__actions reveal">
+            <a class="btn btn--primary" href="#contact">Book a call</a>
+            <a class="btn btn--ghost" href="#work">View work</a>
+          </div>
+          <dl class="hero__stats reveal">
+            <div>
+              <dt>40+</dt>
+              <dd>Projects shipped</dd>
+            </div>
+            <div>
+              <dt>12</dt>
+              <dd>Industries</dd>
+            </div>
+            <div>
+              <dt>98%</dt>
+              <dd>Repeat &amp; referral</dd>
+            </div>
+          </dl>
+        </div>
+        <div class="hero__visual reveal">
+          <div class="hero__frame">
+            <img src="assets/images/hero.jpg" alt="" width="1600" height="900" />
+            <div class="hero__badge">
+              <span>Website · Product · Brand</span>
+            </div>
+          </div>
+        </div>
+      </section>
 
-						<article class="thumb">
-							<a href="images/fulls/02.jpg" class="image"><img src="images/thumbs/02.jpg" alt="Quote card image 02" /></a>
-							<h2>“Less, but better.”</h2>
-							<p>— Dieter Rams</p>
-						</article>
+      <section class="marquee" aria-hidden="true">
+        <div class="marquee__track">
+          <span>Website Design</span><span>Product UI</span><span>Brand Systems</span>
+          <span>Design Systems</span><span>Software UX</span><span>Launch Sites</span>
+          <span>Website Design</span><span>Product UI</span><span>Brand Systems</span>
+          <span>Design Systems</span><span>Software UX</span><span>Launch Sites</span>
+        </div>
+      </section>
 
-						<article class="thumb">
-							<a href="images/fulls/03.jpg" class="image"><img src="images/thumbs/03.jpg" alt="Quote card image 03" /></a>
-							<h2>“Form follows function.”</h2>
-							<p>— Louis Sullivan</p>
-						</article>
+      <section class="section" id="work">
+        <div class="section__head">
+          <p class="eyebrow">Selected work</p>
+          <h2 class="section__title">Case studies</h2>
+          <p class="section__desc">
+            From brand sites to complex product surfaces—we deliver experiences
+            that operate, not just look finished.
+          </p>
+        </div>
 
-						<article class="thumb">
-							<a href="images/fulls/04.jpg" class="image"><img src="images/thumbs/04.jpg" alt="Quote card image 04" /></a>
-							<h2>“God is in the details.”</h2>
-							<p>— Ludwig Mies van der Rohe</p>
-						</article>
+        <div class="work-grid">
+          <article class="work-card work-card--lg reveal">
+            <a class="work-card__link" href="#contact">
+              <div class="work-card__media">
+                <img src="assets/images/work-ui.jpg" alt="Enterprise product interface design" />
+              </div>
+              <div class="work-card__meta">
+                <span class="tag">Product UI</span>
+                <h3>Atlas Console</h3>
+                <p>Enterprise data console: information hierarchy, dark system, and component library.</p>
+              </div>
+            </a>
+          </article>
 
-						<article class="thumb">
-							<a href="images/fulls/05.jpg" class="image"><img src="images/thumbs/05.jpg" alt="Quote card image 05" /></a>
-							<h2>“Design is not just what it looks like and feels like. Design is how it works.”</h2>
-							<p>— Steve Jobs</p>
-						</article>
+          <article class="work-card reveal">
+            <a class="work-card__link" href="#contact">
+              <div class="work-card__media">
+                <img src="assets/images/work-space.jpg" alt="Brand website design" />
+              </div>
+              <div class="work-card__meta">
+                <span class="tag">Website</span>
+                <h3>Northline Gallery</h3>
+                <p>Institutional site with immersive scroll and curatorial typography.</p>
+              </div>
+            </a>
+          </article>
 
-						<article class="thumb">
-							<a href="images/fulls/06.jpg" class="image"><img src="images/thumbs/06.jpg" alt="Quote card image 06" /></a>
-							<h2>“The details are not the details. They make the design.”</h2>
-							<p>— Charles Eames</p>
-						</article>
+          <article class="work-card reveal">
+            <a class="work-card__link" href="#contact">
+              <div class="work-card__media">
+                <img src="assets/images/work-brand.jpg" alt="Brand identity and web system" />
+              </div>
+              <div class="work-card__meta">
+                <span class="tag">Brand + Web</span>
+                <h3>Kepler Studio</h3>
+                <p>End-to-end digital brand system from identity to launch pages.</p>
+              </div>
+            </a>
+          </article>
 
-						<article class="thumb">
-							<a href="images/fulls/07.jpg" class="image"><img src="images/thumbs/07.jpg" alt="Quote card image 07" /></a>
-							<h2>“Good design is obvious. Great design is transparent.”</h2>
-							<p>— Joe Sparano</p>
-						</article>
+          <article class="work-card work-card--wide reveal">
+            <a class="work-card__link" href="#contact">
+              <div class="work-card__media">
+                <img src="assets/images/work-app.jpg" alt="Mobile software interface design" />
+              </div>
+              <div class="work-card__meta">
+                <span class="tag">Mobile software</span>
+                <h3>Lumen Health</h3>
+                <p>Health app UX: streamlined flows, accessible contrast, ship-ready components.</p>
+              </div>
+            </a>
+          </article>
+        </div>
+      </section>
 
-						<article class="thumb">
-							<a href="images/fulls/08.jpg" class="image"><img src="images/thumbs/08.jpg" alt="Quote card image 08" /></a>
-							<h2>“Perfection is achieved, not when there is nothing more to add, but when there is nothing left to take away.”</h2>
-							<p>— Antoine de Saint-Exupéry</p>
-						</article>
+      <section class="section section--alt" id="services">
+        <div class="section__head">
+          <p class="eyebrow">What we do</p>
+          <h2 class="section__title">Services</h2>
+        </div>
+        <div class="services">
+          <article class="service reveal">
+            <span class="service__num">01</span>
+            <h3>Website design</h3>
+            <p>
+              Brand sites, product marketing pages, campaigns, and content platforms.
+              Information architecture, visual systems, and responsive delivery built
+              for clarity and conversion.
+            </p>
+            <ul>
+              <li>Brand &amp; marketing websites</li>
+              <li>Landing pages &amp; growth experiments</li>
+              <li>CMS structure &amp; multi-language setups</li>
+            </ul>
+          </article>
+          <article class="service reveal">
+            <span class="service__num">02</span>
+            <h3>Software product design</h3>
+            <p>
+              Web, desktop, and mobile product experience—from journeys and prototypes
+              to high-fidelity UI and design systems your engineering team can scale.
+            </p>
+            <ul>
+              <li>SaaS &amp; internal tools</li>
+              <li>Mobile app interfaces</li>
+              <li>Design systems &amp; tokens</li>
+            </ul>
+          </article>
+          <article class="service reveal">
+            <span class="service__num">03</span>
+            <h3>Brand &amp; visual systems</h3>
+            <p>
+              Digital-first brand language: type, color, graphic rules, and components
+              so web, product, and collateral grow from one coherent system.
+            </p>
+            <ul>
+              <li>Visual identity refresh</li>
+              <li>Digital brand guidelines</li>
+              <li>Launch &amp; presentation assets</li>
+            </ul>
+          </article>
+        </div>
+      </section>
 
-						<article class="thumb">
-							<a href="images/fulls/09.jpg" class="image"><img src="images/thumbs/09.jpg" alt="Quote card image 09" /></a>
-							<h2>“Beauty of style and harmony and grace and good rhythm depend on simplicity.”</h2>
-							<p>— Plato</p>
-						</article>
+      <section class="section" id="process">
+        <div class="section__head section__head--row">
+          <div>
+            <p class="eyebrow">How we work</p>
+            <h2 class="section__title">Process</h2>
+          </div>
+          <p class="section__desc">
+            Fewer meetings, more artifacts. Every phase ends with something you can
+            review—not vague “progress.”
+          </p>
+        </div>
+        <ol class="process">
+          <li class="reveal">
+            <h3>Discover</h3>
+            <p>Goals, audience, competition, and constraints. Brief and success metrics.</p>
+          </li>
+          <li class="reveal">
+            <h3>Structure</h3>
+            <p>IA, user flows, wireframes. Align logic before ornament.</p>
+          </li>
+          <li class="reveal">
+            <h3>Shape</h3>
+            <p>Visual direction, key screens, motion principles—premium and buildable.</p>
+          </li>
+          <li class="reveal">
+            <h3>Deliver</h3>
+            <p>Specs, components, engineering handoff, and launch QA.</p>
+          </li>
+        </ol>
+      </section>
 
-						<article class="thumb">
-							<a href="images/fulls/10.jpg" class="image"><img src="images/thumbs/10.jpg" alt="Quote card image 10" /></a>
-							<h2>“I have seen the future, and it is design.”</h2>
-							<p>— Norman Bel Geddes</p>
-						</article>
+      <section class="section section--about" id="about">
+        <div class="about">
+          <div class="about__text reveal">
+            <p class="eyebrow">Studio</p>
+            <h2 class="section__title">
+              A little distance,<br /><em>a sharper edge</em>
+            </h2>
+            <p>
+              The name is a stance: stay a step off the trend cycle, and decide only
+              for design that holds up over time. We don’t ship template sites full of
+              effects—we build experiences users trust and teams can maintain.
+            </p>
+            <p>
+              We work with startups, professional services, and organizations modernizing
+              their digital presence. Design-only engagements, or handoff with your
+              engineers and trusted build partners.
+            </p>
+          </div>
+          <div class="about__panel reveal">
+            <div class="about__metric">
+              <span>Design language</span>
+              <strong>Editorial · Swiss · Product</strong>
+            </div>
+            <div class="about__metric">
+              <span>Deliverables</span>
+              <strong>Figma · Spec · Code-ready</strong>
+            </div>
+            <div class="about__metric">
+              <span>Engagement</span>
+              <strong>Project · Retainer</strong>
+            </div>
+            <div class="about__metric">
+              <span>Based in</span>
+              <strong>United States · Remote-first</strong>
+            </div>
+          </div>
+        </div>
+      </section>
 
-						<article class="thumb">
-							<a href="images/fulls/11.jpg" class="image"><img src="images/thumbs/11.jpg" alt="Quote card image 11" /></a>
-							<h2>“The object of art is not to reproduce reality, but to create a reality of the same intensity.”</h2>
-							<p>— Alberto Giacometti</p>
-						</article>
+      <section class="section section--contact" id="contact">
+        <div class="contact">
+          <div class="contact__copy reveal">
+            <p class="eyebrow">Start a project</p>
+            <h2 class="section__title">Tell us what’s next</h2>
+            <p class="section__desc">
+              Share stage, timeline, and budget range. We typically reply within
+              1–2 business days.
+            </p>
+            <a class="contact__mail" href="mailto:hello@standoffish.net">hello@standoffish.net</a>
+            <p class="contact__note">Or use the form—we’ll follow up.</p>
+          </div>
+          <form class="contact__form reveal" action="mailto:hello@standoffish.net" method="post" enctype="text/plain">
+            <label>
+              <span>Name / team</span>
+              <input name="name" type="text" autocomplete="name" required placeholder="Alex Rivera / Nova Labs" />
+            </label>
+            <label>
+              <span>Email</span>
+              <input name="email" type="email" autocomplete="email" required placeholder="you@company.com" />
+            </label>
+            <label>
+              <span>Project type</span>
+              <select name="type" required>
+                <option value="" disabled selected>Select one</option>
+                <option>Website design</option>
+                <option>Software / product UI</option>
+                <option>Brand + website</option>
+                <option>Design system</option>
+                <option>General inquiry</option>
+              </select>
+            </label>
+            <label>
+              <span>Project brief</span>
+              <textarea name="message" rows="4" required placeholder="Audience, timeline, reference sites…"></textarea>
+            </label>
+            <button class="btn btn--primary btn--full" type="submit">Send inquiry</button>
+          </form>
+        </div>
+      </section>
+    </main>
 
-						<article class="thumb">
-							<a href="images/fulls/12.jpg" class="image"><img src="images/thumbs/12.jpg" alt="Quote card image 12" /></a>
-							<h2>“Make it simple, but significant.”</h2>
-							<p>— Don Draper</p>
-						</article>
-					</div>
+    <footer class="footer">
+      <div class="footer__top">
+        <a class="nav__logo" href="#top">Standoffish</a>
+        <p>Website &amp; software design for ambitious teams.</p>
+      </div>
+      <div class="footer__bottom">
+        <span>© <span data-year></span> Standoffish. All rights reserved.</span>
+        <span>standoffish.net · USA</span>
+      </div>
+    </footer>
 
-				<!-- Footer -->
-					<footer id="footer" class="panel">
-						<div class="inner split">
-							<div>
-								<section>
-									<h2>STANDOFFISH LLC</h2>
-									<p>
-										We are a small and deliberate atelier of design: a studio not of volume, but of measure.
-										Our practice inclines toward the arcane virtues—proportion, restraint, cadence—wherein a form is
-										wrought by subtraction and made credible by silence. We labor at the margins of the obvious,
-										serving those who prefer the austere to the ornate, the exact to the loud, the enduring to the
-										immediate.
-									</p>
-								</section>
-
-								<section>
-									<h2>Elsewhere</h2>
-									<ul class="icons">
-										<li><a href="#" class="icon fa-github"><span class="label">GitHub</span></a></li>
-										<li><a href="#" class="icon fa-linkedin"><span class="label">LinkedIn</span></a></li>
-										<li><a href="#" class="icon fa-instagram"><span class="label">Instagram</span></a></li>
-										<li><a href="#" class="icon fa-twitter"><span class="label">X</span></a></li>
-									</ul>
-								</section>
-
-								<p class="copyright">
-									&copy; STANDOFFISH LLC.
-								</p>
-							</div>
-
-							<div>
-								<section>
-									<h2>Get in touch</h2>
-									
-									<form method="post" action="#" onsubmit="return false;">
-										<div class="fields">
-											<div class="field half">
-												<input type="text" name="name" id="name" placeholder="Name (optional)" />
-											</div>
-											<div class="field half">
-												<input type="text" name="email" id="email" placeholder="Email (optional)" />
-											</div>
-											<div class="field">
-												<textarea name="message" id="message" rows="4" placeholder="Message (optional)"></textarea>
-											</div>
-										</div>
-										<ul class="actions">
-											<li><a class="button primary" href="mailto:noreply@standoffish.net">Email Us</a></li>
-											<li><input type="reset" value="Clear" /></li>
-										</ul>
-									</form>
-								</section>
-							</div>
-						</div>
-					</footer>
-
-			</div>
-
-		<!-- Scripts -->
-			<script src="assets/js/jquery.min.js"></script>
-			<script src="assets/js/jquery.poptrox.min.js"></script>
-			<script src="assets/js/browser.min.js"></script>
-			<script src="assets/js/breakpoints.min.js"></script>
-			<script src="assets/js/util.js"></script>
-			<script src="assets/js/main.js"></script>
-
-	</body>
+    <script src="assets/js/main.js"></script>
+  </body>
 </html>
-
-
