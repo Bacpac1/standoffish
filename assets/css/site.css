@@ -1,0 +1,252 @@
+/* NOSLEN's pages, in NOSLEN's language: B1's grammar. The navy air above, one orange rule, the paper record below.
+   Printed matter: flat inks on stock, no outlines around shapes, no rounded corners, no shadows, no glows.
+   One 45-degree family corner on designed objects (the card, link chips, mounts), cut from their ground only:
+   a picture is never clipped, and nothing is ever laid over a frame's stamp.
+   In-world text is set as received: no text-transform, no smart quotes, pre-wrap. The inks are the series' (ds 3.3.1). */
+
+:root {
+  --paper: #ece4d2; --paper2: #dcd1b9; --navy: #1a2944; --char: #2c3038;
+  --orange: #e0552d; --cobalt: #2d5ca4; --sky: #93bad6; --mustard: #e6a83c;
+  --light-system: #7aa2ff;                /* the system's own light: the label it drafts in B1's air */
+
+  --stock: var(--paper); --stock2: var(--paper2); --line: var(--navy);
+  --focus: var(--cobalt); --chip-hover: var(--cobalt); --chip-hover-ink: var(--paper);
+
+  --mono: "Plex Mono", "Sym Mono", ui-monospace, monospace;
+  --serif: "Source Serif", "Sym Mono", serif;
+
+  --gutter: clamp(16px, 4.4vw, 64px);
+  --wrap: 1180px;
+  --rule: clamp(4px, .42vw, 6px);         /* 6 at 1440, as on the banner */
+  --cut: 14px;                            /* the family corner's legs */
+  color-scheme: light;
+}
+/* dark: the record prints on the navy stock */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --stock: var(--navy); --stock2: var(--char); --line: var(--paper);
+    --focus: var(--sky); --chip-hover: var(--sky); --chip-hover-ink: var(--navy);
+    color-scheme: dark;
+  }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html {
+  -webkit-text-size-adjust: 100%; text-size-adjust: 100%;
+  background-color: var(--stock);
+  background-image: url("../img/tooth.webp");          /* the paper's tooth: soft-light keeps the stock's ink */
+  background-size: 384px 384px;
+  background-blend-mode: soft-light;
+}
+/* on the navy stock the tooth prints at a third of its strength */
+@media (prefers-color-scheme: dark) {
+  html { background-image: linear-gradient(rgb(26 41 68 / .7), rgb(26 41 68 / .7)), url("../img/tooth.webp");
+         background-size: auto, 384px 384px; background-blend-mode: normal, soft-light; }
+}
+body {
+  margin: 0; color: var(--line);
+  font: 400 16px/1.6 var(--mono);
+  font-synthesis: none; font-kerning: normal; -webkit-font-smoothing: antialiased;
+}
+img, svg, video, picture { display: block; max-width: 100%; }
+img { height: auto; }
+a { color: inherit; text-decoration-line: underline; text-decoration-thickness: 1px; text-underline-offset: .22em; }
+a:hover { text-decoration-thickness: 2px; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+::selection { background: var(--mustard); color: var(--navy); }
+
+.wrap { width: min(100% - 2 * var(--gutter), var(--wrap)); margin-inline: auto; }
+.skip { position: absolute; left: var(--gutter); top: -80px; z-index: 10; padding: 10px 14px;
+        background: var(--paper); color: var(--navy); font: 500 14px/1 var(--mono); }
+.skip:focus { top: 12px; }
+
+/* ------------------------------------------------------------------ the air, the label, the rule */
+.air { background: var(--navy); color: var(--paper); --focus: var(--sky); }
+.air__in { display: flex; flex-direction: column; justify-content: space-between;
+           min-height: clamp(240px, calc(100svh * 5 / 9), 560px);     /* B1: the air is 5/9 of the frame */
+           padding-block: 14px clamp(30px, 7svh, 76px); }
+.air__nav { display: flex; justify-content: space-between; align-items: baseline; gap: 24px;
+            font: 500 13px/1 var(--mono); letter-spacing: .04em; }
+.air__nav a { color: var(--paper); text-decoration: none; padding: 12px 0; }
+.air__nav a:hover { text-decoration: underline; text-underline-offset: .3em; }
+
+.drafted { --size: clamp(46px, 12.6vw, 132px); --track: .3em;
+           margin: 0; font: 500 var(--size)/1 var(--mono); letter-spacing: var(--track);
+           color: var(--light-system); white-space: nowrap; }
+.drafted a { color: inherit; text-decoration: none; display: inline-block; }
+.drafted a:hover { color: var(--paper); }
+.drafted .k { position: relative; }
+/* typed once, right to left: N, E, L, S, O, N, at the system's key rate (six keys in 0.35 s), then it holds.
+   Each key is held back until its time (no fill: when the hold ends, the key stands); the caret stands left of
+   the last key typed until the next one lands. */
+@media (prefers-reduced-motion: no-preference) {
+  .drafted .k6 { --t: .55s; }
+  .drafted .k5 { --t: .62s; }
+  .drafted .k4 { --t: .69s; }
+  .drafted .k3 { --t: .76s; }
+  .drafted .k2 { --t: .83s; }
+  .drafted .k1 { --t: .90s; }
+  .drafted .k { animation: key-wait var(--t) linear; }
+  .drafted .k::before { content: ""; position: absolute; left: calc(var(--track) / -2 - .03em); top: .1em;
+                        width: .06em; height: .78em; background: currentColor; opacity: 0;
+                        animation: caret-on 70ms linear var(--t); }
+  .drafted .k1::before { content: none; }
+}
+@keyframes key-wait { from, to { opacity: 0; } }
+@keyframes caret-on { from, to { opacity: 1; } }
+
+.rule { height: var(--rule); background: var(--orange); }
+
+/* ------------------------------------------------------------------ the paper */
+.paper { display: grid; gap: clamp(56px, 7vw, 96px); padding-block: clamp(40px, 6vw, 80px) clamp(56px, 7vw, 96px); }
+.paper > * { margin: 0; min-width: 0; }
+
+.form__label { margin: 0 0 16px; font: 500 14px/1.3 var(--mono); letter-spacing: .02em; }
+.owp { margin: 0; font: 400 14px/1.75 var(--mono); white-space: pre-wrap; overflow-wrap: break-word;
+       font-variant-ligatures: none; tab-size: 4; max-width: 78ch; }
+
+/* the card is a designed object: printed on the second paper, its top left cut at 45 degrees */
+.card { position: relative; isolation: isolate; width: fit-content; max-width: 100%;
+        padding: clamp(16px, 3.6vw, 44px) clamp(14px, 3.6vw, 48px); --cut: clamp(16px, 2.2vw, 26px); }
+.card::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--stock2);
+                clip-path: polygon(var(--cut) 0, 100% 0, 100% 100%, 0 100%, 0 var(--cut)); }
+
+/* #sheets: the List of Sheets, then each Sheet in serial order */
+.sheets { display: grid; gap: clamp(40px, 5vw, 64px); }
+.sheets__list { list-style: none; margin: 0; padding: 0; display: grid; gap: clamp(48px, 6vw, 80px); }
+.sheet { display: grid; grid-template-columns: minmax(0, 640px) minmax(0, 1fr); gap: 20px clamp(24px, 3.4vw, 48px);
+         align-items: end; }
+.sheet__frame img { width: 100%; }
+.sheet__meta { display: grid; gap: 18px; justify-items: start; }
+.sheet__meta p { margin: 0; }
+.sheet__code { font: 500 clamp(24px, 2.6vw, 32px)/1 var(--mono); letter-spacing: .04em; }
+.sheet__run { font: 400 15px/1 var(--mono); }
+
+/* a link chip: solid ink, the family corner cut from its ground (the focus ring stays whole) */
+.chip { position: relative; isolation: isolate; display: inline-block; color: var(--stock); text-decoration: none;
+        padding: 14px 20px 13px 26px; font: 500 15px/1.25 var(--mono); --cut: 12px; }
+.chip::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--line);
+                clip-path: polygon(var(--cut) 0, 100% 0, 100% 100%, 0 100%, 0 var(--cut)); }
+.chip:hover { color: var(--chip-hover-ink); }
+.chip:hover::before { background: var(--chip-hover); }
+
+/* the record page */
+.film { margin: 0; }
+.chip--film { font-size: clamp(16px, 1.6vw, 19px); padding: 17px 24px 16px 30px; --cut: 14px; }
+.frames__list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: clamp(12px, 2vw, 28px); max-width: 1108px; }
+.frames__item:first-child { grid-column: 1 / -1; }
+.frames__item img { width: 100%; }
+.pager { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: baseline;
+         font: 500 14px/1.3 var(--mono); }
+.pager a { display: inline-block; padding: 10px 0; }
+.pager__next { text-align: right; }
+
+/* ------------------------------------------------------------------ Visual Materials: by Sheet, then by kind */
+.vm { display: grid; gap: clamp(48px, 6vw, 80px); }
+.vm__head, .vm__title { margin: 0; font: 500 14px/1.3 var(--mono); letter-spacing: .02em; }
+.vm__sheet { display: grid; gap: clamp(36px, 4.6vw, 60px); }
+.vm__code { margin: 0; font: 500 clamp(24px, 2.6vw, 32px)/1 var(--mono); letter-spacing: .04em; }
+.vm__group { display: grid; gap: 16px; }
+.plates__list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr));
+                gap: clamp(32px, 4vw, 48px) clamp(16px, 2.4vw, 32px); }
+.plate { grid-column: 1 / -1; min-width: 0; }
+.plate--half { grid-column: span 6; }
+.plate__fig { margin: 0; }
+.plate__cap { margin-top: 12px; font: 400 14px/1.6 var(--mono); }
+/* a piece shown at its own size (a 1:1 detail), never larger */
+.plate--native .mount { width: fit-content; max-width: 100%; }
+.plate--native .mount img { width: auto; max-width: 100%; }
+/* several pictures as one piece, each whole */
+.set { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(8px, 1.4vw, 18px); align-items: start; }
+.set__item img { width: 100%; }
+
+/* a mount: the second paper behind a plate, cut at the top left; the picture inside stays whole */
+.mount { position: relative; isolation: isolate; padding: clamp(12px, 1.8vw, 22px); --cut: 20px; }
+.mount::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--stock2);
+                 clip-path: polygon(var(--cut) 0, 100% 0, 100% 100%, 0 100%, 0 var(--cut)); }
+.mount img { width: 100%; }
+/* a Sheet's frame sits on its own mount, so its edge reads against the paper (many frames print on paper too) */
+.mount--frame { padding: clamp(8px, 1.1vw, 14px); --cut: 14px; }
+
+/* a motion clip: a strip of whole frames; it plays in place on request */
+.clip__open { display: block; color: inherit; text-decoration: none; }
+.strip { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: clamp(4px, .6vw, 8px); }
+.strip--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.strip__frame img { width: 100%; }
+.clip__cue { position: relative; isolation: isolate; display: inline-block; margin-top: 14px; padding: 10px 16px 9px 20px;
+             color: var(--stock); font: 500 14px/1 var(--mono); --cut: 9px; }
+.clip__cue::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--line);
+                     clip-path: polygon(var(--cut) 0, 100% 0, 100% 100%, 0 100%, 0 var(--cut)); }
+.clip__open:hover .clip__cue { color: var(--chip-hover-ink); }
+.clip__open:hover .clip__cue::before { background: var(--chip-hover); }
+.clip video { display: block; width: 100%; height: auto; background: var(--navy); }
+
+/* the plate table: the frame's printing plates stacked in order, each with its blend mode */
+.ptable { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px clamp(20px, 2.6vw, 36px); }
+.ptable__stack { position: relative; isolation: isolate; }
+.ptable__layer { display: block; width: 100%; height: auto; }
+.ptable__layer + .ptable__layer { position: absolute; inset: 0; }
+.blend-normal { mix-blend-mode: normal; }
+.blend-multiply { mix-blend-mode: multiply; }
+.ptable__switches { margin: 0; padding: 0; border: 0; min-width: 0; display: grid; gap: 2px; align-content: start; }
+.ptable__legend { padding: 0; margin: 0 0 8px; font: 500 14px/1.3 var(--mono); }
+.sw { display: flex; align-items: center; gap: 12px; min-height: 40px; margin: 0; font: 400 14px/1.3 var(--mono); }
+label.sw { cursor: pointer; }
+/* each switch: a real checkbox (its state), the plate's solid ink swatch, the plate's name */
+.sw input { appearance: none; -webkit-appearance: none; flex: none; width: 20px; height: 20px; margin: 0;
+            border: 2px solid var(--line); background: transparent no-repeat center / 10px 10px; cursor: pointer; }
+.sw input:checked { background-image: linear-gradient(var(--line), var(--line)); }
+.sw input:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+.sw__box { flex: none; width: 20px; height: 20px; }
+.sw__ink { flex: none; width: 22px; height: 22px; color: var(--line); }
+.sw input:not(:checked) ~ .sw__name { text-decoration: line-through; text-decoration-thickness: 1px; }
+.sw__note { padding-left: .4em; }
+.ptable__layer.is-off { visibility: hidden; }
+.ptable:has(input.p1:not(:checked)) .ptable__layer.p1,
+.ptable:has(input.p2:not(:checked)) .ptable__layer.p2,
+.ptable:has(input.p3:not(:checked)) .ptable__layer.p3,
+.ptable:has(input.p4:not(:checked)) .ptable__layer.p4,
+.ptable:has(input.p5:not(:checked)) .ptable__layer.p5,
+.ptable:has(input.p6:not(:checked)) .ptable__layer.p6,
+.ptable:has(input.p7:not(:checked)) .ptable__layer.p7,
+.ptable:has(input.p8:not(:checked)) .ptable__layer.p8,
+.ptable:has(input.p9:not(:checked)) .ptable__layer.p9,
+.ptable:has(input.p10:not(:checked)) .ptable__layer.p10,
+.ptable:has(input.p11:not(:checked)) .ptable__layer.p11,
+.ptable:has(input.p12:not(:checked)) .ptable__layer.p12,
+.ptable:has(input.p13:not(:checked)) .ptable__layer.p13,
+.ptable:has(input.p14:not(:checked)) .ptable__layer.p14,
+.ptable:has(input.p15:not(:checked)) .ptable__layer.p15,
+.ptable:has(input.p16:not(:checked)) .ptable__layer.p16 { visibility: hidden; }
+
+/* ------------------------------------------------------------------ the foot */
+.foot { padding-block: 0 48px; font: 500 13px/1.3 var(--mono); }
+.foot a { display: inline-block; padding: 10px 0; }
+.foot a + a { margin-left: 28px; }
+
+/* ------------------------------------------------------------------ wider screens */
+@media (min-width: 700px) {
+  .owp { font-size: 15px; }
+}
+@media (min-width: 960px) {
+  .ptable { grid-template-columns: minmax(0, 1fr) 248px; align-items: start; }
+}
+/* ------------------------------------------------------------------ narrow screens */
+@media (max-width: 759px) {
+  .sheet { grid-template-columns: minmax(0, 1fr); }
+  .plate--half { grid-column: 1 / -1; }
+  .strip, .strip--4 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 599px) {
+  .frames__list { grid-template-columns: minmax(0, 1fr); }
+  .set { grid-template-columns: minmax(0, 1fr); }
+  .owp { font-size: 13px; }
+  .air__in { min-height: clamp(220px, 44svh, 400px); }
+}
+
+@media print {
+  html { background: #fff; }
+  .air, .rule, .foot, .pager, .skip { display: none; }
+  body { color: #1a2944; }
+}

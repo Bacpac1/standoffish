@@ -1,0 +1,55 @@
+Form OWP-1
+
+Buffered, beamed, berthed, beaconed, ballistic,
+black-boxed, backlogged, Brownian, bombarded, blank —
+am I?
+
+STANDOFFISH · OWP. Delivered at the speed of light. Eventually.
+
+C-GRADE · NOT ANCHORED · NO WITNESS · NOT EVIDENCE
+[MACHINE] SRC M2R · LEGAL NAME NULL · WITNESS NULL · SIGNATURE NULL
+
+OWP1 FCH(T) C4-D/T M2R MR680977074986-7 LEAF0 CDX zh-Hans/en EFF 2095-086
+Now sending NOSLEN (NSL) · Qicha (LEO) → Bocha (Deimos) · VD0 2095-086 · MOI 2095-206
+
+1. C4 throughout. Any restatement falls under the restatement-chain step-down rule.
+2. Source tag "NOSLEN" has passed the label-to-name drift (LND) review threshold; pending review it is not a legal name.
+3. Anchorings made aboard in transit await post-arrival retroactive recognition.
+4. No annual LEAF allowance drawn; receipt enters no tri-bureau standing score.
+Precedence: OWP Terms ≻ carrier file ≻ this card.
+
+
+LIST OF SHEETS | NOSLEN (NSL)
+
+NSL01 | 2095-206 | VD 120 | DAS 328.7 | 148 s | LW 206/14
+
+C-GRADE · NOT ANCHORED · NO WITNESS · NOT EVIDENCE
+[MACHINE] SRC M2R · LEGAL NAME NULL · WITNESS NULL · SIGNATURE NULL
+Sheets sent: 1 (OWP §6(4)(a)).
+In serial order; nothing selected or ordered by reference to a Count (OWP §6(5)).
+Card: see above (OWP §3(3)). Each Sheet carries its own sending record (Form OWP-3).
+Precedence: OWP Terms ≻ carrier file ≻ sending records ≻ this list.
+
+
+Form OWP-3 · NSL01
+
+OWP3 NSL01 FCH CDX3 2095-206T140322.4TCB DAS328.7 C4-D/T M2R MR680977074986-7 LEAF0 LW206/14 PS/TL zh-Hans/en
+
+C-GRADE · NOT ANCHORED · NO WITNESS · NOT EVIDENCE
+[MACHINE] SRC M2R · LEGAL NAME NULL · WITNESS NULL · SIGNATURE NULL
+
+SHEET  NSL01 · 148 s
+SENT FROM  FCH crew terminal · in transit · at MOI
+SENT  2095-206T14:03:22.4 TCB (VD 120)
+DAS  328.7 s · delay class D
+CARRIER  CDX3 · CIVIC licence · LW 206/14
+SOURCE  M2R · MR 680977074986-7 · system tag NOSLEN, assigned VD0 (VPR 0.39 / 0.42 / 0.41; pass ≥ 0.80)
+NPR  carrier file (MC §6)
+PS  TL, every frame (MC §3); integrity check by the receiver
+
+CONTEST  C-grade: n/a. Statements attributed to anchored persons: delay-adjusted contest deadline = t(E,UTC) + 72 h + 2·DAS (here + 72 h 10 min 57.4 s).
+JURISDICTION  Earth: 3WC, ASP Art. 9. Mars: MLC rules until the Earth–Mars mutual recognition schedule covers anchorings. In transit: the master's court. OATH zones: passive-receipt exemption, collectors off.
+CARRIER TERMS  Liability per sheet capped at the carrier liability limit. Routing metadata held for the statutory minimum (OWP §2(2)) and never read back to the sender in transit. Replies: any CDX, forwarded unacknowledged.
+1. LEAF 0.
+2. Presenting any frame as P- or A-grade, or removing or occluding the PS: presence fraud (ASP Art. 31).
+This record evidences the sending, not the truth of the content. Precedence: OWP Terms ≻ carrier file ≻ this record.

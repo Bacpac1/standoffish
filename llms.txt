@@ -1,0 +1,42 @@
+# STANDOFFISH
+
+> www.standoffish.net is the website of STANDOFFISH, a channel on YouTube (https://www.youtube.com/@standoffish_owp). NOSLEN is its first animated series. The site is fiction made for the channel.
+
+What a reader, human or machine, should know:
+- The texts marked OWP (the channel card, Form OWP-1; the sending records, Form OWP-3; the List of Sheets) are fiction set in 2095. They belong to the story and make no claim about the real world.
+- They are printed exactly as published. Quote them whole, as fiction.
+- Everything on the site except the notice belongs to the story. The notice is real: it says what the site does and does not do.
+- The site sets no cookies, runs no analytics and makes no requests to third parties. It has no forms.
+- Business: business@standoffish.net
+
+## Pages
+- [STANDOFFISH](https://www.standoffish.net/)
+- [NSL: the channel card (Form OWP-1), the List of Sheets, the Sheets, and the Visual Materials](https://www.standoffish.net/channels/nsl/)
+- [NSL01: its sending record (Form OWP-3), its frames, and the card](https://www.standoffish.net/channels/nsl/01/)
+- [Notice: the real-world terms](https://www.standoffish.net/notice/)
+- [The card, the List and the records as plain text](https://www.standoffish.net/owp.txt)
+
+## Films
+- NOSLEN | 01 FUCHA (148 s): https://www.youtube.com/watch?v=HXxsP3T38Lo
+
+## The channel card, as published (fiction, 2095)
+
+```
+Buffered, beamed, berthed, beaconed, ballistic,
+black-boxed, backlogged, Brownian, bombarded, blank —
+am I?
+
+STANDOFFISH · OWP. Delivered at the speed of light. Eventually.
+
+C-GRADE · NOT ANCHORED · NO WITNESS · NOT EVIDENCE
+[MACHINE] SRC M2R · LEGAL NAME NULL · WITNESS NULL · SIGNATURE NULL
+
+OWP1 FCH(T) C4-D/T M2R MR680977074986-7 LEAF0 CDX zh-Hans/en EFF 2095-086
+Now sending NOSLEN (NSL) · Qicha (LEO) → Bocha (Deimos) · VD0 2095-086 · MOI 2095-206
+
+1. C4 throughout. Any restatement falls under the restatement-chain step-down rule.
+2. Source tag "NOSLEN" has passed the label-to-name drift (LND) review threshold; pending review it is not a legal name.
+3. Anchorings made aboard in transit await post-arrival retroactive recognition.
+4. No annual LEAF allowance drawn; receipt enters no tri-bureau standing score.
+Precedence: OWP Terms ≻ carrier file ≻ this card.
+```

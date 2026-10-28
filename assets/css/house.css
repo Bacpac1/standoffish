@@ -1,0 +1,41 @@
+/* The root placeholder, the 2026 notice and the NULL page: deliberately plain and neutral, none of the series' look.
+   The STANDOFFISH home is designed separately. Paper, the house's navy ink, mono type, no motion. */
+
+:root {
+  --paper: #ece4d2; --navy: #1a2944;
+  --ground: var(--paper); --ink: var(--navy); --focus: #2d5ca4;
+  --mono: "Plex Mono", "Sym Mono", ui-monospace, monospace;
+  --serif: "Source Serif", "Sym Mono", serif;
+  --gutter: clamp(16px, 6vw, 96px);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --ground: var(--navy); --ink: var(--paper); --focus: #93bad6; color-scheme: dark; }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; background: var(--ground); }
+body { margin: 0; color: var(--ink); font: 400 15px/1.7 var(--mono); font-synthesis: none;
+       -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration-line: underline; text-decoration-thickness: 1px; text-underline-offset: .24em; }
+a:hover { text-decoration-thickness: 2px; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+
+/* the placeholder and NULL */
+.hh { width: min(100% - 2 * var(--gutter), 760px); margin-inline: auto; padding-block: clamp(56px, 16svh, 176px) 72px; }
+.hh__name { margin: 0 0 20px; font: 500 clamp(24px, 3.4vw, 34px)/1.1 var(--mono); letter-spacing: .06em; }
+.hh__line { margin: 0; max-width: 62ch; }
+.hh__links { list-style: none; padding: 0; margin: 40px 0 0; }
+.hh__links a, .hh--null a { display: inline-block; padding: 8px 0; }
+.hh__null { margin: 0 0 16px; font: 500 clamp(40px, 7vw, 72px)/1 var(--mono); letter-spacing: .06em; }
+
+/* the notice: real-world, 2026 */
+.hbar { width: min(100% - 2 * var(--gutter), 760px); margin-inline: auto; padding-top: 14px;
+        font: 500 13px/1 var(--mono); letter-spacing: .04em; }
+.hbar a { display: inline-block; text-decoration: none; padding: 12px 0; }
+.hbar a:hover { text-decoration: underline; text-underline-offset: .3em; }
+.notice { width: min(100% - 2 * var(--gutter), 760px); margin-inline: auto; padding-block: clamp(48px, 9svh, 112px) 96px;
+          font: 400 18px/1.65 var(--serif); }
+.notice p { margin: 0 0 1.1em; max-width: 36em; }
+.notice__title { margin: 0 0 40px; font: 500 clamp(22px, 2.6vw, 28px)/1.25 var(--mono); letter-spacing: .02em; }
+.notice .notice__copy { margin-top: 48px; font: 400 14px/1.5 var(--mono); }
