@@ -13,7 +13,6 @@
   --focus: var(--cobalt); --chip-hover: var(--cobalt); --chip-hover-ink: var(--paper);
 
   --mono: "Plex Mono", "Sym Mono", ui-monospace, monospace;
-  --serif: "Source Serif", "Sym Mono", serif;
 
   --gutter: clamp(16px, 4.4vw, 64px);
   --wrap: 1180px;

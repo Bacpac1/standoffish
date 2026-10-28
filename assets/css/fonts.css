@@ -1,5 +1,4 @@
 /* subset at build; the licences: /assets/fonts/LICENSES.txt */
 @font-face { font-family: "Plex Mono"; src: url("../fonts/plexmono-400.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
 @font-face { font-family: "Plex Mono"; src: url("../fonts/plexmono-500.woff2") format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
-@font-face { font-family: "Source Serif"; src: url("../fonts/serif-400.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
 @font-face { font-family: "Sym Mono"; src: url("../fonts/sym-400.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; unicode-range: U+2192, U+2265, U+227B; }
