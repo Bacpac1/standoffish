@@ -10,6 +10,11 @@ What a reader, human or machine, should know:
 
 ## Pages
 - [STANDOFFISH](https://www.standoffish.net/)
+- [Replies (the reply desks)](https://www.standoffish.net/reply/)
+- [Certification](https://www.standoffish.net/certify/)
+- [Records: the channels in the class](https://www.standoffish.net/channels/)
+- [The Register](https://www.standoffish.net/register/)
+- [Routes](https://www.standoffish.net/routes/)
 - [NSL: the channel card (Form OWP-1), the List of Sheets, the Sheets, and the Visual Materials](https://www.standoffish.net/channels/nsl/)
 - [NSL01: its sending record (Form OWP-3), its frames, and the card](https://www.standoffish.net/channels/nsl/01/)
 - [The card, the List and the records as plain text](https://www.standoffish.net/owp.txt)

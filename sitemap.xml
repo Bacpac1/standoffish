@@ -1,6 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://www.standoffish.net/</loc></url>
+  <url><loc>https://www.standoffish.net/reply/</loc></url>
+  <url><loc>https://www.standoffish.net/certify/</loc></url>
+  <url><loc>https://www.standoffish.net/channels/</loc></url>
+  <url><loc>https://www.standoffish.net/register/</loc></url>
+  <url><loc>https://www.standoffish.net/routes/</loc></url>
   <url><loc>https://www.standoffish.net/channels/nsl/</loc></url>
   <url><loc>https://www.standoffish.net/channels/nsl/01/</loc></url>
+  <url><loc>https://www.standoffish.net/routes/hail/</loc></url>
+  <url><loc>https://www.standoffish.net/routes/thrice/</loc></url>
+  <url><loc>https://www.standoffish.net/routes/lintel/</loc></url>
+  <url><loc>https://www.standoffish.net/routes/fallow/</loc></url>
+  <url><loc>https://www.standoffish.net/routes/roger/</loc></url>
+  <url><loc>https://www.standoffish.net/routes/understudy/</loc></url>
+  <url><loc>https://www.standoffish.net/routes/glasshouse/</loc></url>
 </urlset>
