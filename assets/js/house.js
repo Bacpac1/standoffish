@@ -4,8 +4,10 @@
       passes the room by a few millimetres: the act at the centre of the picture stays where it is, the room
       opens around it. The picture's frame and its stamp stay put. WebGL2 only; never under reduced motion.
    2. The seat. The time in Longyearbyen, and whether the sun rises there today.
-   3. The desks. The atlas: three views of the map as tabs, each desk's card, Earth by continent; and a filter by
-      service over the list and the map, both whole without it. */
+   3. The desks. Find a desk: the atlas's views as tabs with their counts, a search and a filter by service over the
+      map, its list and the directory; a desk opens beside the map; Earth zooms and pans. Whole without it.
+   4. The carriers. Each node of the network's drawing gives its card and lights what it works with; the day of link
+      windows marks the hour in TCB. */
 (function () {
   'use strict';
   var root = document.documentElement;
@@ -235,168 +237,550 @@
 
   /* ------------------------------------------------------------------------------------------- 3. the desks */
   var slice = function (l) { return Array.prototype.slice.call(l); };
-  var atlas = document.querySelector('[data-atlas]'), dimMarks = function () {};
+  var atlas = document.querySelector('[data-atlas]');
   if (atlas) (function () {
-    /* the atlas: the three views become tabs (the region tiles below the map), every marker opens its desk's card,
-       copied from the desk's own entry in the directory; Earth zooms by continent; the list's "On the map" and the
-       filter reach the map. Escape closes the card. Under reduced motion nothing travels. */
+    /* Find a desk. The atlas's three views become tabs above the map, each with its count; the search (a town, a
+       place, a country or a code) and the filter by service narrow the map, the list beside it and the directory
+       below, together. A marker or a row opens its desk beside the map, copied from the desk's own entry in the
+       directory. Earth zooms by continent, by + and -, by a double click, a pinch, or the wheel with Ctrl or Cmd,
+       and pans by dragging; the list then holds the desks in view. On the markers the arrow keys travel: left and
+       right go west and east, up and down north and south. Escape goes back. Under reduced motion nothing travels. */
     atlas.classList.add('is-live');
-    var stage = atlas.querySelector('[data-atlas-stage]'), card = atlas.querySelector('[data-atlas-card]');
-    var views = slice(atlas.querySelectorAll('[data-view]')), marks = slice(atlas.querySelectorAll('.dm'));
-    var zoomBar = atlas.querySelector('[data-atlas-zoom]'), zoomBtns = slice(zoomBar.querySelectorAll('button'));
-    var nav = document.querySelector('.dindex'), tiles = nav ? slice(nav.querySelectorAll('a')) : [];
-    var narrow = window.matchMedia ? matchMedia('(max-width: 760px)') : { matches: false };
-    var earth = atlas.querySelector('[data-view="earth"] svg'), zooms = {};
-    try { zooms = JSON.parse(atlas.querySelector('[data-view="earth"]').getAttribute('data-zooms')); } catch (e) {}
-    var cur = 'earth', sel = null, vb = [0, 0, 1000, 432.1], anim = 0;
-    var viewOf = function (id) { var m = atlas.querySelector('.dm[data-desk="' + id + '"]'); return m ? m.closest('[data-view]').getAttribute('data-view') : null; };
-    var markOf = function (id) { return atlas.querySelector('[data-view="' + cur + '"] .dm[data-desk="' + id + '"]'); };
-
-    function show(id) {
-      var src = document.getElementById(id), m = markOf(id);
-      if (!src || !m) { card.classList.remove('is-on'); card.hidden = true; return; }
-      var body = src.cloneNode(true);
-      body.removeAttribute('id'); body.classList.remove('is-sel');
-      slice(body.querySelectorAll('[id]')).forEach(function (n) { n.removeAttribute('id'); });
-      var holder = document.createElement('div'); holder.className = 'desk desk--' + (src.className.match(/desk--(\w+)/) || [, ''])[1];
-      while (body.firstChild) holder.appendChild(body.firstChild);
-      var go = document.createElement('a'); go.className = 'desk__go'; go.href = '#' + id; go.textContent = 'In the directory';
-      go.addEventListener('click', function (e) {
-        e.preventDefault();
-        src.scrollIntoView({ behavior: mq.matches ? 'auto' : 'smooth', block: 'center' });
-        var f = src.querySelector('a, button'); if (f) f.focus({ preventScroll: true });
-      });
-      holder.appendChild(go);
-      var x = document.createElement('button'); x.type = 'button'; x.className = 'desk__close'; x.setAttribute('aria-label', 'Close');
-      x.textContent = '×'; x.addEventListener('click', function () { select(null); });
-      card.textContent = ''; card.appendChild(x); card.appendChild(holder);
-      card.hidden = false;
-      card.setAttribute('aria-label', m.getAttribute('aria-label'));
-      if (!narrow.matches) {
-        var s = stage.getBoundingClientRect(), r = m.getBoundingClientRect();
-        var cw = card.offsetWidth, ch = card.offsetHeight, mx = r.left + r.width / 2 - s.left, my = r.top + r.height / 2 - s.top;
-        var left = mx + 22, top = my - ch / 2;
-        if (left + cw > s.width) left = mx - 22 - cw;
-        if (left < 0) left = Math.max(0, Math.min(s.width - cw, mx - cw / 2));
-        top = Math.max(0, Math.min(Math.max(0, s.height - ch), top));
-        card.style.left = Math.round(left) + 'px'; card.style.top = Math.round(top) + 'px';
-      }
-      requestAnimationFrame(function () { card.classList.add('is-on'); });
-    }
-    function hide() { card.classList.remove('is-on'); card.hidden = true; }
-    function select(id) {
-      sel = id;
-      marks.forEach(function (m) { m.classList.toggle('is-sel', m.getAttribute('data-desk') === id); });
-      slice(document.querySelectorAll('.desk.is-sel')).forEach(function (d) { d.classList.remove('is-sel'); });
-      if (id) { var li = document.getElementById(id); if (li) li.classList.add('is-sel'); show(id); } else hide();
-    }
-    function preview(id) { if (id) show(id); else if (sel && viewOf(sel) === cur) show(sel); else hide(); }
-
-    /* the views */
-    function view(id) {
-      cur = id;
-      views.forEach(function (v) { v.classList.toggle('is-on', v.getAttribute('data-view') === id); });
-      tiles.forEach(function (t) { t.setAttribute('aria-selected', t.getAttribute('href') === '#' + id ? 'true' : 'false'); });
-      zoomBar.hidden = id !== 'earth';
-      fitHits();
-      if (sel && viewOf(sel) === id) show(sel); else hide();
-    }
-    if (nav && tiles.length) {
-      nav.setAttribute('role', 'tablist'); nav.setAttribute('aria-label', 'Views of the map');
-      tiles.forEach(function (t) {
-        var id = t.getAttribute('href').slice(1);
-        t.setAttribute('role', 'tab'); t.setAttribute('aria-controls', 'map-' + id);
-        t.addEventListener('click', function (e) { e.preventDefault(); view(id); });
-      });
-    }
-
-    /* Earth, by continent */
-    function fitHits() {                           // a finger's reach: about 20 px around each marker, whatever the zoom
-      views.forEach(function (v) {
-        var svg = v.querySelector('svg'), w = svg.getBoundingClientRect().width; if (!w) return;
-        var b = (svg.getAttribute('viewBox') || '0 0 1000 1').split(' ').map(parseFloat), k = v.getAttribute('data-view') === 'earth' ? b[2] / 1000 : 1;
-        var r = Math.max(16, Math.min(60, 20 / (w / b[2]) / k));
-        slice(v.querySelectorAll('.dm__hit')).forEach(function (c) { c.setAttribute('r', r.toFixed(1)); });
-      });
-    }
-    function setVB(b) {
-      vb = b; earth.setAttribute('viewBox', b.map(function (v) { return v.toFixed(1); }).join(' '));
-      var k = b[2] / 1000;
-      slice(earth.querySelectorAll('.dm__at')).forEach(function (g) {
-        var t = g.getAttribute('data-at') || g.getAttribute('transform').replace(/ scale\([^)]*\)/, '');
-        g.setAttribute('data-at', t); g.setAttribute('transform', t + ' scale(' + k.toFixed(3) + ')');
-      });
-    }
-    function zoom(key, then) {
-      var to = zooms[key] || zooms.all; if (!to) return;
-      zoomBtns.forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-z') === key ? 'true' : 'false'); });
-      cancelAnimationFrame(anim); hide();
-      var from = vb.slice(), t0 = performance.now(), T = mq.matches ? 0 : 700;
-      var ease = function (t) { return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
-      var step = function (now) {
-        var t = T ? Math.min(1, (now - t0) / T) : 1, e = ease(t);
-        setVB(from.map(function (v, i) { return v + (to[i] - v) * e; }));
-        if (t < 1) anim = requestAnimationFrame(step); else { fitHits(); if (then) then(); else if (sel && viewOf(sel) === 'earth') show(sel); }
-      };
-      anim = requestAnimationFrame(step);
-    }
-    zoomBtns.forEach(function (b) { b.addEventListener('click', function () { zoom(b.getAttribute('data-z')); }); });
-    zoomBar.hidden = false;
-
-    /* the markers */
-    marks.forEach(function (m) {
-      var id = m.getAttribute('data-desk');
-      m.addEventListener('click', function (e) { e.preventDefault(); select(sel === id ? null : id); });
-      m.addEventListener('mouseenter', function () { preview(id); });
-      m.addEventListener('mouseleave', function () { preview(null); });
-      m.addEventListener('focus', function () { preview(id); });
-      m.addEventListener('blur', function () { preview(null); });
-    });
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && sel) select(null); });
-    window.addEventListener('resize', function () { fitHits(); if (sel && viewOf(sel) === cur) show(sel); });
-
-    /* from the list to the map */
-    slice(document.querySelectorAll('.dlist .desk[id]')).forEach(function (li) {
-      var id = li.id, v = viewOf(id); if (!v) return;
-      var b = document.createElement('button'); b.type = 'button'; b.className = 'desk__map'; b.textContent = 'On the map';
-      b.addEventListener('click', function () {
-        var m = atlas.querySelector('.dm[data-desk="' + id + '"]'), c = m && m.getAttribute('data-c');
-        atlas.scrollIntoView({ behavior: mq.matches ? 'auto' : 'smooth', block: 'start' });
-        view(v);
-        if (v === 'earth' && c) zoom(c, function () { select(id); }); else select(id);
-      });
-      li.appendChild(b);
-    });
-
-    /* the filter reaches the map */
-    dimMarks = function (f) {
-      marks.forEach(function (m) {
-        var on = f === 'all' || (' ' + m.getAttribute('data-f') + ' ').indexOf(' ' + f + ' ') >= 0;
-        m.classList.toggle('is-off', !on);
-        if (!on && m.getAttribute('data-desk') === sel) select(null);
-      });
+    var $ = function (s, r) { return (r || atlas).querySelector(s); };
+    var $$ = function (s, r) { return slice((r || atlas).querySelectorAll(s)); };
+    var stage = $('[data-atlas-stage]'), panel = $('[data-atlas-panel]'), list = $('[data-atlas-list]');
+    var lk = $('[data-atlas-lk]'), also = $('[data-atlas-also]'), rowsEl = $('[data-atlas-rows]'), detail = $('[data-atlas-detail]');
+    var tip = $('[data-atlas-tip]'), input = $('[data-atlas-q]'), seg = $('.atlas__tabs'), tabs = $$('[role="tab"]');
+    var views = $$('[data-view]'), marks = $$('.dm'), fbtns = $$('[data-desk-filter] button');
+    var zoomBar = $('[data-atlas-zoom]'), zbtns = $$('button', zoomBar), zc = $('[data-atlas-zc]'), zcb = $$('button', zc);
+    var nav = document.querySelector('.dindex'), count = document.querySelector('[data-desk-count]');
+    var groups = slice(document.querySelectorAll('[data-group], .dcont, .dregion'));
+    var earthFig = $('[data-view="earth"]'), earth = $('svg', earthFig);
+    var lo = $('.atlas__land--lo', earth), hi = $('.atlas__land--hi', earth);
+    var FULL = earth.getAttribute('viewBox').split(/[ ,]+/).map(parseFloat), W = FULL[2], H = FULL[3], WMIN = W / 8;
+    var coarse = window.matchMedia ? matchMedia('(pointer: coarse)') : { matches: false };
+    var pxW = 1000, sT = 1;                        // the map's width on screen; a marker's unit in pixels
+    var zooms = {}; try { zooms = JSON.parse(earthFig.getAttribute('data-zooms')) || {}; } catch (e) {}
+    var CONT = { europe: 'Europe', africa: 'Africa', asia: 'Asia', oceania: 'Oceania', 'the-americas': 'the Americas' };
+    var WHERE = { earth: 'on Earth', 'earth-orbit': 'in Earth orbit', mars: 'at Mars' };
+    var narrow = window.matchMedia ? matchMedia('(max-width: 999px)') : { matches: false };
+    var smooth = function () { return mq.matches ? 'auto' : 'smooth'; };
+    var norm = function (t) {                      // Tromso finds Tromsø, Sao Paulo São Paulo, Reykjavik Reykjavík
+      t = String(t || '').toLowerCase().replace(/\u00f8/g, 'o').replace(/\u00e6/g, 'ae').replace(/\u0153/g, 'oe')
+        .replace(/\u00f0/g, 'd').replace(/\u00fe/g, 'th').replace(/\u00df/g, 'ss');
+      return t.normalize ? t.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : t;
     };
-    view('earth');
+    var keyed = function (el) { try { return el.matches(':focus-visible'); } catch (e) { return true; } };
+    var split = function (t) { return norm(t).split(/[\s,;\/\u00b7]+/).filter(Boolean); };
+
+    /* the desks: each marker with its entry in the directory, and a row for the list */
+    var D = {}, order = [];
+    slice(document.querySelectorAll('.dlist .desk[id]')).forEach(function (li) {
+      var m = $('.dm[data-desk="' + li.id + '"]'); if (!m) return;
+      var g = $('.dm__at', m), xy = (g.getAttribute('transform').match(/translate\(([-\d.]+)[ ,]+([-\d.]+)\)/) || [0, 0, 0]);
+      var grp = li.closest('[data-group]'), gh = grp && grp.querySelector('.dgroup__h'), sub = li.querySelector('.desk__sub');
+      var d = { id: li.id, li: li, mark: m, at: g, base: g.getAttribute('transform'), x: +xy[1], y: +xy[2],
+        view: m.closest('[data-view]').getAttribute('data-view'), c: m.getAttribute('data-c') || '',
+        kind: (li.className.match(/desk--(\w+)/) || ['', ''])[1], town: li.querySelector('.desk__town').textContent.trim(),
+        label: li.querySelector('.desk__kind').textContent.trim(), place: gh ? gh.textContent.trim() : sub ? sub.textContent.trim() : '',
+        f: ' ' + (li.getAttribute('data-f') || '') + ' ', q: norm(li.getAttribute('data-q')), on: true };
+      D[d.id] = d; order.push(d);
+    });
+    order.forEach(function (d) {
+      var li = document.createElement('li'), b = document.createElement('button');
+      b.type = 'button'; b.className = 'arow';
+      var mk = document.createElement('i'); mk.className = 'arow__mk arow__mk--' + d.kind; mk.setAttribute('aria-hidden', 'true');
+      var t = document.createElement('span'); t.className = 'arow__t'; t.textContent = d.town;
+      var s = document.createElement('span'); s.className = 'arow__s'; s.textContent = d.label + (d.place ? ' · ' + d.place : '');
+      b.appendChild(mk); b.appendChild(t); b.appendChild(s);
+      b.addEventListener('click', function () { go(d.id, { from: b, fly: true }); });
+      b.addEventListener('pointerenter', function (e) { if (e.pointerType === 'mouse') hot(d.id); });
+      b.addEventListener('pointerleave', function (e) { if (e.pointerType === 'mouse') hot(null); });
+      b.addEventListener('focus', function () { if (keyed(b)) hot(d.id); });
+      b.addEventListener('blur', function () { hot(null); });
+      li.appendChild(b); rowsEl.appendChild(li); d.row = li; d.btn = b;
+      var on = document.createElement('button'); on.type = 'button'; on.className = 'desk__map'; on.textContent = 'On the map';
+      on.addEventListener('click', function () {                   // from the directory to the map, and back with Escape
+        atlas.scrollIntoView({ behavior: smooth(), block: 'start' });
+        go(d.id, { from: on, fly: true });
+      });
+      d.li.appendChild(on);
+    });
+
+    /* what shows: the view, the search, the filter; on Earth, the continent or the part in view */
+    var cur = 'earth', sel = null, filt = 'all', words = [], area = 'all', vb = FULL.slice(), anim = 0, origin = null, rv = {};
+    var ok = function (d) {
+      if (filt !== 'all' && d.f.indexOf(' ' + filt + ' ') < 0) return false;
+      for (var i = 0; i < words.length; i++) if (d.q.indexOf(words[i]) < 0) return false;
+      return true;
+    };
+    var inside = function (d) { return d.x >= vb[0] && d.x <= vb[0] + vb[2] && d.y >= vb[1] && d.y <= vb[1] + vb[3]; };
+    var inArea = function (d) { return d.view !== 'earth' || words.length || area === 'all' || (area === 'view' ? inside(d) : d.c === area); };
+    var where = function () {
+      if (cur !== 'earth' || words.length || area === 'all') return WHERE[cur];
+      return area === 'view' ? 'in view' : 'in ' + CONT[area];
+    };
+    var narrowed = function () { return filt !== 'all' || words.length > 0; };
+    function refresh() {
+      var per = { earth: 0, 'earth-orbit': 0, mars: 0 }, total = 0, shown = 0;
+      var moved = false;                           // the page below changes only when the search or the filter does
+      order.forEach(function (d) {
+        var on = ok(d); if (on) { per[d.view]++; total++; }
+        if (on !== d.on || d.li.hidden === on) { d.on = on; d.mark.classList.toggle('is-off', !on); d.li.hidden = !on; moved = true; }
+        var vis = on && d.view === cur && inArea(d);
+        if (d.row.hidden === vis) d.row.hidden = !vis;
+        if (vis) shown++;
+      });
+      if (moved) groups.forEach(function (g) { var h = !g.querySelector('.desk:not([hidden])'); if (g.hidden !== h) g.hidden = h; });
+      tabs.forEach(function (t) { $('[data-count]', t).textContent = per[t.getAttribute('data-tab')]; });
+      lk.textContent = shown + (shown === 1 ? ' desk ' : ' desks ') + where();
+      also.textContent = '';
+      if (narrowed() && !total) {
+        var p = document.createElement('p'); p.textContent = 'Try a town, a country or a code, such as SIN.'; also.appendChild(p);
+      } else if (narrowed()) tabs.forEach(function (t) {
+        var v = t.getAttribute('data-tab'); if (v === cur || !per[v]) return;
+        var b = document.createElement('button'); b.type = 'button'; b.textContent = per[v] + ' ' + WHERE[v];
+        b.addEventListener('click', function () { tab(v); var r = rowsEl.querySelector('li:not([hidden]) .arow'); if (r) r.focus(); });
+        also.appendChild(b);
+      });
+      also.hidden = !also.firstChild;
+      count.textContent = '';
+      var n = document.createElement('span'); n.textContent = narrowed() ? total + ' of ' + order.length + ' desks' : order.length + ' desks';
+      count.appendChild(n);
+      if (narrowed()) {
+        var a = document.createElement('button'); a.type = 'button'; a.textContent = 'Show all desks';
+        a.addEventListener('click', function () { reset(); count.focus({ preventScroll: true }); });
+        count.appendChild(a);
+      }
+      count.hidden = false;
+      if (sel && !D[sel].on) close(false);
+      roving(); recluster();
+      var back = $('.atlas__back', detail); if (back) back.textContent = lk.textContent;
+    }
+    function reset() {
+      input.value = ''; words = []; filt = 'all';
+      fbtns.forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-f') === 'all' ? 'true' : 'false'); });
+      refresh();
+    }
+
+    /* the views, as tabs: the arrow keys, Home and End move between them */
+    var th = document.createElement('span'); th.className = 'atlas__thumb'; th.setAttribute('aria-hidden', 'true');
+    seg.insertBefore(th, seg.firstChild);
+    function thumb(now) {
+      var t = $('[aria-selected="true"]', seg); if (!t) return;
+      if (now) th.style.transition = 'none';
+      th.style.width = t.offsetWidth + 'px'; th.style.transform = 'translateX(' + t.offsetLeft + 'px)';
+      if (now) { th.getBoundingClientRect(); th.style.transition = ''; }
+    }
+    function tab(v, focus) {
+      if (v !== cur && sel) close(false);
+      cur = v;
+      tabs.forEach(function (t) {
+        var on = t.getAttribute('data-tab') === v;
+        t.setAttribute('aria-selected', on ? 'true' : 'false'); t.setAttribute('tabindex', on ? '0' : '-1');
+        if (on && focus) t.focus();
+      });
+      views.forEach(function (f) { var on = f.getAttribute('data-view') === v; f.classList.toggle('is-on', on); f.inert = !on; });
+      zoomBar.hidden = zc.hidden = v !== 'earth';
+      hot(null); thumb(); refresh();
+    }
+    tabs.forEach(function (t, i) {
+      t.addEventListener('click', function () { tab(t.getAttribute('data-tab')); });
+      t.addEventListener('keydown', function (e) {
+        var j = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[e.key];
+        if (j === undefined) return;
+        e.preventDefault(); tab(tabs[(j + tabs.length) % tabs.length].getAttribute('data-tab'), true);
+      });
+    });
+
+    /* a marker's name over it, for a pointer or a row; the selection, beside the map */
+    function hot(id, text, at) {                   // a desk by its id; or a cluster (at), with its names
+      order.forEach(function (d) { var on = d.id === id; d.mark.classList.toggle('is-hot', on); d.btn.classList.toggle('is-hot', on); });
+      var d = id && D[id], cl = at || (d && d.cl && document.activeElement !== d.mark ? d.cl : null);
+      Object.keys(bubbles).forEach(function (k) { bubbles[k].classList.toggle('is-hot', bubbles[k] === cl); });
+      if (!at && (!d || d.view !== cur || !d.on || (d.view === 'earth' && !inside(d)))) { tip.classList.remove('is-on'); tip.hidden = true; return; }
+      var el = cl ? cl.firstChild : $('rect, circle:not(.dm__halo):not(.dm__hit)', d.mark);
+      var s = stage.getBoundingClientRect(), g = el.getBoundingClientRect();
+      tip.textContent = text || d.town + ' · ' + d.label; tip.hidden = false;
+      var tw = tip.offsetWidth, tht = tip.offsetHeight, x = g.left + g.width / 2 - s.left;
+      var left = Math.max(6, Math.min(s.width - tw - 6, x - tw / 2)), top = g.top - s.top - tht - 9;
+      if (top < 6) top = g.bottom - s.top + 9;
+      tip.style.transform = 'translate(' + Math.round(left) + 'px,' + Math.round(top) + 'px)';
+      requestAnimationFrame(function () { tip.classList.add('is-on'); });
+    }
+    function fill(d) {
+      detail.textContent = '';
+      var back = document.createElement('button'); back.type = 'button'; back.className = 'atlas__back'; back.textContent = lk.textContent;
+      back.addEventListener('click', function () { close(true); });
+      var body = d.li.cloneNode(true), box = document.createElement('div');
+      box.className = 'desk desk--' + d.kind;
+      $$('[id]', body).forEach(function (n) { n.removeAttribute('id'); });
+      $$('.desk__map', body).forEach(function (n) { n.parentNode.removeChild(n); });
+      while (body.firstChild) box.appendChild(body.firstChild);
+      var h = $('.desk__town', box), h2 = document.createElement('h2');
+      h2.className = 'desk__town'; h2.setAttribute('tabindex', '-1');
+      while (h.firstChild) h2.appendChild(h.firstChild);
+      h.parentNode.replaceChild(h2, h);
+      var to = document.createElement('a'); to.className = 'more desk__go'; to.href = '#' + d.id; to.textContent = 'In the directory';
+      to.addEventListener('click', function (e) {
+        e.preventDefault();
+        d.li.scrollIntoView({ behavior: smooth(), block: 'center' });
+        var f = d.li.querySelector('.desk__map'); if (f) f.focus({ preventScroll: true });
+      });
+      box.appendChild(to);
+      detail.appendChild(back); detail.appendChild(box);
+    }
+    function go(id, o) {
+      var d = D[id]; if (!d) return;
+      o = o || {};
+      if (!d.on) reset();
+      if (d.view !== cur) tab(d.view);
+      sel = id; origin = o.from || null; rv[d.view] = id;
+      order.forEach(function (e) {
+        var on = e.id === id;
+        e.mark.classList.toggle('is-sel', on); e.li.classList.toggle('is-sel', on); e.btn.classList.toggle('is-sel', on);
+        if (on) e.btn.setAttribute('aria-current', 'true'); else e.btn.removeAttribute('aria-current');
+      });
+      fill(d);
+      list.hidden = true; detail.hidden = false; detail.scrollTop = 0;
+      roving(); recluster();
+      if (d.view === 'earth') { if (o.fly && area !== d.c && !(area === 'view' && inside(d))) zoom(d.c); else ensure(d); }
+      if (o.focus !== false) $('.desk__town', detail).focus({ preventScroll: true });
+      if (o.reveal && narrow.matches) panel.scrollIntoView({ behavior: smooth(), block: 'nearest' });
+    }
+    function close(restore) {
+      var o = origin; sel = null; origin = null;
+      order.forEach(function (e) { e.mark.classList.remove('is-sel'); e.li.classList.remove('is-sel'); e.btn.classList.remove('is-sel'); e.btn.removeAttribute('aria-current'); });
+      detail.hidden = true; detail.textContent = ''; list.hidden = false;
+      recluster();
+      if (!restore) return;
+      if (o && document.documentElement.contains(o) && !o.closest('[hidden]')) o.focus();
+      else { var r = rowsEl.querySelector('li:not([hidden]) .arow'); if (r) r.focus({ preventScroll: true }); }
+    }
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape' || !sel) return;
+      var a = document.activeElement;
+      if (a && a !== document.body && !atlas.contains(a)) return;
+      e.preventDefault(); close(true);
+    });
+
+    /* the search and the filter */
+    var qt = 0;
+    var search = function () { clearTimeout(qt); words = split(input.value); if (sel) close(false); refresh(); };
+    input.addEventListener('input', function () { clearTimeout(qt); qt = setTimeout(search, 70); });
+    input.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter') return;
+      e.preventDefault(); search();
+      var hits = order.filter(function (d) { return d.on; });
+      if (words.length && hits.length === 1) go(hits[0].id, { from: input, fly: true, reveal: true });
+      else if (hits.length && !hits.some(function (d) { return d.view === cur; })) tab(hits[0].view);
+    });
+    fbtns.forEach(function (b) {
+      b.addEventListener('click', function () {
+        filt = b.getAttribute('data-f');
+        fbtns.forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+        refresh();
+      });
+    });
+
+    /* the markers: one stop for the Tab key in each view; the arrow keys travel */
+    function roving() {
+      views.forEach(function (f) {
+        var v = f.getAttribute('data-view'), ms = $$('.dm', f), keep = null;
+        var live = ms.filter(function (m) { return !m.classList.contains('is-off'); });
+        [rv[v], sel].forEach(function (id) { if (!keep && id) live.forEach(function (m) { if (m.getAttribute('data-desk') === id) keep = m; }); });
+        keep = keep || live[0] || null;
+        ms.forEach(function (m) { m.setAttribute('tabindex', m === keep ? '0' : '-1'); });
+      });
+    }
+    function step(m, key) {
+      var d = D[m.getAttribute('data-desk')], ms = $$('.dm', m.closest('[data-view]')).filter(function (x) { return !x.classList.contains('is-off'); });
+      var i = ms.indexOf(m), n = ms.length, to = null, best = Infinity;
+      if (key === 'ArrowRight') return ms[(i + 1) % n];
+      if (key === 'ArrowLeft') return ms[(i - 1 + n) % n];
+      if (key === 'Home') return ms[0];
+      if (key === 'End') return ms[n - 1];
+      if (key !== 'ArrowUp' && key !== 'ArrowDown') return null;
+      var sgn = key === 'ArrowUp' ? -1 : 1;
+      ms.forEach(function (x) {
+        var e = D[x.getAttribute('data-desk')], dy = (e.y - d.y) * sgn, dx = e.x - d.x;
+        if (dy <= 0.5) return;
+        var sc = dy * dy + 4 * dx * dx; if (sc < best) { best = sc; to = x; }
+      });
+      return to;
+    }
+    marks.forEach(function (m) {
+      var id = m.getAttribute('data-desk'), d = D[id]; if (!d) return;
+      m.addEventListener('click', function (e) { e.preventDefault(); go(id, { from: m, reveal: true }); });
+      m.addEventListener('pointerenter', function (e) { if (e.pointerType === 'mouse') hot(id); });
+      m.addEventListener('pointerleave', function (e) { if (e.pointerType === 'mouse') hot(null); });
+      m.addEventListener('focus', function () { rv[d.view] = id; roving(); if (d.view === 'earth') ensure(d); hot(id); });
+      m.addEventListener('blur', function () { hot(null); });
+      m.addEventListener('keydown', function (e) {
+        if (e.key === ' ') { e.preventDefault(); go(id, { from: m, reveal: true }); return; }
+        if (d.view === 'earth' && (e.key === '+' || e.key === '=' || e.key === '-')) {
+          e.preventDefault();
+          var w = Math.max(WMIN, Math.min(W, vb[2] * (e.key === '-' ? 2 : .5))), h = w * H / W;
+          fly(clampVB([d.x - w / 2, d.y - h / 2, w, h]), function () { settle(); hot(id); });
+          return;
+        }
+        var to = step(m, e.key); if (!to) return;
+        e.preventDefault(); to.focus({ preventScroll: true });
+      });
+    });
+
+    /* Earth: the zoom and the pan. The markers keep their size at any zoom; past 1.3 times the finer land comes in */
+    var clampVB = function (b) {
+      var w = Math.max(WMIN, Math.min(W, b[2])), h = w * H / W;
+      return [Math.max(FULL[0], Math.min(FULL[0] + W - w, b[0])), Math.max(FULL[1], Math.min(FULL[1] + H - h, b[1])), w, h];
+    };
+    function setVB(b) {
+      vb = b; earth.setAttribute('viewBox', b.map(function (v) { return v.toFixed(2); }).join(' '));
+      var k = b[2] / W, f = Math.max(0, Math.min(1, (1 / k - 1.3) / 0.5)), ms = (sT * b[2] / pxW).toFixed(4);
+      if (hi) { hi.style.opacity = f.toFixed(2); lo.style.opacity = (1 - f).toFixed(2); }
+      order.forEach(function (d) { if (d.view === 'earth') d.at.setAttribute('transform', d.base + ' scale(' + ms + ')'); });
+      recluster();
+      earthFig.classList.toggle('is-zoomed', k < .999);
+      zcb[0].setAttribute('aria-disabled', b[2] <= WMIN + .5 ? 'true' : 'false');
+      zcb[1].setAttribute('aria-disabled', k >= .999 ? 'true' : 'false');
+    }
+    var ease = function (t) { return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
+    function fly(to, then) {                       // the width changes by ratio, the centre in a line: a steady zoom
+      cancelAnimationFrame(anim); hot(null);
+      var from = vb.slice(), t0 = performance.now(), T = mq.matches ? 0 : 650;
+      var c0x = from[0] + from[2] / 2, c0y = from[1] + from[3] / 2, c1x = to[0] + to[2] / 2, c1y = to[1] + to[3] / 2;
+      var tick = function (now) {
+        var t = T ? Math.min(1, (now - t0) / T) : 1, e = ease(t);
+        var w = from[2] * Math.pow(to[2] / from[2], e), h = w * H / W;
+        setVB(t < 1 ? clampVB([c0x + (c1x - c0x) * e - w / 2, c0y + (c1y - c0y) * e - h / 2, w, h]) : to);
+        if (t < 1) anim = requestAnimationFrame(tick); else if (then) then();
+      };
+      anim = requestAnimationFrame(tick);
+    }
+    function press(key) { zbtns.forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-z') === key ? 'true' : 'false'); }); }
+    function zoom(key) {
+      var to = zooms[key]; if (!to) return;
+      area = key; press(key); fly(clampVB(to)); refresh();
+    }
+    function settle() {                            // after a pan or a zoom by hand: the list holds the desks in view
+      var full = vb[2] >= W - .5;
+      area = full ? 'all' : 'view'; press(full ? 'all' : ''); refresh();
+    }
+    function ensure(d) {
+      if (vb[2] >= W - .5) return;
+      var mx = vb[2] * .1, my = vb[3] * .1;
+      if (d.x > vb[0] + mx && d.x < vb[0] + vb[2] - mx && d.y > vb[1] + my && d.y < vb[1] + vb[3] - my) return;
+      fly(clampVB([d.x - vb[2] / 2, d.y - vb[3] / 2, vb[2], vb[3]]), function () {
+        settle(); if (document.activeElement === d.mark) hot(d.id);
+      });
+    }
+    function zoomAt(ax, ay, f, bx, by) {           // the point under (ax, ay) comes to (bx, by), the width times f
+      var r = earth.getBoundingClientRect(), s0 = vb[2] / r.width;
+      var ux = vb[0] + (ax - r.left) * s0, uy = vb[1] + (ay - r.top) * s0;
+      var w = Math.max(WMIN, Math.min(W, vb[2] * f)), s1 = w / r.width;
+      if (bx === undefined) { bx = ax; by = ay; }
+      setVB(clampVB([ux - (bx - r.left) * s1, uy - (by - r.top) * s1, w, w * H / W]));
+    }
+    function measure() {                           // the markers keep their size on screen, whatever the map's width or zoom
+      pxW = earth.getBoundingClientRect().width || 1000; sT = Math.max(.8, Math.min(1, pxW / 1000));
+      var r = ((coarse.matches ? 34 : 22) * .56 / sT).toFixed(1), k0 = (sT * 1000 / pxW).toFixed(4);
+      $$('.dm__hit').forEach(function (c) { c.setAttribute('r', r); });       // a finger's reach, or a pointer's
+      order.forEach(function (d) { if (d.view !== 'earth') d.at.setAttribute('transform', d.base + ' scale(' + k0 + ')'); });
+      setVB(vb);
+    }
+    /* desks too close to tell apart on screen stand together as one mark with their number; a click on it zooms in
+       until they stand apart. The seat and the open desk stand alone, and at the closest zoom every desk does. */
+    var NS = 'http://www.w3.org/2000/svg', bubbles = {}, cg = document.createElementNS(NS, 'g');
+    cg.setAttribute('class', 'atlas__cl'); cg.setAttribute('aria-hidden', 'true'); earth.appendChild(cg);
+    var names = function (m) {
+      var t = m.map(function (e) { return e.town; });
+      return t.length <= 3 ? t.join(', ') : t.slice(0, 2).join(', ') + ' and ' + (t.length - 2) + ' more';
+    };
+    function bubble() {
+      var g = document.createElementNS(NS, 'g'), c = document.createElementNS(NS, 'circle');
+      var t = document.createElementNS(NS, 'text'), hit = document.createElementNS(NS, 'circle');
+      g.setAttribute('class', 'dc'); hit.setAttribute('class', 'dc__hit'); t.setAttribute('dy', '.36em');
+      g.appendChild(c); g.appendChild(t); g.appendChild(hit);
+      g.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); spread(g._m); });
+      g.addEventListener('pointerenter', function (e) { if (e.pointerType === 'mouse') hot(null, names(g._m), g); });
+      g.addEventListener('pointerleave', function (e) { if (e.pointerType === 'mouse') hot(null); });
+      return g;
+    }
+    function recluster() {
+      var R = coarse.matches ? 34 : 22, s = pxW / vb[2], ms = (sT * vb[2] / pxW).toFixed(4), keep = {}, used = {};
+      var live = order.filter(function (d) { return d.view === 'earth' && d.on; });
+      order.forEach(function (d) { d.cl = null; });
+      if (vb[2] > WMIN + .5) live.forEach(function (d) {
+        if (used[d.id] || d.kind === 'seat' || d.id === sel) return;
+        var m = [d];
+        live.forEach(function (e) {
+          if (e === d || used[e.id] || e.kind === 'seat' || e.id === sel) return;
+          var dx = (e.x - d.x) * s, dy = (e.y - d.y) * s;
+          if (dx * dx + dy * dy < R * R) m.push(e);
+        });
+        if (m.length < 2) return;
+        var key = m.map(function (e) { return e.id; }).sort().join(' '), cx = 0, cy = 0;
+        m.forEach(function (e) { used[e.id] = 1; cx += e.x / m.length; cy += e.y / m.length; });
+        var g = bubbles[key] || bubble();
+        g._m = m; keep[key] = g;
+        g.firstChild.setAttribute('r', (11 + 2.6 * Math.log(m.length) / Math.LN2).toFixed(1));
+        g.childNodes[1].textContent = m.length;
+        g.lastChild.setAttribute('r', (Math.max(R * .6, 16) / sT).toFixed(1));
+        g.setAttribute('transform', 'translate(' + cx.toFixed(2) + ' ' + cy.toFixed(2) + ') scale(' + ms + ')');
+        m.forEach(function (e) { e.cl = g; });
+      });
+      Object.keys(bubbles).forEach(function (k) { if (!keep[k]) { cg.removeChild(bubbles[k]); delete bubbles[k]; } });
+      Object.keys(keep).forEach(function (k) { if (!bubbles[k]) { bubbles[k] = keep[k]; cg.appendChild(keep[k]); } });
+      order.forEach(function (d) { d.mark.classList.toggle('is-in', !!d.cl); });
+    }
+    function spread(m) {                           // zoom until the desks of a cluster stand apart, all in view
+      var x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity, dmin = Infinity, R = coarse.matches ? 34 : 22;
+      m.forEach(function (a, i) {
+        x0 = Math.min(x0, a.x); x1 = Math.max(x1, a.x); y0 = Math.min(y0, a.y); y1 = Math.max(y1, a.y);
+        m.slice(i + 1).forEach(function (b) { dmin = Math.min(dmin, Math.hypot(a.x - b.x, a.y - b.y)); });
+      });
+      var need = dmin * pxW / (R * 1.7), fit = Math.max((x1 - x0) * 1.5, (y1 - y0) * 1.5 * W / H);
+      var w = Math.max(WMIN, fit, Math.min(need, vb[2] / 2)), h = w * H / W;
+      fly(clampVB([(x0 + x1) / 2 - w / 2, (y0 + y1) / 2 - h / 2, w, h]), settle);
+    }
+    zbtns.forEach(function (b) { b.addEventListener('click', function () { zoom(b.getAttribute('data-z')); }); });
+    zcb.forEach(function (b) {
+      b.addEventListener('click', function () {
+        if (b.getAttribute('aria-disabled') === 'true') return;
+        var w = Math.max(WMIN, Math.min(W, vb[2] * (b.getAttribute('data-zc') === 'in' ? .5 : 2))), h = w * H / W;
+        fly(clampVB([vb[0] + vb[2] / 2 - w / 2, vb[1] + vb[3] / 2 - h / 2, w, h]), settle);
+      });
+    });
+    var ptrs = {}, drag = false, moved = false, wt = 0;
+    var grab = function (ids) {
+      drag = true; moved = true; cancelAnimationFrame(anim); hot(null); earthFig.classList.add('is-drag');
+      ids.forEach(function (id) { try { earth.setPointerCapture(+id); } catch (x) {} });
+    };
+    earth.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      ptrs[e.pointerId] = { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY }; moved = false;
+    });
+    earth.addEventListener('pointermove', function (e) {
+      var p = ptrs[e.pointerId]; if (!p) return;
+      var ids = Object.keys(ptrs);
+      if (ids.length === 2) {                      // two fingers: a pinch, and a pan with them
+        var a = ptrs[ids[0]], b = ptrs[ids[1]];
+        var d0 = Math.hypot(a.x - b.x, a.y - b.y), ax = (a.x + b.x) / 2, ay = (a.y + b.y) / 2;
+        p.x = e.clientX; p.y = e.clientY;
+        var d1 = Math.hypot(a.x - b.x, a.y - b.y), bx = (a.x + b.x) / 2, by = (a.y + b.y) / 2;
+        if (!drag) grab(ids);
+        if (d0 > 0 && d1 > 0) zoomAt(ax, ay, d0 / d1, bx, by);
+        return;
+      }
+      if (ids.length !== 1) return;
+      if (!drag) {
+        if (Math.abs(e.clientX - p.x0) + Math.abs(e.clientY - p.y0) < 6 || vb[2] >= W - .5) return;
+        grab(ids);
+      }
+      var s = vb[2] / earth.getBoundingClientRect().width;
+      setVB(clampVB([vb[0] - (e.clientX - p.x) * s, vb[1] - (e.clientY - p.y) * s, vb[2], vb[3]]));
+      p.x = e.clientX; p.y = e.clientY;
+    });
+    var lift = function (e) {
+      if (!ptrs[e.pointerId]) return;
+      delete ptrs[e.pointerId];
+      var left = Object.keys(ptrs);
+      left.forEach(function (id) { ptrs[id].x0 = ptrs[id].x; ptrs[id].y0 = ptrs[id].y; });
+      if (!left.length && drag) { drag = false; earthFig.classList.remove('is-drag'); settle(); }
+    };
+    earth.addEventListener('pointerup', lift); earth.addEventListener('pointercancel', lift);
+    earth.addEventListener('click', function (e) { if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; } }, true);
+    earth.addEventListener('wheel', function (e) {    // a pinch on a trackpad, or the wheel with Ctrl or Cmd; the page scrolls otherwise
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault(); cancelAnimationFrame(anim); hot(null);
+      var dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+      zoomAt(e.clientX, e.clientY, Math.abs(dy) < 50 ? Math.exp(dy * .01) : Math.exp((dy > 0 ? 1 : -1) * .25));
+      clearTimeout(wt); wt = setTimeout(settle, 180);
+    }, { passive: false });
+    earth.addEventListener('dblclick', function (e) {
+      if (e.target.closest && e.target.closest('.dm')) return;
+      e.preventDefault();
+      var r = earth.getBoundingClientRect(), s = vb[2] / r.width, ux = vb[0] + (e.clientX - r.left) * s, uy = vb[1] + (e.clientY - r.top) * s;
+      var w = Math.max(WMIN, Math.min(W, vb[2] * (e.shiftKey ? 2 : .5))), k = w / vb[2];
+      fly(clampVB([ux - (ux - vb[0]) * k, uy - (uy - vb[1]) * k, w, w * H / W]), settle);
+    });
+
+    /* in place: the controls, the list, the views as tab panels; the region tiles give way to the tabs */
+    views.forEach(function (f) { f.setAttribute('role', 'tabpanel'); f.setAttribute('aria-labelledby', 'tab-' + f.getAttribute('data-view')); });
+    var keys = document.createElement('p'); keys.className = 'vh'; keys.id = 'atlas-keys';
+    keys.textContent = 'The arrow keys move between the desks: left and right go west and east, up and down go north and south. Enter opens a desk; on Earth, plus and minus zoom.';
+    atlas.appendChild(keys);
+    views.forEach(function (f) { $('svg', f).setAttribute('aria-describedby', 'atlas-keys'); });
+    $('[data-atlas-ctrl]').hidden = false; panel.hidden = false;
+    if (nav) nav.hidden = true;
+    count.setAttribute('tabindex', '-1');
+    measure(); tab('earth'); thumb(true);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { thumb(true); });
+    window.addEventListener('resize', function () { thumb(true); measure(); hot(null); });
+    var h0 = decodeURIComponent(location.hash.slice(1));      // from elsewhere: /desks/#tromso, /desks/#mars
+    if (D[h0]) go(h0, { focus: false }); else if (h0 === 'earth-orbit' || h0 === 'mars') tab(h0);
   })();
 
-  var filt = document.querySelector('[data-desk-filter]');
-  if (filt) {
-    var desks = slice(document.querySelectorAll('.desk[data-f]')), boxes = slice(document.querySelectorAll('[data-group], .dcont, .dregion'));
-    var count = filt.querySelector('[data-desk-count]');
-    var buttons = slice(filt.querySelectorAll('button[data-f]'));
-    var apply = function (f) {
-      var n = 0;
-      desks.forEach(function (d) {
-        var on = f === 'all' || (' ' + d.getAttribute('data-f') + ' ').indexOf(' ' + f + ' ') >= 0;
-        d.hidden = !on; if (on) n++;
-      });
-      boxes.forEach(function (b) { b.hidden = !b.querySelector('.desk:not([hidden])'); });
-      buttons.forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-f') === f ? 'true' : 'false'); });
-      count.textContent = n + (n === 1 ? ' desk' : ' desks');
-      dimMarks(f);
-    };
-    buttons.forEach(function (b) { b.addEventListener('click', function () { apply(b.getAttribute('data-f')); }); });
-    filt.hidden = false;
-    apply('all');
-  }
+  /* ------------------------------------------------------------------------------------------- 4. the carriers */
+  var netw = document.querySelector('[data-netw]');
+  if (netw) (function () {
+    /* every station, relay and vessel of the drawing gives its card (the gazetteer's facts, and its windows) and lights
+       what it works with; the day of windows below marks the hour in TCB on the reader's clock, and the windows open
+       at it. TCB runs ahead of UTC by the leap seconds, 32.184 s and the rate of the barycentre. */
+    var nodes = {}; try { nodes = JSON.parse(netw.getAttribute('data-netw')); } catch (e) {}
+    var stage = netw.querySelector('.netw__stage'), card = netw.querySelector('[data-netw-card]');
+    var nn = slice(netw.querySelectorAll('.nn')), links = slice(netw.querySelectorAll('[data-link]'));
+    var rows = slice(netw.querySelectorAll('[data-node-row]'));
+    var pinned = null;
+    var esc = function (t) { var d = document.createElement('div'); d.textContent = t; return d.innerHTML; };
+    function light(code) {
+      var n = nodes[code]; netw.classList.toggle('is-lit', !!n);
+      var withs = n ? n.with_ : [];
+      nn.forEach(function (a) { var c = a.getAttribute('data-node'); a.classList.toggle('is-on', c === code); a.classList.toggle('is-with', withs.indexOf(c) >= 0); });
+      links.forEach(function (l) { l.classList.toggle('is-with', !!code && (' ' + l.getAttribute('data-link') + ' ').indexOf(' ' + code + ' ') >= 0); });
+      rows.forEach(function (r) { r.classList.toggle('is-on', !!code && (' ' + r.getAttribute('data-node-row') + ' ').indexOf(' ' + code + ' ') >= 0); });
+      if (!n) { card.classList.remove('is-on'); card.hidden = true; return; }
+      card.innerHTML = '<h3>' + esc(n.name) + '</h3><p class="c">' + esc(n.code) + '</p><dl>' +
+        n.rows.map(function (r) { return '<dt>' + esc(r[0]) + '</dt><dd>' + esc(r[1]) + '</dd>'; }).join('') + '</dl>';
+      card.hidden = false;
+      var a = netw.querySelector('.nn[data-node="' + code + '"]'), s = stage.getBoundingClientRect(), r = a.getBoundingClientRect();
+      var cx = r.left + r.width / 2 - s.left, cy = r.top + r.height / 2 - s.top, cw = card.offsetWidth, ch = card.offsetHeight;
+      var left = cx + 20 + cw > s.width ? cx - 20 - cw : cx + 20, top = Math.max(0, Math.min(s.height - ch, cy - ch / 2));
+      card.style.left = Math.round(Math.max(0, left)) + 'px'; card.style.top = Math.round(top) + 'px';
+      requestAnimationFrame(function () { card.classList.add('is-on'); });
+    }
+    nn.forEach(function (a) {
+      var c = a.getAttribute('data-node');
+      a.addEventListener('mouseenter', function () { light(c); });
+      a.addEventListener('mouseleave', function () { light(pinned); });
+      a.addEventListener('focus', function () { light(c); });
+      a.addEventListener('blur', function () { light(pinned); });
+      a.addEventListener('click', function (e) { e.preventDefault(); pinned = pinned === c ? null : c; light(pinned); });
+    });
+    rows.forEach(function (r) {
+      var c = r.getAttribute('data-node-row').split(' ')[0];
+      r.addEventListener('mouseenter', function () { light(c); });
+      r.addEventListener('mouseleave', function () { light(pinned); });
+    });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && pinned) { pinned = null; light(null); } });
+    document.addEventListener('click', function (e) { if (pinned && !e.target.closest('.nn')) { pinned = null; light(null); } });
+    var now = netw.querySelector('[data-wnd-now]');
+    if (now) {
+      var line = now.querySelector('line'), txt = now.querySelector('text'), svg = now.ownerSVGElement;
+      var tick = function () {
+        var d = new Date(), jd = d.getTime() / 864e5 + 2440587.5;
+        var tcb = d.getTime() / 1000 + 37 + 32.184 + 1.550519768e-8 * (jd - 2443144.5003725) * 86400;
+        var h = ((tcb / 3600) % 24 + 24) % 24, x = 92 + (940 - 92) * h / 24;
+        line.setAttribute('x1', x.toFixed(1)); line.setAttribute('x2', x.toFixed(1));
+        txt.setAttribute('x', x.toFixed(1));
+        var hh = Math.floor(h), mm = Math.floor((h - hh) * 60);
+        txt.textContent = (hh < 10 ? '0' : '') + hh + ':' + (mm < 10 ? '0' : '') + mm + ' TCB';
+        rows.forEach(function (r) { var a = +r.getAttribute('data-from'), b = +r.getAttribute('data-to'); r.classList.toggle('is-open', h >= a && h < b); });
+        now.removeAttribute('hidden');
+        setTimeout(tick, 60000 - (d.getSeconds() * 1000 + d.getMilliseconds()) + 50);
+      };
+      tick();
+    }
+  })();
+
 })();
