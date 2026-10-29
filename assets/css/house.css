@@ -133,14 +133,26 @@ a { color: inherit; text-decoration: none; }
 .earlier { margin-top: clamp(48px, 5vw, 72px); padding-top: 18px; border-top: 1px solid var(--hair);
            display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 24px; row-gap: 22px; }
 .earlier__k { grid-column: 1 / span 3; margin: 6px 0 0; font: 500 11.5px/1.4 var(--mono); letter-spacing: .08em; color: var(--soft); }
-.elist { grid-column: 4 / -1; list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 18px 40px; align-items: center; }
-.elist a.esys { display: inline-flex; align-items: center; gap: 12px; font: 480 15px/1.2 var(--sans); }
-.elist .rmark { width: 34px; height: 34px; }
-.elist a.esys:hover span { text-decoration: underline; text-underline-offset: .22em; text-decoration-thickness: 1px; }
-.mail { display: inline-flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
-.mail__k { font: 480 15px/1.2 var(--sans); }
-.mail a { font: 400 14px/1.2 var(--mono); color: var(--link); }
-.mail a:hover { text-decoration: underline; text-underline-offset: .22em; }
+.elist { grid-column: 4 / -1; list-style: none; margin: 0; padding: 0; display: grid; }
+/* one row per route, newest first: its mark (in its decade's manner) and name; its value (a line, a handle, a number) */
+.erow { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); align-items: center; column-gap: 24px;
+        row-gap: 6px; padding-block: 13px; border-top: 1px solid var(--hair); }
+.erow:first-child { border-top: 0; padding-top: 0; }
+.esys { display: inline-flex; align-items: center; gap: 14px; font: 500 16px/1.2 var(--sans); min-width: 0; }
+.elist .rmark { width: 34px; height: 34px; flex: none; }
+a.esys:hover .erow__n { text-decoration: underline; text-underline-offset: .22em; text-decoration-thickness: 1px; }
+.erow__v { font: 400 14px/1.45 var(--mono); color: var(--soft); overflow-wrap: anywhere; min-width: 0; }
+a.erow__v { color: var(--link); }
+a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
+/* the streams of the 2020s: named in type, each with its colour as the decade's apps wore it (no marks of theirs) */
+.chip { width: 34px; height: 34px; flex: none; border-radius: 9px; }
+.chip--youtube { background: #ff0033; }
+.chip--instagram { background: linear-gradient(45deg, #fdc468 0%, #f77737 28%, #e1306c 55%, #a334c2 80%, #5851db 100%); }
+.chip--x { background: #0f1419; }
+.chip--telegram { background: #2aabee; }
+.chip--mail { border-radius: 3px; border: 1.6px solid currentColor; background:
+  linear-gradient(30deg, transparent 47%, currentColor 48%, currentColor 52%, transparent 53%) top / 100% 50% no-repeat,
+  linear-gradient(-30deg, transparent 47%, currentColor 48%, currentColor 52%, transparent 53%) top / 100% 50% no-repeat; }
 
 /* ------------------------------------------------------------------------------------------- the Register */
 .reg { background: var(--ink); color: #f2f1ec; padding-block: clamp(84px, 10vw, 150px); }
@@ -217,7 +229,7 @@ a { color: inherit; text-decoration: none; }
   .parts dl > div { grid-template-columns: 1fr; row-gap: 4px; }
   .rgrid a { padding: 20px 18px 18px; gap: 18px; }
   .rgrid .rmark { width: 44px; height: 44px; }
-  .elist { gap: 16px 28px; }
+  .erow { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* ------------------------------------------------------------------------------------------- NULL (404) */

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" class="rt rt--hail" data-route="hail">
+<html lang="en" class="rt rt--hail rt-era--now" data-route="hail">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -14,19 +14,39 @@
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preload" href="/assets/fonts/archivo.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/css/fonts.css?v=f914a354">
-<link rel="stylesheet" href="/assets/css/route.css?v=f914a354">
+<link rel="stylesheet" href="/assets/css/fonts.css?v=8d9bcf51">
+<link rel="stylesheet" href="/assets/css/route.css?v=8d9bcf51">
 </head>
 <body>
 <main class="rt__main" id="main">
-<canvas class="rt__fx" aria-hidden="true"></canvas>
-<div class="rt__still" aria-hidden="true"><svg viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid slice"><path stroke="currentColor" fill="none" stroke-opacity=".12" d="M0 180H1000"/><path stroke="currentColor" fill="none" stroke-opacity=".45" d="M460 48V312"/><path stroke="#ff7a45" stroke-opacity=".3" stroke-width="2" d="M460 54V306"/><circle cx="140" cy="180" r="3" fill="currentColor"/><circle cx="760" cy="180" r="4.5" fill="#ff7a45"/></svg></div><p class="rt__brand"><svg class="rmark rmark--hail" viewBox="0 0 48 48" width="30" height="30" aria-hidden="true" focusable="false"><path fill="currentColor" d="M10.5 6.5h3.4v35h-3.4z"/><path fill="currentColor" d="M13.9 7.5H38.5L13.9 27.5z"/><path fill="none" stroke="currentColor" stroke-width="2.2" d="M14.9 8.6h22.5v17.8H14.9z"/></svg><span>Hail</span></p>
+<header class="rt__top"><p class="rt__brand"><svg class="rmark rmark--hail" viewBox="0 0 48 48" width="30" height="30" aria-hidden="true" focusable="false"><path fill="currentColor" d="M10.5 6.5h3.4v35h-3.4z"/><path fill="currentColor" d="M13.9 7.5H38.5L13.9 27.5z"/><path fill="none" stroke="currentColor" stroke-width="2.2" d="M14.9 8.6h22.5v17.8H14.9z"/></svg><span>Hail</span></p></header>
+<div class="rt__stage">
+<div class="hl">
+<div class="hl__card" data-at="0.1">
+<p class="hl__k">New postcard</p>
+<dl class="hl__f">
+<div><dt>To</dt><dd>FCH(T)<span>a sender in transit</span></dd></div>
+<div><dt>Via</dt><dd>CDX3<span>the Chadu relays</span></dd></div>
+<div><dt>Window</dt><dd>LW 206/14<span>08:00&#8211;16:00 TCB</span></dd></div>
+<div><dt>Light-time</dt><dd><b data-lt>328.7</b>&#8201;s</dd></div>
+</dl>
+<p class="hl__body" aria-hidden="true"><i></i></p>
+<p class="hl__send" data-at="0.85"><span>Send</span></p>
+</div>
+<div class="hl__route" aria-hidden="true">
+<div class="hl__node"><i></i><span>EARTH</span><small>your terminal</small></div>
+<div class="hl__seg"><b class="hl__pulse" data-at="1.0"></b></div>
+<div class="hl__node hl__node--relay" data-at="1.7"><i></i><span>CDX3</span><small>held</small></div>
+<div class="hl__seg hl__seg--far"></div>
+<div class="hl__node hl__node--ship"><i></i><span>FCH(T)</span><small><b data-lt>328.7</b>&#8201;s ahead</small></div>
+</div>
+</div></div>
 <div class="rt__text">
-<p class="rt__status">HAIL · PURSUIT · NOT CARRIED</p>
+<p class="rt__status">HAIL · HELD AT RELAY CDX3</p>
 <h1 class="rt__say">Your click is attempting a pursuit prohibited by the relevant provisions.</h1>
-<p class="rt__fine">Replies are lodged at a <a href="/reply/">reply desk</a>, and carried on the next window.</p></div>
+<p class="rt__fine">Replies to a sender in transit are lodged at a <a href="/reply/">reply desk</a> and carried on the next window. OWP §5(1), (3).</p></div>
 <p class="rt__back"><a href="/routes/">The Register&#8217;s routes</a></p>
 </main>
-<script src="/assets/js/route.js?v=f914a354" defer></script>
+<script src="/assets/js/route.js?v=8d9bcf51" defer></script>
 </body>
 </html>

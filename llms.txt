@@ -17,7 +17,7 @@ What a reader, human or machine, should know:
 - [Routes](https://www.standoffish.net/routes/)
 - [Visit the Register](https://www.standoffish.net/visit/)
 - [Under the Terms: senders, carriers, streams, receivers](https://www.standoffish.net/under-the-terms/)
-- [No read-back (what these pages keep: nothing)](https://www.standoffish.net/no-read-back/)
+- [One way: what these pages and the Register keep of a reader](https://www.standoffish.net/one-way/)
 - [Access](https://www.standoffish.net/access/)
 - [Stewardship (the records store)](https://www.standoffish.net/stewardship/)
 - [Governance](https://www.standoffish.net/governance/)

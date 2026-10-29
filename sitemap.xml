@@ -8,7 +8,7 @@
   <url><loc>https://www.standoffish.net/routes/</loc></url>
   <url><loc>https://www.standoffish.net/visit/</loc></url>
   <url><loc>https://www.standoffish.net/under-the-terms/</loc></url>
-  <url><loc>https://www.standoffish.net/no-read-back/</loc></url>
+  <url><loc>https://www.standoffish.net/one-way/</loc></url>
   <url><loc>https://www.standoffish.net/access/</loc></url>
   <url><loc>https://www.standoffish.net/stewardship/</loc></url>
   <url><loc>https://www.standoffish.net/governance/</loc></url>
@@ -26,4 +26,7 @@
   <url><loc>https://www.standoffish.net/routes/roger/</loc></url>
   <url><loc>https://www.standoffish.net/routes/understudy/</loc></url>
   <url><loc>https://www.standoffish.net/routes/glasshouse/</loc></url>
+  <url><loc>https://www.standoffish.net/routes/facsimile/</loc></url>
+  <url><loc>https://www.standoffish.net/routes/telephone/</loc></url>
+  <url><loc>https://www.standoffish.net/routes/telegraph/</loc></url>
 </urlset>
