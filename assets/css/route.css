@@ -6,11 +6,11 @@
         --bg: #f3f2ee; --fg: #121417; --dim: #6b6c70; --acc: #121417; color-scheme: light; }
 .rt--hail { --bg: #0c1730; --fg: #eef2fa; --dim: rgb(238 242 250 / .58); --acc: #ff7a45; color-scheme: dark; }
 .rt--thrice { --bg: #f5f5f3; --fg: #0d0d0e; --dim: #66676b; --acc: #0d0d0e; }
-.rt--lintel { --bg: #f1eee6; --fg: #1b1a18; --dim: #7a766c; --acc: #1b1a18; }
-.rt--fallow { --bg: #e7ebe3; --fg: #2b362e; --dim: #66736a; --acc: #2b362e; }
-.rt--roger { --bg: #ff5a36; --fg: #fff6ec; --dim: rgb(255 246 236 / .78); --acc: #fff6ec; }
-.rt--understudy { --bg: #cfe3df; --fg: #213e3a; --dim: #4b6964; --acc: #213e3a; }
-.rt--glasshouse { --bg: #6d6fe8; --fg: #ffffff; --dim: rgb(255 255 255 / .8); --acc: #ffffff; color-scheme: dark; }
+.rt--lintel { --bg: #f1eee6; --fg: #1b1a18; --dim: #6d6a61; --acc: #1b1a18; }
+.rt--fallow { --bg: #e7ebe3; --fg: #2b362e; --dim: #5b675f; --acc: #2b362e; }
+.rt--roger { --bg: #ff5a36; --fg: #2a0c05; --dim: #3d1309; --acc: #2a0c05; }
+.rt--understudy { --bg: #cfe3df; --fg: #213e3a; --dim: #47635f; --acc: #213e3a; }
+.rt--glasshouse { --bg: #5d5fdb; --fg: #ffffff; --dim: #f0f0fc; --acc: #ffffff; color-scheme: dark; }
 
 *, *::before, *::after { box-sizing: border-box; }
 html { background: var(--bg); -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
@@ -61,7 +61,7 @@ a { color: inherit; }
 .rt--glasshouse .rt__say { font-weight: 560; }
 
 /* Glasshouse: the 2030s. A glass pane over slow light, rounded and bright, as screens then were */
-.rt--glasshouse body { background: #6d6fe8; }
+.rt--glasshouse body { background: #5d5fdb; }
 .gl__blobs { position: absolute; inset: -20%; filter: blur(60px) saturate(140%); }
 .gl__blobs i { position: absolute; width: 60vmax; height: 60vmax; border-radius: 50%; opacity: .9; }
 .gl__blobs i:nth-child(1) { left: -10%; top: -5%; background: radial-gradient(circle, #6fe3ff 0%, transparent 62%); }

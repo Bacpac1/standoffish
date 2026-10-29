@@ -192,10 +192,11 @@
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
-  var visible = false, raf = 0, last = -1;
+  var visible = false, raf = 0, last = -1, moved = 0, odd = 0;
   function frame(now) {
     raf = 0;
     if (!visible || document.hidden) return;
+    if (now - moved > 400 && (odd ^= 1)) { if (!reduce) raf = requestAnimationFrame(frame); return; }   // at rest, half rate
     size();
     var tau = seq ? tauOf(progress()) : 0;
     if (seq) mark(tau);
@@ -215,6 +216,7 @@
     }, { rootMargin: '120px' }).observe(fig);
   } else { visible = true; kick(); }
   window.addEventListener('resize', function () { size(); kick(); }, { passive: true });
+  window.addEventListener('scroll', function () { moved = performance.now(); }, { passive: true });
   if (reduce) window.addEventListener('scroll', function () { kick(); }, { passive: true });
   document.addEventListener('visibilitychange', kick);
   canvas.addEventListener('webglcontextlost', function (e) { e.preventDefault(); fig.classList.remove('is-live'); visible = false; });

@@ -195,8 +195,8 @@
   });
 
   /* ------------------------------------------------------------------------------------------- 2. the seat */
-  var seat = document.querySelector('[data-seat-now]');
-  if (seat && window.Intl) {
+  var seats = Array.prototype.slice.call(document.querySelectorAll('[data-seat-now]'));
+  if (seats.length && window.Intl) {
     var LAT = 78.2232, LON = 15.6267, rad = Math.PI / 180, fmt;
     try { fmt = new Intl.DateTimeFormat('en-GB', { timeZone: 'Arctic/Longyearbyen', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }); }
     catch (e) { try { fmt = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Oslo', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }); } catch (e2) { fmt = null; } }
@@ -218,10 +218,14 @@
       return sunAt(now) > -0.833 ? 'Daylight' : 'Dark';
     };
     var show = function () {
-      var now = new Date();
-      var line = 'Longyearbyen ' + (fmt ? fmt.format(now) : '') + ' · ' + state(now);
-      seat.textContent = seat.getAttribute('data-seat-now') === 'time' ? line : '78°13′N 15°38′E · ' + line;
-      seat.hidden = false;
+      var now = new Date(), st = state(now), hm = fmt ? fmt.format(now) : '';
+      var line = 'Longyearbyen ' + hm + ' · ' + st;
+      seats.forEach(function (seat) {                // a line, the line with the place, the clock alone, the sun alone
+        var m = seat.getAttribute('data-seat-now');
+        seat.textContent = m === 'time' ? line : m === 'clock' ? (hm || seat.textContent) : m === 'sun' ? st
+                         : '78°13′N 15°38′E · ' + line;
+        seat.hidden = false;
+      });
       setTimeout(show, 60000 - (now.getSeconds() * 1000 + now.getMilliseconds()) + 50);
     };
     show();
