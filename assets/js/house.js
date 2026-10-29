@@ -37,6 +37,7 @@
   var rooms = [], ticking = false;
 
   function progressOf(el) {
+    if (typeof el._tour === 'number') return { p: el._tour, on: !!el._tourOn };   // held in the tour (1b)
     var r = el.getBoundingClientRect(), vh = window.innerHeight || 1;
     var p = (r.top + r.height / 2 - vh / 2) / (vh / 2 + r.height / 2);
     return { p: Math.max(-1, Math.min(1, p)), on: r.bottom > -40 && r.top < vh + 40 };
@@ -132,7 +133,42 @@
 
   function tick() {
     ticking = false;
+    if (tour) tourTick();
     rooms.forEach(function (el) { draw(el, false); });
+  }
+
+  /* ------------------------------------------------------------------------------------------- 1b. the tour
+     On the home the three rooms are held in one frame while the reader goes on: the words change, Replies, then
+     Certification, then Records, and the camera passes each room in its turn, as it passes them on their pages.
+     Without the script, or under reduced motion, the three stand one after another as before. */
+  var tour = null, arts = [], marks = [];
+  function tourTick() {
+    var r = tour.getBoundingClientRect(), vh = window.innerHeight || 1, span = r.height - vh;
+    var P = span > 0 ? Math.min(1, Math.max(0, -r.top / span)) : 0;
+    var n = arts.length, x = Math.min(P * n, n - 1e-6), k = Math.floor(x), q = x - k;
+    var near = r.bottom > -40 && r.top < vh + 40;
+    arts.forEach(function (a, i) {
+      a.classList.toggle('is-on', i === k);
+      var room = a.querySelector('.room');
+      if (room) { room._tour = i < k ? 1 : i > k ? -1 : q * 2 - 1; room._tourOn = near && Math.abs(i - k) <= 1; }
+    });
+    marks.forEach(function (m, i) { m.classList.toggle('is-on', i === k); });
+  }
+  function startTour() {
+    tour = document.querySelector('[data-tour]');
+    if (!tour || mq.matches) { tour = null; return; }
+    arts = Array.prototype.slice.call(tour.querySelectorAll('.wk'));
+    marks = Array.prototype.slice.call(tour.querySelectorAll('.tour__marks li'));
+    if (arts.length < 2) { tour = null; return; }
+    tour.classList.add('is-tour');
+    tourTick();
+    window.addEventListener('scroll', onScroll, { passive: true });
+  }
+  function stopTour() {
+    if (!tour) return;
+    tour.classList.remove('is-tour');
+    arts.forEach(function (a) { a.classList.remove('is-on'); var r = a.querySelector('.room'); if (r) delete r._tour; });
+    tour = null;
   }
   function onScroll() { if (!ticking) { ticking = true; requestAnimationFrame(tick); } }
   function onResize() { rooms.forEach(function (el) { fit(el); draw(el, true); }); }
@@ -152,8 +188,11 @@
     rooms.forEach(function (el) { el.classList.remove('is-live'); });
     window.removeEventListener('scroll', onScroll);
   }
+  startTour();
   startRooms();
-  if (mq.addEventListener) mq.addEventListener('change', function () { if (mq.matches) stopRooms(); else startRooms(); });
+  if (mq.addEventListener) mq.addEventListener('change', function () {
+    if (mq.matches) { stopTour(); stopRooms(); } else { startTour(); startRooms(); }
+  });
 
   /* ------------------------------------------------------------------------------------------- 2. the seat */
   var seat = document.querySelector('[data-seat-now]');

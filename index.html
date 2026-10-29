@@ -14,8 +14,8 @@
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preload" href="/assets/fonts/archivo.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/css/fonts.css?v=7a4dcb8d">
-<link rel="stylesheet" href="/assets/css/house.css?v=7a4dcb8d">
+<link rel="stylesheet" href="/assets/css/fonts.css?v=32812fc5">
+<link rel="stylesheet" href="/assets/css/house.css?v=32812fc5">
 </head>
 <body class="house">
 <a class="skip" href="#main">Skip to content</a>
@@ -31,12 +31,15 @@
 </header>
 <main id="main">
 <h1 class="vh">STANDOFFISH</h1>
-<section class="nos" aria-labelledby="nos-h">
+<section class="nos" data-seq aria-labelledby="nos-h">
+<div class="nos__stage">
+<div class="nos__head">
 <h2 class="nos__name" id="nos-h">NOSLEN</h2>
 <p class="nos__line">Now sending.</p>
 <p class="nos__from">From the FUCHA, in transit.</p>
 <p class="ctas"><a class="more" href="/channels/nsl/">Explore NOSLEN</a><a class="more" href="https://www.youtube.com/@standoffish_owp" rel="noopener noreferrer">Watch</a></p>
-<a class="nos__kv" href="/channels/nsl/" tabindex="-1" aria-hidden="true">
+</div>
+<figure class="nos__light" data-voice="#FF3B30 #FF9F0A #FF6A3D #FFC24A">
 <picture>
 <source media="(max-width: 700px)" type="image/avif" srcset="/assets/media/house/kv-p-900.avif 900w, /assets/media/house/kv-p-1350.avif 1350w" sizes="100vw">
 <source media="(max-width: 700px)" type="image/webp" srcset="/assets/media/house/kv-p-900.webp 900w, /assets/media/house/kv-p-1350.webp 1350w" sizes="100vw">
@@ -44,10 +47,13 @@
 <source type="image/webp" srcset="/assets/media/house/kv-1600.webp 1600w, /assets/media/house/kv-2400.webp 2400w, /assets/media/house/kv-3360.webp 3360w" sizes="(min-width: 1600px) 1600px, 100vw">
 <img src="/assets/media/house/kv-1600.webp" width="3360" height="1680" alt="" decoding="async">
 </picture>
-</a>
+</figure>
+<p class="nos__say"><span class="ln"><span class="w" data-syl="2" data-pause="0.21">Buffered,</span> <span class="w" data-syl="1" data-pause="0.21">beamed,</span> <span class="w" data-syl="1" data-pause="0.21">berthed,</span> <span class="w" data-syl="2" data-pause="0.21">beaconed,</span> <span class="w" data-syl="3" data-pause="0.46">ballistic,</span></span><span class="ln"><span class="w" data-syl="2" data-pause="0.21">black-boxed,</span> <span class="w" data-syl="2" data-pause="0.21">backlogged,</span> <span class="w" data-syl="3" data-pause="0.21">Brownian,</span> <span class="w" data-syl="3" data-pause="0.21">bombarded,</span> <span class="w" data-syl="1" data-pause="0.0">blank</span> <span class="w" data-syl="0" data-pause="0.85">—</span></span><span class="ln"><span class="w" data-syl="1" data-pause="0.07">am</span> <span class="w" data-syl="1" data-pause="0.0">I?</span></span></p>
+</div>
 </section>
 
-<section class="work" aria-label="The work">
+<section class="work" data-tour aria-label="The work">
+<div class="work__stage">
 <article class="wk wrap" id="replies">
 <header class="wk__head">
 <p class="wk__n">01</p>
@@ -105,6 +111,8 @@
 </div>
 </figure>
 </article>
+<ol class="tour__marks" aria-hidden="true"><li>01 Replies</li><li>02 Certification</li><li>03 Records</li></ol>
+</div>
 </section>
 
 <section class="routes wrap" id="routes" aria-labelledby="routes-h">
@@ -137,6 +145,17 @@
 </div>
 </section>
 
+<section class="circle wrap" aria-label="The Register">
+<ul class="circle__grid">
+<li><a href="/visit/"><span class="circle__t">Visit the Register.</span><span class="circle__l">The seat in Longyearbyen, and what is not there.</span><span class="more">More</span></a></li>
+<li><a href="/terms/"><span class="circle__t">The Terms.</span><span class="circle__l">The One-Way Publication Terms, in full.</span><span class="more">More</span></a></li>
+<li><a href="/read/"><span class="circle__t">Reading a record.</span><span class="circle__l">Every code on a card and a sending record.</span><span class="more">More</span></a></li>
+<li><a href="/no-read-back/"><span class="circle__t">No read-back.</span><span class="circle__l">What these pages keep of their reader.</span><span class="more">More</span></a></li>
+<li><a href="/access/"><span class="circle__t">Access.</span><span class="circle__l">Whole without the script, with nothing moving.</span><span class="more">More</span></a></li>
+<li><a href="/stewardship/"><span class="circle__t">Stewardship.</span><span class="circle__l">The records store, on frozen ground.</span><span class="more">More</span></a></li>
+</ul>
+</section>
+
 </main>
 <section class="fine wrap" aria-label="Form OWP-1">
 <p class="fine__k">NSL · FORM OWP-1</p>
@@ -159,12 +178,17 @@ Now sending NOSLEN (NSL) · Qicha (LEO) → Bocha (Deimos) · VD0 2095-086 · MO
 Precedence: OWP Terms ≻ carrier file ≻ this card.</pre>
 </section>
 <footer class="gf wrap">
-<div class="gf__map">
-<div><b>Works</b><a href="/channels/nsl/">NOSLEN</a></div>
-<div><b>The work</b><a href="/reply/">Replies</a><a href="/certify/">Certification</a><a href="/channels/">Records</a></div>
-<div><b>The Register</b><a href="/register/">About</a><a href="/routes/">Routes</a></div>
+<nav class="gf__map" aria-label="Directory">
+<div><b>Works</b><a href="/channels/nsl/">NOSLEN</a><a href="/channels/nsl/01/">NSL01</a></div>
+<div><b>The work</b><a href="/reply/">Replies</a><a href="/certify/">Certification</a><a href="/channels/">Records</a><a href="/read/">Reading a record</a></div>
+<div><b>Under the Terms</b><a href="/under-the-terms/#senders">Senders</a><a href="/under-the-terms/#carriers">Carriers</a><a href="/under-the-terms/#streams">Streams</a><a href="/under-the-terms/#receivers">Receivers</a></div>
+<div><b>Visit</b><a href="/visit/">The seat</a><a href="/reply/">Reply desks</a><a href="/routes/lintel/">Hours</a></div>
+<div><b>Values</b><a href="/no-read-back/">No read-back</a><a href="/access/">Access</a><a href="/stewardship/">Stewardship</a></div>
+<div><b>The Register</b><a href="/register/">About</a><a href="/governance/">Governance</a><a href="/routes/">Routes</a></div>
+<div><b>Instruments</b><a href="/terms/">The Terms</a><a href="/law/mc/">The Machine Clause</a><a href="/law/asp/">The Anchored Speech Protocol</a></div>
 <div><b>Electronic mail</b><a href="mailto:business@standoffish.net">business@standoffish.net</a></div>
-</div>
-<div class="gf__end"><span class="wm">STANDOFFISH</span><span>Jurisdiction: Earth</span></div>
-</footer><script src="/assets/js/house.js?v=7a4dcb8d" defer></script></body>
+</nav>
+<div class="gf__end"><span class="wm">STANDOFFISH</span><span class="gf__legal"><a href="/no-read-back/">No read-back</a><a href="/site-map/">Site map</a><span>Jurisdiction: Earth</span></span></div>
+</footer><script src="/assets/js/house.js?v=32812fc5" defer></script>
+<script src="/assets/js/voice.js?v=32812fc5" defer></script></body>
 </html>

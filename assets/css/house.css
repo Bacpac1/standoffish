@@ -50,8 +50,31 @@ a { color: inherit; text-decoration: none; }
 .nos__from { margin: 12px 0 0; font: 400 13px/1.5 var(--mono); color: rgb(236 228 210 / .58); }
 .nos .ctas { justify-content: center; margin-top: 24px; font-size: 18px; }
 .nos .more { color: var(--voice); }
-.nos__kv { display: block; margin: clamp(20px, 3vw, 40px) auto 0; max-width: 1600px; }
-.nos__kv img { width: 100%; height: auto; }
+/* the voice light: the picture, and over it (the same size) the light drawn live by voice.js, its stamp in its corner.
+   Nothing is laid over it: the words it says stand below it */
+.nos__light { position: relative; margin: clamp(20px, 3vw, 40px) auto 0; width: min(100%, 1600px); aspect-ratio: 2 / 1; }
+.nos__light img { width: 100%; height: 100%; }
+.nos__light canvas { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity .5s ease; }
+.nos__light.is-live canvas { opacity: 1; }
+.nos__light.is-live picture { visibility: hidden; }
+.nos__say { width: min(100% - 2 * var(--gut), 30em); margin: clamp(22px, 3vw, 44px) auto 0;
+            padding-bottom: clamp(56px, 8vw, 104px); font: 560 clamp(24px, 3.05vw, 46px)/1.14 var(--sans);
+            font-stretch: 100%; letter-spacing: -.012em; text-wrap: balance; color: var(--paper); }
+.nos__say .ln { display: block; }
+/* held: the page stands still while the reader goes on, and the light says the line (voice.js adds .is-seq) */
+.nos.is-seq { height: 290vh; height: 290svh; padding-block: 0; overflow: visible; }
+.nos.is-seq .nos__stage { position: sticky; top: 0; height: 100vh; height: 100svh; display: flex; flex-direction: column;
+                          justify-content: center; padding-block: clamp(20px, 4svh, 56px); }
+.nos.is-seq .nos__light { flex: 0 0 auto; width: 100%; height: min(44svh, 40vw); aspect-ratio: auto; }
+.nos.is-seq .nos__say { padding-bottom: 0; }
+.nos.is-seq .w { opacity: .17; transition: opacity .16s linear, color .3s linear; }
+.nos.is-seq .w--lit { opacity: 1; }
+.nos.is-seq .w--now { color: var(--voice); }
+@media (max-width: 700px) {
+  .nos__light { aspect-ratio: 4 / 5; }
+  .nos.is-seq .nos__light { height: min(36svh, 84vw); }
+  .nos.is-seq .nos__say { font-size: clamp(21px, 6vw, 28px); }
+}
 
 /* ------------------------------------------------------------------------------------------- the work */
 .work { padding-block: clamp(72px, 10vw, 152px) 0; }
@@ -65,6 +88,21 @@ a { color: inherit; text-decoration: none; }
 .wk__side { grid-column: 8 / -1; padding-bottom: .5em; }
 .wk__line { margin: 0 0 10px; max-width: 30ch; font-size: clamp(18px, 1.5vw, 21px); line-height: 1.38; color: var(--soft); }
 .wk__pic { margin: 0; }
+.tour__marks { display: none; }
+/* the tour (house.js adds .is-tour): the three held in one frame, the words and the room changing as the reader goes on */
+.work.is-tour { height: 330vh; height: 330svh; padding-block: 0; }
+.work.is-tour .work__stage { position: sticky; top: 0; height: 100vh; height: 100svh; display: grid; align-content: center;
+                             padding-block: clamp(16px, 3svh, 40px) clamp(40px, 6svh, 64px); }
+.work.is-tour .wk { grid-area: 1 / 1; margin-top: 0; opacity: 0; visibility: hidden;
+                    transition: opacity .55s ease, visibility 0s linear .55s; }
+.work.is-tour .wk.is-on { opacity: 1; visibility: visible; transition: opacity .55s ease, visibility 0s; }
+.work.is-tour .wk__head { margin-bottom: clamp(14px, 2svh, 28px); }
+.work.is-tour .wk__pic { width: min(100%, calc((100svh - 300px) * 1.7768)); }
+.work.is-tour .tour__marks { display: flex; justify-content: center; gap: 22px; position: absolute; left: 0; right: 0;
+                             bottom: clamp(14px, 2.4svh, 26px); margin: 0; padding: 0; list-style: none;
+                             font: 400 12px/1 var(--mono); letter-spacing: .04em; color: var(--faint); }
+.work.is-tour .tour__marks li { transition: color .4s ease; }
+.work.is-tour .tour__marks li.is-on { color: var(--ink); }
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
     .wk__h { animation: settle linear both; animation-timeline: view(); animation-range: entry 10% cover 42%; }
@@ -193,3 +231,56 @@ a { color: inherit; text-decoration: none; }
 .page--routes { padding-top: 0; }
 .page--routes .routes { padding-top: clamp(48px, 7vw, 104px); }
 .hh a { text-decoration: underline; text-underline-offset: .24em; text-decoration-thickness: 1px; }
+
+/* ------------------------------------------------------------------------------------------- the circle (home) */
+.circle { padding-block: clamp(64px, 8vw, 120px) clamp(24px, 3vw, 40px); }
+.circle__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+.circle__grid a { display: flex; flex-direction: column; gap: 10px; min-height: 220px; height: 100%; padding: 28px 28px 24px;
+                  background: #fff; border-radius: 18px; }
+.circle__t { font: 600 clamp(26px, 2.4vw, 36px)/1.04 var(--sans); font-stretch: 96%; letter-spacing: -.014em; }
+.circle__l { font-size: 16px; line-height: 1.4; color: var(--soft); max-width: 30ch; }
+.circle .more { margin-top: auto; font-size: 15px; }
+.circle__grid a:hover .more { text-decoration: underline; text-underline-offset: .2em; text-decoration-thickness: 1px; }
+@media (max-width: 900px) { .circle__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .circle__grid { grid-template-columns: 1fr; } .circle__grid a { min-height: 0; } }
+
+/* ------------------------------------------------------------------------------------------- an instrument */
+.doc__cite { margin: clamp(28px, 3.4vw, 48px) 0 0; max-width: 88ch; font: 400 12.5px/1.6 var(--mono); color: var(--soft); }
+.doc { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 24px;
+       margin-top: clamp(28px, 3.4vw, 48px); border-top: 1px solid var(--hair); }
+.doc__toc { grid-column: 1 / span 3; padding-top: 16px; }
+.doc__toc ol { margin: 12px 0 0; padding: 0; list-style: none; font-size: 14px; line-height: 1.35; }
+.doc__toc li + li { margin-top: 8px; }
+.doc__toc a { color: #2a2c30; }
+.doc__toc a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: .2em; }
+@media (min-width: 901px) { .doc__toc > * { position: sticky; top: 24px; } .doc__toc { align-self: start; position: sticky; top: 16px; } }
+.doc__text { grid-column: 4 / -1; padding-top: 6px; font-size: 16.5px; line-height: 1.56; color: #24262a; min-width: 0; }
+.doc__text h2 { margin: 52px 0 14px; font: 600 clamp(22px, 2vw, 28px)/1.15 var(--sans); letter-spacing: -.008em; color: var(--ink);
+                scroll-margin-top: 24px; }
+.doc__text h2:first-child { margin-top: 16px; }
+.doc__text h3 { margin: 32px 0 10px; font: 600 18px/1.25 var(--sans); }
+.doc__text p, .doc__text ul, .doc__text ol { margin: 0 0 14px; max-width: 74ch; }
+.doc__text p[id] { scroll-margin-top: 24px; }
+.doc__text :target { background: #fff3c9; box-shadow: -8px 0 0 #fff3c9, 8px 0 0 #fff3c9; }
+.doc__text strong { font-weight: 620; color: var(--ink); }
+.doc__text code { font: 400 .88em/1.4 var(--mono); background: #e9e7e1; padding: .08em .3em; border-radius: 3px; overflow-wrap: anywhere; }
+.doc__text .tbl { margin: 18px 0 22px; overflow-x: auto; border: 1px solid var(--hair); border-radius: 10px; background: #fbfbf9; }
+.doc__text table { border-collapse: collapse; min-width: 640px; width: 100%; font-size: 13.5px; line-height: 1.42; }
+.doc__text th, .doc__text td { padding: 9px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--hair); }
+.doc__text th { font-weight: 620; background: #f1efea; }
+.doc__text tr:last-child td { border-bottom: 0; }
+.doc__text hr { border: 0; border-top: 1px solid var(--hair); margin: 32px 0; }
+.doc__note { margin-top: 40px !important; padding-top: 16px; border-top: 1px solid var(--hair); font: 400 12.5px/1.6 var(--mono); color: var(--faint); }
+@media (max-width: 900px) { .doc__toc { grid-column: 1 / -1; } .doc__text { grid-column: 1 / -1; } }
+
+/* ------------------------------------------------------------------------------------------- the site map */
+.smap { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 32px 24px; margin-top: clamp(36px, 4vw, 56px);
+        border-top: 1px solid var(--hair); padding-top: 16px; }
+.smap h2 { margin: 0 0 12px; }
+.smap ul { margin: 0; padding: 0; list-style: none; }
+.smap li + li { margin-top: 8px; }
+.smap a { color: var(--link); }
+.smap a:hover { text-decoration: underline; text-underline-offset: .2em; }
+@media (max-width: 900px) { .smap { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.gf__legal { display: inline-flex; gap: 18px; flex-wrap: wrap; }
+.gf__legal a:hover { text-decoration: underline; text-underline-offset: .2em; }
