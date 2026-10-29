@@ -9,7 +9,9 @@
    4. The carriers. Each node of the network's drawing gives its card and lights what it works with; the day of link
       windows marks the hour in TCB.
    5. The slip. The lodging slip on /reply/ rises out of the desk's printer as the page reaches it.
-   6. The year's light. On /visit/, the reader's today and now on the year of light at the seat; any day read out. */
+   6. The year's light. On /visit/, the reader's today and now on the year of light at the seat; any day read out.
+   7. The statement. One year for every card of the annual statement, chosen above or under the pointer.
+   8. The clock. On /service-standards/, the clock runs once across its six weeks as the page reaches it. */
 (function () {
   'use strict';
   var root = document.documentElement;
@@ -817,6 +819,64 @@
     key.removeAttribute('hidden'); read.removeAttribute('hidden');
     tick();
     if (box.scrollWidth > box.clientWidth + 1) box.scrollLeft = xOf(today) / G.vw * box.scrollWidth - box.clientWidth / 2;
+  })();
+
+  /* ------------------------------------------------------------------------------------------- 7. the statement */
+  var sty = document.querySelector('[data-styears]');
+  if (sty) (function () {
+    /* one year for every card of the statement: chosen above (the arrow keys move it), or under the pointer on any
+       card's bars, a click keeping it */
+    var btns = slice(sty.querySelectorAll('[role="radio"]')), cards = slice(document.querySelectorAll('.stcard'));
+    var years = btns.map(function (b) { return b.textContent; }), chosen = btns.length - 1;
+    function show(i) {
+      cards.forEach(function (c) {
+        var n = c.getAttribute('data-n').split('|'), d = c.getAttribute('data-d').split('|');
+        c.querySelector('[data-stn]').textContent = n[i];
+        c.querySelector('[data-sty]').textContent = years[i];
+        c.querySelector('[data-std]').textContent = d[i];
+        slice(c.querySelectorAll('.stcard__bar')).forEach(function (r) { r.classList.toggle('is-on', +r.getAttribute('data-i') === i); });
+      });
+    }
+    function choose(i, focus) {
+      chosen = i;
+      btns.forEach(function (b, j) {
+        b.setAttribute('aria-checked', j === i ? 'true' : 'false'); b.setAttribute('tabindex', j === i ? '0' : '-1');
+        if (j === i && focus) b.focus();
+      });
+      show(i);
+    }
+    btns.forEach(function (b, i) {
+      b.addEventListener('click', function () { choose(i); });
+      b.addEventListener('keydown', function (e) {
+        var j = { ArrowRight: i + 1, ArrowDown: i + 1, ArrowLeft: i - 1, ArrowUp: i - 1, Home: 0, End: btns.length - 1 }[e.key];
+        if (j === undefined) return;
+        e.preventDefault(); choose(Math.max(0, Math.min(btns.length - 1, j)), true);
+      });
+    });
+    cards.forEach(function (c) {
+      var svg = c.querySelector('svg');
+      var at = function (e) {
+        var r = svg.getBoundingClientRect();
+        return Math.max(0, Math.min(btns.length - 1, Math.floor((e.clientX - r.left) / r.width * btns.length)));
+      };
+      svg.addEventListener('pointermove', function (e) { if (e.pointerType === 'mouse') show(at(e)); });
+      svg.addEventListener('pointerleave', function (e) { if (e.pointerType === 'mouse') show(chosen); });
+      svg.addEventListener('click', function (e) { choose(at(e)); });
+    });
+    sty.hidden = false;
+  })();
+
+  /* ------------------------------------------------------------------------------------------- 8. the clock */
+  var clk = document.querySelector('[data-clk]');
+  if (clk && !mq.matches && 'IntersectionObserver' in window) (function () {
+    /* the service clock runs once across its six weeks as the page reaches it */
+    var r = clk.getBoundingClientRect();
+    if (r.top < innerHeight && r.bottom > 0) return;
+    clk.classList.add('is-ready');
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (e) { if (e.isIntersecting) { clk.classList.add('is-run'); io.disconnect(); } });
+    }, { threshold: .25 });
+    io.observe(clk);
   })();
 
   /* ------------------------------------------------------------------------------------------- 4. the carriers */

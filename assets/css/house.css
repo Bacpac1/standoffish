@@ -234,6 +234,87 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
 .now { font: 400 13px/1.5 var(--mono); color: var(--soft); }
 .parts dd .now { display: block; margin-top: 6px; }
 
+/* the clock on two scales (/service-standards/, round 23): each standard as the working days the clock counts, laid on
+   six weeks of days from a Monday morning; weekends hatched, a pause in amber. As the page reaches it, the clock runs
+   across the weeks once; it stands still under reduced motion and without the script. */
+.clk { margin: clamp(36px, 5vw, 72px) 0 0; padding-top: 16px; border-top: 1px solid var(--hair); }
+.clk__k { margin: 0 0 20px; font: 500 11.5px/1.4 var(--mono); letter-spacing: .08em; color: var(--faint); }
+.clk__grid { display: grid; gap: 10px; }
+.clk__row { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 9fr); column-gap: 24px; align-items: center; }
+.clk__lab { display: grid; gap: 2px; margin: 0; }
+.clk__t { font: 560 14.5px/1.3 var(--sans); }
+.clk__n { font: 400 12px/1.4 var(--mono); color: var(--soft); }
+.clk__days { display: grid; grid-template-columns: repeat(42, minmax(0, 1fr)); gap: 2px; }
+.clk__d { display: block; height: 16px; border-radius: 3px; background: #e9e7e0; transition: background-color .16s ease-out; }
+.clk__d.is-on { background: var(--ink); }
+.clk__d.is-we { background: repeating-linear-gradient(135deg, #cfccc3 0 1.5px, #eeece6 1.5px 4.5px); }
+.clk__d.is-pa { background: #f3c45c; }
+.clk__d.is-after { background: #efede8; }
+.clk__d.is-we.is-after { background: repeating-linear-gradient(135deg, #e0ded7 0 1.5px, #f1efea 1.5px 4.5px); }
+.clk.is-ready .clk__d.is-on { background: #e9e7e0; }
+.clk.is-ready.is-run .clk__d.is-on { background: var(--ink); }
+.clk.is-run .clk__d:nth-child(1) { transition-delay: 0ms; }
+.clk.is-run .clk__d:nth-child(2) { transition-delay: 26ms; }
+.clk.is-run .clk__d:nth-child(3) { transition-delay: 52ms; }
+.clk.is-run .clk__d:nth-child(4) { transition-delay: 78ms; }
+.clk.is-run .clk__d:nth-child(5) { transition-delay: 104ms; }
+.clk.is-run .clk__d:nth-child(6) { transition-delay: 130ms; }
+.clk.is-run .clk__d:nth-child(7) { transition-delay: 156ms; }
+.clk.is-run .clk__d:nth-child(8) { transition-delay: 182ms; }
+.clk.is-run .clk__d:nth-child(9) { transition-delay: 208ms; }
+.clk.is-run .clk__d:nth-child(10) { transition-delay: 234ms; }
+.clk.is-run .clk__d:nth-child(11) { transition-delay: 260ms; }
+.clk.is-run .clk__d:nth-child(12) { transition-delay: 286ms; }
+.clk.is-run .clk__d:nth-child(13) { transition-delay: 312ms; }
+.clk.is-run .clk__d:nth-child(14) { transition-delay: 338ms; }
+.clk.is-run .clk__d:nth-child(15) { transition-delay: 364ms; }
+.clk.is-run .clk__d:nth-child(16) { transition-delay: 390ms; }
+.clk.is-run .clk__d:nth-child(17) { transition-delay: 416ms; }
+.clk.is-run .clk__d:nth-child(18) { transition-delay: 442ms; }
+.clk.is-run .clk__d:nth-child(19) { transition-delay: 468ms; }
+.clk.is-run .clk__d:nth-child(20) { transition-delay: 494ms; }
+.clk.is-run .clk__d:nth-child(21) { transition-delay: 520ms; }
+.clk.is-run .clk__d:nth-child(22) { transition-delay: 546ms; }
+.clk.is-run .clk__d:nth-child(23) { transition-delay: 572ms; }
+.clk.is-run .clk__d:nth-child(24) { transition-delay: 598ms; }
+.clk.is-run .clk__d:nth-child(25) { transition-delay: 624ms; }
+.clk.is-run .clk__d:nth-child(26) { transition-delay: 650ms; }
+.clk.is-run .clk__d:nth-child(27) { transition-delay: 676ms; }
+.clk.is-run .clk__d:nth-child(28) { transition-delay: 702ms; }
+.clk.is-run .clk__d:nth-child(29) { transition-delay: 728ms; }
+.clk.is-run .clk__d:nth-child(30) { transition-delay: 754ms; }
+.clk.is-run .clk__d:nth-child(31) { transition-delay: 780ms; }
+.clk.is-run .clk__d:nth-child(32) { transition-delay: 806ms; }
+.clk.is-run .clk__d:nth-child(33) { transition-delay: 832ms; }
+.clk.is-run .clk__d:nth-child(34) { transition-delay: 858ms; }
+.clk.is-run .clk__d:nth-child(35) { transition-delay: 884ms; }
+.clk.is-run .clk__d:nth-child(36) { transition-delay: 910ms; }
+.clk.is-run .clk__d:nth-child(37) { transition-delay: 936ms; }
+.clk.is-run .clk__d:nth-child(38) { transition-delay: 962ms; }
+.clk.is-run .clk__d:nth-child(39) { transition-delay: 988ms; }
+.clk.is-run .clk__d:nth-child(40) { transition-delay: 1014ms; }
+.clk.is-run .clk__d:nth-child(41) { transition-delay: 1040ms; }
+.clk.is-run .clk__d:nth-child(42) { transition-delay: 1066ms; }
+.clk__row--axis .clk__lab { font: 500 11px/1.3 var(--mono); letter-spacing: .06em; color: var(--soft); }
+.clk__dl { display: block; font: 400 10px/1 var(--mono); font-style: normal; text-align: center; color: var(--soft); }
+.clk__dl.is-we { color: #8f8d86; }
+.clk__tk { font: 600 11px/1 var(--mono); text-align: center; color: var(--ink); }
+.clk__tk--1 { grid-column: 5; } .clk__tk--2 { grid-column: 12; } .clk__tk--3 { grid-column: 19; } .clk__tk--4 { grid-column: 26; }
+.clk__wk { grid-column: span 7; padding-right: 2px; font: 400 11px/1 var(--mono); text-align: right; color: var(--soft); }
+.clk__cap { max-width: 76ch; margin: 20px 0 0; font-size: 15px; line-height: 1.5; color: var(--soft); }
+.clk__legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: 12px 0 0; font: 400 12px/1.4 var(--mono); color: var(--soft); }
+.clk__sw { display: inline-block; width: 14px; height: 12px; margin-left: 12px; border-radius: 3px; }
+.clk__sw:first-child { margin-left: 0; }
+.clk__sw--on { background: var(--ink); } .clk__sw--pa { background: #f3c45c; }
+.clk__sw--we { background: repeating-linear-gradient(135deg, #cfccc3 0 1.5px, #eeece6 1.5px 4.5px); }
+@media (max-width: 760px) {
+  .clk__row { grid-template-columns: minmax(0, 1fr); row-gap: 6px; }
+  .clk__row--axis .clk__lab:empty, .clk__row--letters { display: none; }
+  .clk__d { height: 12px; border-radius: 2px; }
+  .clk__days { gap: 1.5px; }
+}
+@media (prefers-reduced-motion: reduce) { .clk__d { transition: none; } }
+
 /* the year's light at the seat on /visit/ (round 23): the sun over Longyearbyen through the year, by the hours of
    each day; the day in pale gold, warmer as the sun climbs; the twilights in blue; the night deepest. The reader's
    today and now marked; a day read out under the pointer or the arrow keys. Wider than a phone, it scrolls in its box. */
@@ -736,6 +817,41 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
 .tbl .nw { white-space: nowrap; }
 .tbl tbody th .sub { display: block; margin-top: 2px; font-weight: 450; color: var(--soft); }
 .stmt + .stmt { margin-top: clamp(40px, 4vw, 64px); }
+/* the statement drawn (round 23): one year for every card, chosen above; a card for the class and for each place,
+   with its figure, its change on the year before and five bars from zero; the table holds the statement itself */
+.styears { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-top: clamp(28px, 3vw, 44px); }
+.styears + .stmt { margin-top: 22px; }
+.styears__k { margin: 0; font: 500 11.5px/1.4 var(--mono); letter-spacing: .08em; color: var(--soft); }
+.styears__b { display: inline-flex; flex-wrap: wrap; padding: 3px; background: #e4e2db; border-radius: 12px; }
+.styears__b button { min-height: 38px; padding: 8px 16px; border: 0; border-radius: 9px; background: transparent; color: var(--soft);
+  font: 540 14.5px/1.2 var(--sans); font-variant-numeric: tabular-nums; cursor: pointer;
+  transition: background-color .14s ease-out, color .14s ease-out, box-shadow .14s ease-out; }
+.styears__b button:hover, .styears__b button[aria-checked="true"] { color: var(--ink); }
+.styears__b button[aria-checked="true"] { background: #fff; box-shadow: 0 1px 2px rgba(20, 22, 26, .1), 0 3px 10px rgba(20, 22, 26, .07); }
+.styears__b button:focus-visible { outline-offset: -2px; }
+.stcards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 0 0 18px; }
+.stcard { display: grid; align-content: start; min-width: 0; padding: 18px 20px 16px; background: #fff; border-radius: 14px;
+  box-shadow: inset 0 0 0 1px #e6e4dd; }
+.stcard--total { grid-column: 1 / -1; grid-template-columns: minmax(0, 1fr) minmax(0, 340px); column-gap: 32px; align-items: end; }
+.stcard__k { margin: 0; font: 560 14px/1.3 var(--sans); color: #2b2d31; }
+.stcard__n { display: flex; align-items: baseline; gap: 10px; margin: 10px 0 0; font: 620 clamp(30px, 3vw, 44px)/1 var(--sans);
+  font-stretch: 94%; letter-spacing: -.01em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.stcard--total .stcard__n { font-size: clamp(44px, 5.4vw, 80px); }
+.stcard__y { font: 500 12px/1 var(--mono); letter-spacing: .04em; color: var(--soft); }
+.stcard__d { min-height: 1.4em; margin: 8px 0 0; font: 400 12.5px/1.4 var(--mono); color: var(--soft); }
+.stcard__bars { display: block; width: 100%; height: 60px; margin-top: 18px; overflow: visible; }
+.stcard--total .stcard__bars { grid-column: 2; grid-row: 1 / span 3; height: 112px; margin: 0; }
+.js .stcard__bars { cursor: pointer; }
+.stcard__bar { fill: #d8d5cc; transition: fill .14s ease-out; }
+.stcard__bar.is-on { fill: var(--ink); }
+.stcard__base { stroke: #cfccc3; stroke-width: 1; vector-effect: non-scaling-stroke; }
+@media (max-width: 900px) { .stcards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) {
+  .stcard--total { grid-template-columns: minmax(0, 1fr); }
+  .stcard--total .stcard__bars { grid-column: 1; grid-row: auto; height: 72px; margin-top: 18px; }
+  .stcard__n { font-size: 28px; }
+}
+@media (prefers-reduced-motion: reduce) { .stcard__bar, .styears__b button { transition: none; } }
 .stmt__note { margin: -8px 0 14px; font: 400 12.5px/1.5 var(--mono); color: var(--soft); }
 .stmt__total th, .stmt__total td { font-weight: 620; color: var(--ink); background: #f6f5f1; }
 .stmt__code { display: inline-block; min-width: 1.6em; margin-right: 10px; color: var(--soft); }
