@@ -39,7 +39,7 @@
     '    float wy=sin(xs*1.6+uPhase-4.1*PW[i])*AW[i]*harm*uYS*env;',
     '    float d=abs(ys-wy);',
     '    float th=uTh*env*TW[i]+1e-6;',
-    '    float w=pow(clamp(th/(d+th*.32),0.,1.),1.5)*fade;',
+    '    float w=pow(clamp(th/(d+th*.32),0.,1.),1.5)*fade*exp(-d*d/6.);',   // the glow fades away from the band, so it never stands as a column
     '    acc+=w*C[i];dens+=w*fade;',
     '    float u=clamp(1.-d/(th*2.2),0.,1.);hits+=u*u*(3.-2.*u);',
     '    float sg=.14+.36*th;',
@@ -181,7 +181,9 @@
     var th = 0.30 * (1 + 0.12 * live) * (0.94 + 0.14 * midN);
     var land = W >= H * 1.3;
     var cx = W * 0.5, cy = H * 0.5;
-    var capW = land ? Math.min(W * 0.62, H * 2.2) : W * 0.96, capH = land ? H * 0.40 : W * 0.27;
+    // the lens keeps one proportion on every screen (about 5.4 to 1, as on a wide one): a phone gets the same long,
+    // thin light, never a round one
+    var capW = land ? Math.min(W * 0.62, H * 2.2) : W * 0.94, capH = capW / 5.4;
     var st = Math.max(22 / 1440 * W, Math.min(W, H) / 50, 12 * dpr), m = Math.max(40 / 1440 * W, 16 * dpr);
     gl.uniform2f(U.uRes, W, H);
     gl.uniform4f(U.uCap, cx, cy, capW / 2, capH / 2);
