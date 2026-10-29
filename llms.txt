@@ -26,7 +26,7 @@ What a reader, human or machine, should know:
 - [Forms: OWP-1 to OWP-4, and the instructions for Form OWP-3](https://www.standoffish.net/forms/)
 - [The class mark and Schedule A](https://www.standoffish.net/mark/)
 - [Label-to-name drift reviews: the register](https://www.standoffish.net/reviews/lnd/)
-- [Carriers of the class, and the Chadu relays' in-transit provisions](https://www.standoffish.net/carriers/)
+- [Carriers of the class, and the Chadu and Deimos relays' in-transit provisions](https://www.standoffish.net/carriers/)
 - [Gazetteer: stations, vessels, relays, courts and places](https://www.standoffish.net/places/)
 - [Visit the Register](https://www.standoffish.net/visit/)
 - [Under the Terms: senders, carriers, streams, receivers](https://www.standoffish.net/under-the-terms/)
