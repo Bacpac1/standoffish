@@ -29,6 +29,7 @@ What a reader, human or machine, should know:
 - [Carriers of the class, and the Chadu and Deimos relays' in-transit provisions](https://www.standoffish.net/carriers/)
 - [Gazetteer: stations, vessels, relays, courts and places](https://www.standoffish.net/places/)
 - [Decisions: the Register's determinations under the Terms](https://www.standoffish.net/decisions/)
+- [Schedules A to D to the Terms (fiction): the class mark, the carrier liability floor, the reply desks, the channel codes](https://www.standoffish.net/terms/schedules/)
 - [Amendment No. 5 to the Terms (fiction, made 2095, in force 2096)](https://www.standoffish.net/terms/amendment-5/)
 - [Visit the Register](https://www.standoffish.net/visit/)
 - [Under the Terms: senders, carriers, streams, receivers](https://www.standoffish.net/under-the-terms/)

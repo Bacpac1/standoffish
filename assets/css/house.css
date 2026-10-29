@@ -289,6 +289,8 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
 .doc { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 24px;
        margin-top: clamp(28px, 3.4vw, 48px); border-top: 1px solid var(--hair); }
 .doc__toc { grid-column: 1 / span 3; padding-top: 16px; }
+.doc__text .doc__src { margin: -6px 0 18px; font: 400 12.5px/1.6 var(--mono); color: var(--soft); }
+.doc__text .mk { margin: 28px 0 8px; }
 .doc__toc ol { margin: 12px 0 0; padding: 0; list-style: none; font-size: 14px; line-height: 1.35; }
 .doc__toc li + li { margin-top: 8px; }
 .doc__toc a { color: #2a2c30; }
