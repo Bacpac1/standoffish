@@ -469,3 +469,14 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
   .dindex a, .dband__n a { padding: 14px 12px; }
   .dindex__t { font-size: 13px; }
 }
+
+/* ------------------------------------------------------------------------------------------- fees and the statement (round 17) */
+.tbl td.fee { white-space: nowrap; font-weight: 560; color: var(--ink); }
+.tbl td.fee--free { color: var(--soft); font-weight: 450; }
+.tbl td .cite { display: block; margin-top: 4px; font: 400 12px/1.4 var(--mono); color: var(--faint); }
+.tbl td a { color: var(--link); }
+.tbl .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.stmt + .stmt { margin-top: clamp(40px, 4vw, 64px); }
+.stmt__note { margin: -8px 0 14px; font: 400 12.5px/1.5 var(--mono); color: var(--soft); }
+.stmt__total th, .stmt__total td { font-weight: 620; color: var(--ink); background: #f6f5f1; }
+.stmt__code { display: inline-block; min-width: 1.6em; margin-right: 10px; color: var(--soft); }
