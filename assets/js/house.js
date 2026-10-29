@@ -4,7 +4,8 @@
       passes the room by a few millimetres: the act at the centre of the picture stays where it is, the room
       opens around it. The picture's frame and its stamp stay put. WebGL2 only; never under reduced motion.
    2. The seat. The time in Longyearbyen, and whether the sun rises there today.
-   3. The desks. A filter by service over the list of desks, which is whole without it. */
+   3. The desks. The atlas: three views of the map as tabs, each desk's card, Earth by continent; and a filter by
+      service over the list and the map, both whole without it. */
 (function () {
   'use strict';
   var root = document.documentElement;
@@ -233,12 +234,156 @@
   }
 
   /* ------------------------------------------------------------------------------------------- 3. the desks */
+  var slice = function (l) { return Array.prototype.slice.call(l); };
+  var atlas = document.querySelector('[data-atlas]'), dimMarks = function () {};
+  if (atlas) (function () {
+    /* the atlas: the three views become tabs (the region tiles below the map), every marker opens its desk's card,
+       copied from the desk's own entry in the directory; Earth zooms by continent; the list's "On the map" and the
+       filter reach the map. Escape closes the card. Under reduced motion nothing travels. */
+    atlas.classList.add('is-live');
+    var stage = atlas.querySelector('[data-atlas-stage]'), card = atlas.querySelector('[data-atlas-card]');
+    var views = slice(atlas.querySelectorAll('[data-view]')), marks = slice(atlas.querySelectorAll('.dm'));
+    var zoomBar = atlas.querySelector('[data-atlas-zoom]'), zoomBtns = slice(zoomBar.querySelectorAll('button'));
+    var nav = document.querySelector('.dindex'), tiles = nav ? slice(nav.querySelectorAll('a')) : [];
+    var narrow = window.matchMedia ? matchMedia('(max-width: 760px)') : { matches: false };
+    var earth = atlas.querySelector('[data-view="earth"] svg'), zooms = {};
+    try { zooms = JSON.parse(atlas.querySelector('[data-view="earth"]').getAttribute('data-zooms')); } catch (e) {}
+    var cur = 'earth', sel = null, vb = [0, 0, 1000, 432.1], anim = 0;
+    var viewOf = function (id) { var m = atlas.querySelector('.dm[data-desk="' + id + '"]'); return m ? m.closest('[data-view]').getAttribute('data-view') : null; };
+    var markOf = function (id) { return atlas.querySelector('[data-view="' + cur + '"] .dm[data-desk="' + id + '"]'); };
+
+    function show(id) {
+      var src = document.getElementById(id), m = markOf(id);
+      if (!src || !m) { card.classList.remove('is-on'); card.hidden = true; return; }
+      var body = src.cloneNode(true);
+      body.removeAttribute('id'); body.classList.remove('is-sel');
+      slice(body.querySelectorAll('[id]')).forEach(function (n) { n.removeAttribute('id'); });
+      var holder = document.createElement('div'); holder.className = 'desk desk--' + (src.className.match(/desk--(\w+)/) || [, ''])[1];
+      while (body.firstChild) holder.appendChild(body.firstChild);
+      var go = document.createElement('a'); go.className = 'desk__go'; go.href = '#' + id; go.textContent = 'In the directory';
+      go.addEventListener('click', function (e) {
+        e.preventDefault();
+        src.scrollIntoView({ behavior: mq.matches ? 'auto' : 'smooth', block: 'center' });
+        var f = src.querySelector('a, button'); if (f) f.focus({ preventScroll: true });
+      });
+      holder.appendChild(go);
+      var x = document.createElement('button'); x.type = 'button'; x.className = 'desk__close'; x.setAttribute('aria-label', 'Close');
+      x.textContent = '×'; x.addEventListener('click', function () { select(null); });
+      card.textContent = ''; card.appendChild(x); card.appendChild(holder);
+      card.hidden = false;
+      card.setAttribute('aria-label', m.getAttribute('aria-label'));
+      if (!narrow.matches) {
+        var s = stage.getBoundingClientRect(), r = m.getBoundingClientRect();
+        var cw = card.offsetWidth, ch = card.offsetHeight, mx = r.left + r.width / 2 - s.left, my = r.top + r.height / 2 - s.top;
+        var left = mx + 22, top = my - ch / 2;
+        if (left + cw > s.width) left = mx - 22 - cw;
+        if (left < 0) left = Math.max(0, Math.min(s.width - cw, mx - cw / 2));
+        top = Math.max(0, Math.min(Math.max(0, s.height - ch), top));
+        card.style.left = Math.round(left) + 'px'; card.style.top = Math.round(top) + 'px';
+      }
+      requestAnimationFrame(function () { card.classList.add('is-on'); });
+    }
+    function hide() { card.classList.remove('is-on'); card.hidden = true; }
+    function select(id) {
+      sel = id;
+      marks.forEach(function (m) { m.classList.toggle('is-sel', m.getAttribute('data-desk') === id); });
+      slice(document.querySelectorAll('.desk.is-sel')).forEach(function (d) { d.classList.remove('is-sel'); });
+      if (id) { var li = document.getElementById(id); if (li) li.classList.add('is-sel'); show(id); } else hide();
+    }
+    function preview(id) { if (id) show(id); else if (sel && viewOf(sel) === cur) show(sel); else hide(); }
+
+    /* the views */
+    function view(id) {
+      cur = id;
+      views.forEach(function (v) { v.classList.toggle('is-on', v.getAttribute('data-view') === id); });
+      tiles.forEach(function (t) { t.setAttribute('aria-selected', t.getAttribute('href') === '#' + id ? 'true' : 'false'); });
+      zoomBar.hidden = id !== 'earth';
+      fitHits();
+      if (sel && viewOf(sel) === id) show(sel); else hide();
+    }
+    if (nav && tiles.length) {
+      nav.setAttribute('role', 'tablist'); nav.setAttribute('aria-label', 'Views of the map');
+      tiles.forEach(function (t) {
+        var id = t.getAttribute('href').slice(1);
+        t.setAttribute('role', 'tab'); t.setAttribute('aria-controls', 'map-' + id);
+        t.addEventListener('click', function (e) { e.preventDefault(); view(id); });
+      });
+    }
+
+    /* Earth, by continent */
+    function fitHits() {                           // a finger's reach: about 20 px around each marker, whatever the zoom
+      views.forEach(function (v) {
+        var svg = v.querySelector('svg'), w = svg.getBoundingClientRect().width; if (!w) return;
+        var b = (svg.getAttribute('viewBox') || '0 0 1000 1').split(' ').map(parseFloat), k = v.getAttribute('data-view') === 'earth' ? b[2] / 1000 : 1;
+        var r = Math.max(16, Math.min(60, 20 / (w / b[2]) / k));
+        slice(v.querySelectorAll('.dm__hit')).forEach(function (c) { c.setAttribute('r', r.toFixed(1)); });
+      });
+    }
+    function setVB(b) {
+      vb = b; earth.setAttribute('viewBox', b.map(function (v) { return v.toFixed(1); }).join(' '));
+      var k = b[2] / 1000;
+      slice(earth.querySelectorAll('.dm__at')).forEach(function (g) {
+        var t = g.getAttribute('data-at') || g.getAttribute('transform').replace(/ scale\([^)]*\)/, '');
+        g.setAttribute('data-at', t); g.setAttribute('transform', t + ' scale(' + k.toFixed(3) + ')');
+      });
+    }
+    function zoom(key, then) {
+      var to = zooms[key] || zooms.all; if (!to) return;
+      zoomBtns.forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-z') === key ? 'true' : 'false'); });
+      cancelAnimationFrame(anim); hide();
+      var from = vb.slice(), t0 = performance.now(), T = mq.matches ? 0 : 700;
+      var ease = function (t) { return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
+      var step = function (now) {
+        var t = T ? Math.min(1, (now - t0) / T) : 1, e = ease(t);
+        setVB(from.map(function (v, i) { return v + (to[i] - v) * e; }));
+        if (t < 1) anim = requestAnimationFrame(step); else { fitHits(); if (then) then(); else if (sel && viewOf(sel) === 'earth') show(sel); }
+      };
+      anim = requestAnimationFrame(step);
+    }
+    zoomBtns.forEach(function (b) { b.addEventListener('click', function () { zoom(b.getAttribute('data-z')); }); });
+    zoomBar.hidden = false;
+
+    /* the markers */
+    marks.forEach(function (m) {
+      var id = m.getAttribute('data-desk');
+      m.addEventListener('click', function (e) { e.preventDefault(); select(sel === id ? null : id); });
+      m.addEventListener('mouseenter', function () { preview(id); });
+      m.addEventListener('mouseleave', function () { preview(null); });
+      m.addEventListener('focus', function () { preview(id); });
+      m.addEventListener('blur', function () { preview(null); });
+    });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && sel) select(null); });
+    window.addEventListener('resize', function () { fitHits(); if (sel && viewOf(sel) === cur) show(sel); });
+
+    /* from the list to the map */
+    slice(document.querySelectorAll('.dlist .desk[id]')).forEach(function (li) {
+      var id = li.id, v = viewOf(id); if (!v) return;
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'desk__map'; b.textContent = 'On the map';
+      b.addEventListener('click', function () {
+        var m = atlas.querySelector('.dm[data-desk="' + id + '"]'), c = m && m.getAttribute('data-c');
+        atlas.scrollIntoView({ behavior: mq.matches ? 'auto' : 'smooth', block: 'start' });
+        view(v);
+        if (v === 'earth' && c) zoom(c, function () { select(id); }); else select(id);
+      });
+      li.appendChild(b);
+    });
+
+    /* the filter reaches the map */
+    dimMarks = function (f) {
+      marks.forEach(function (m) {
+        var on = f === 'all' || (' ' + m.getAttribute('data-f') + ' ').indexOf(' ' + f + ' ') >= 0;
+        m.classList.toggle('is-off', !on);
+        if (!on && m.getAttribute('data-desk') === sel) select(null);
+      });
+    };
+    view('earth');
+  })();
+
   var filt = document.querySelector('[data-desk-filter]');
   if (filt) {
-    var all = function (sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); };
-    var desks = all('.desk[data-f]'), boxes = all('[data-group], .dcont, .dregion');
+    var desks = slice(document.querySelectorAll('.desk[data-f]')), boxes = slice(document.querySelectorAll('[data-group], .dcont, .dregion'));
     var count = filt.querySelector('[data-desk-count]');
-    var buttons = Array.prototype.slice.call(filt.querySelectorAll('button[data-f]'));
+    var buttons = slice(filt.querySelectorAll('button[data-f]'));
     var apply = function (f) {
       var n = 0;
       desks.forEach(function (d) {
@@ -248,6 +393,7 @@
       boxes.forEach(function (b) { b.hidden = !b.querySelector('.desk:not([hidden])'); });
       buttons.forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-f') === f ? 'true' : 'false'); });
       count.textContent = n + (n === 1 ? ' desk' : ' desks');
+      dimMarks(f);
     };
     buttons.forEach(function (b) { b.addEventListener('click', function () { apply(b.getAttribute('data-f')); }); });
     filt.hidden = false;
