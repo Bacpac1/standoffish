@@ -8,7 +8,7 @@
       map, its list and the directory; a desk opens beside the map; Earth zooms and pans. Whole without it.
    4. The carriers. Each node of the network's drawing gives its card and lights what it works with; the day of link
       windows marks the hour in TCB.
-   5. The slip. The lodging slip on /reply/ rises out of the desk's printer as the page reaches it.
+   5. The slip. On /reply/, the desk's stamp is set down on the lodging slip as the page reaches it.
    6. The year's light. On /visit/, the reader's today and now on the year of light at the seat; any day read out.
    7. The statement. One year for every card of the annual statement, chosen above or under the pointer.
    8. The clock. On /service-standards/, the clock runs once across its six weeks as the page reaches it.
@@ -320,7 +320,7 @@
       return true;
     };
     var inside = function (d) { return d.x >= vb[0] && d.x <= vb[0] + vb[2] && d.y >= vb[1] && d.y <= vb[1] + vb[3]; };
-    var inArea = function (d) { return d.view !== 'earth' || words.length || area === 'all' || (area === 'view' ? inside(d) : d.c === area); };
+    var inArea = function (d) { return d.view !== 'earth' || words.length > 0 || area === 'all' || (area === 'view' ? inside(d) : d.c === area); };
     var where = function () {
       if (cur !== 'earth' || words.length || area === 'all') return WHERE[cur];
       return area === 'view' ? 'in view' : 'in ' + CONT[area];
@@ -332,7 +332,7 @@
       order.forEach(function (d) {
         var on = ok(d); if (on) { per[d.view]++; total++; }
         if (on !== d.on || d.li.hidden === on) { d.on = on; d.mark.classList.toggle('is-off', !on); d.li.hidden = !on; moved = true; }
-        var vis = on && d.view === cur && inArea(d);
+        var vis = !!(on && d.view === cur && inArea(d));
         if (d.row.hidden === vis) d.row.hidden = !vis;
         if (vis) shown++;
       });
@@ -729,8 +729,8 @@
   /* ------------------------------------------------------------------------------------------- 5. the slip */
   var slip = document.querySelector('[data-slip]');
   if (slip) (function () {
-    /* the lodging slip rises out of the desk's printer, its first line first, as the page reaches it; under the pointer,
-       a part of the slip and its name beside it light each other */
+    /* the lodging slip stands printed; as the page reaches it, the desk's stamp is set down on it. Under the pointer, a
+       part of the slip and its name beside it light each other */
     var parts = slice(slip.closest('section').querySelectorAll('[data-k]'));
     parts.forEach(function (p) {
       var k = p.getAttribute('data-k');
@@ -884,7 +884,8 @@
   var mkb = document.querySelector('[data-mkb]');
   if (mkb) (function () {
     /* the class mark at any size from the least, on four grounds, its clear space shown or hidden, the contrast of its
-       one colour read out (WCAG's formula, as Schedule A(5) has it) */
+       one colour read out (WCAG's formula, as Schedule A(5) has it); at 48 px and under, beside it its pixels, as a
+       screen draws them, enlarged */
     var range = mkb.querySelector('[data-mkb-size]'), out = mkb.querySelector('[data-mkb-out]');
     var stage = mkb.querySelector('[data-mkb-stage]'), svg = stage.querySelector('svg'), read = mkb.querySelector('[data-mkb-read]');
     var cs = mkb.querySelector('[data-mkb-cs]'), gb = slice(mkb.querySelectorAll('[data-ground]'));
@@ -894,9 +895,28 @@
       var c = [1, 3, 5].map(function (i) { var v = parseInt(h.substr(i, 2), 16) / 255; return v <= .04045 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); });
       return .2126 * c[0] + .7152 * c[1] + .0722 * c[2];
     };
-    var g = 'ground';
+    var g = 'ground', pre = slice(mkb.querySelectorAll('[data-px]')), loupe = mkb.querySelector('[data-mkb-loupe]');
+    var cv = mkb.querySelector('[data-mkb-px]'), lt = mkb.querySelector('[data-mkb-lt]');
+    function pixels(px) {                          // the figure as a screen draws it at that size, one pixel to a cell
+      var k = px / BOX, w = Math.ceil(6.15 * k) + 2, h = Math.ceil(BOX * k) + 2, ctx = cv.getContext && cv.getContext('2d');
+      if (!ctx) return;
+      cv.width = w; cv.height = h;
+      var z = Math.max(4, Math.min(12, Math.floor(132 / h)));
+      cv.style.width = w * z + 'px'; cv.style.height = h * z + 'px';
+      ctx.fillStyle = C[g][0]; ctx.fillRect(0, 0, w, h);
+      var cx = 1 + k, cy = h / 2;
+      ctx.fillStyle = ctx.strokeStyle = C[g][1];
+      ctx.beginPath(); ctx.arc(cx, cy, k, 0, Math.PI * 2); ctx.fill();
+      [[1.96, .42], [3.72, .35], [5.00, .30]].forEach(function (a) {
+        ctx.beginPath(); ctx.lineWidth = a[1] * k; ctx.lineCap = 'butt'; ctx.arc(cx, cy, a[0] * k, -Math.PI / 2, Math.PI / 2); ctx.stroke();
+      });
+      lt.textContent = px + ' px \u00d7' + z;
+    }
     function draw() {
       var px = +range.value, k = px / BOX;
+      pre.forEach(function (b) { b.setAttribute('aria-pressed', +b.getAttribute('data-px') === px ? 'true' : 'false'); });
+      loupe.hidden = px > 48;
+      if (px <= 48) pixels(px);
       svg.style.width = (vb[2] * k).toFixed(1) + 'px'; svg.style.height = (vb[3] * k).toFixed(1) + 'px';
       svg.classList.toggle('is-cs', cs.checked);
       stage.setAttribute('data-ground', g);
@@ -906,6 +926,7 @@
       read.textContent = px + ' px across the outer arc, from the least of 12 \u00b7 contrast ' + r.toFixed(1) + ' to 1, from the least of 4.5';
     }
     range.addEventListener('input', draw);
+    pre.forEach(function (b) { b.addEventListener('click', function () { range.value = b.getAttribute('data-px'); draw(); }); });
     cs.addEventListener('change', draw);
     gb.forEach(function (b, i) {
       b.addEventListener('click', function () { pick(i); });
@@ -927,8 +948,9 @@
   var netw = document.querySelector('[data-netw]');
   if (netw) (function () {
     /* every station, relay and vessel of the drawing gives its card (the gazetteer's facts, and its windows) and lights
-       what it works with; the day of windows below marks the hour in TCB on the reader's clock, and the windows open
-       at it. TCB runs ahead of UTC by the leap seconds, 32.184 s and the rate of the barycentre. */
+       what it works with; a click keeps the card, with a way out (the close button, Escape, back to the node) and on
+       (its entry). The day of windows below marks the hour in TCB on the reader's clock, names the windows for that day
+       and opens them at it. TCB runs ahead of UTC by the leap seconds, 32.184 s and the rate of the barycentre. */
     var nodes = {}; try { nodes = JSON.parse(netw.getAttribute('data-netw')); } catch (e) {}
     var stage = netw.querySelector('.netw__stage'), card = netw.querySelector('[data-netw-card]');
     var nn = slice(netw.querySelectorAll('.nn')), links = slice(netw.querySelectorAll('[data-link]'));
@@ -936,14 +958,21 @@
     var pinned = null;
     var esc = function (t) { var d = document.createElement('div'); d.textContent = t; return d.innerHTML; };
     function light(code) {
-      var n = nodes[code]; netw.classList.toggle('is-lit', !!n);
+      var n = nodes[code], pin = !!n && code === pinned; netw.classList.toggle('is-lit', !!n);
       var withs = n ? n.with_ : [];
       nn.forEach(function (a) { var c = a.getAttribute('data-node'); a.classList.toggle('is-on', c === code); a.classList.toggle('is-with', withs.indexOf(c) >= 0); });
       links.forEach(function (l) { l.classList.toggle('is-with', !!code && (' ' + l.getAttribute('data-link') + ' ').indexOf(' ' + code + ' ') >= 0); });
       rows.forEach(function (r) { r.classList.toggle('is-on', !!code && (' ' + r.getAttribute('data-node-row') + ' ').indexOf(' ' + code + ' ') >= 0); });
       if (!n) { card.classList.remove('is-on'); card.hidden = true; return; }
-      card.innerHTML = '<h3>' + esc(n.name) + '</h3><p class="c">' + esc(n.code) + '</p><dl>' +
-        n.rows.map(function (r) { return '<dt>' + esc(r[0]) + '</dt><dd>' + esc(r[1]) + '</dd>'; }).join('') + '</dl>';
+      card.innerHTML = (pin ? '<button type="button" class="netw__x" aria-label="Close">\u00d7</button>' : '') +
+        '<h3>' + esc(n.name) + '</h3><p class="c">' + esc(n.code) + '</p><dl>' +
+        n.rows.map(function (r) { return '<dt>' + esc(r[0]) + '</dt><dd>' + esc(r[1]) + '</dd>'; }).join('') + '</dl>' +
+        (pin && n.link ? '<a class="more netw__go" href="' + esc(n.link) + '">' +
+          (n.link.indexOf('/places/') === 0 ? 'In the gazetteer' : 'The provisions') + '</a>' : '');
+      card.classList.toggle('is-pin', pin);
+      card.setAttribute('aria-label', n.name);
+      var x = card.querySelector('.netw__x');
+      if (x) x.addEventListener('click', function () { unpin(true); });
       card.hidden = false;
       var a = netw.querySelector('.nn[data-node="' + code + '"]'), s = stage.getBoundingClientRect(), r = a.getBoundingClientRect();
       var cx = r.left + r.width / 2 - s.left, cy = r.top + r.height / 2 - s.top, cw = card.offsetWidth, ch = card.offsetHeight;
@@ -957,15 +986,26 @@
       a.addEventListener('mouseleave', function () { light(pinned); });
       a.addEventListener('focus', function () { light(c); });
       a.addEventListener('blur', function () { light(pinned); });
-      a.addEventListener('click', function (e) { e.preventDefault(); pinned = pinned === c ? null : c; light(pinned); });
+      a.addEventListener('click', function (e) {               // a node chooses; its card offers the way out and on
+        e.preventDefault();
+        if (pinned === c) { unpin(true); return; }
+        pinned = c; light(c);
+        var x = card.querySelector('.netw__x'); if (x) x.focus({ preventScroll: true });
+      });
     });
+    function unpin(back) {
+      var c = pinned; pinned = null; light(null);
+      if (back && c) { var a = netw.querySelector('.nn[data-node="' + c + '"]'); if (a) a.focus({ preventScroll: true }); }
+    }
     rows.forEach(function (r) {
       var c = r.getAttribute('data-node-row').split(' ')[0];
       r.addEventListener('mouseenter', function () { light(c); });
       r.addEventListener('mouseleave', function () { light(pinned); });
     });
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && pinned) { pinned = null; light(null); } });
-    document.addEventListener('click', function (e) { if (pinned && !e.target.closest('.nn')) { pinned = null; light(null); } });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && pinned) unpin(card.contains(document.activeElement)); });
+    document.addEventListener('click', function (e) { if (pinned && !e.target.closest('.nn') && !card.contains(e.target)) unpin(false); });
+    var lw = slice(netw.querySelectorAll('.wnd__l')).filter(function (t) { return t.textContent.indexOf('ddd') >= 0; });
+    lw.forEach(function (t) { t.setAttribute('data-lw', t.textContent); });
     var now = netw.querySelector('[data-wnd-now]');
     if (now) {
       var line = now.querySelector('line'), txt = now.querySelector('text'), svg = now.ownerSVGElement;
@@ -978,6 +1018,9 @@
         var hh = Math.floor(h), mm = Math.floor((h - hh) * 60);
         txt.textContent = (hh < 10 ? '0' : '') + hh + ':' + (mm < 10 ? '0' : '') + mm + ' TCB';
         rows.forEach(function (r) { var a = +r.getAttribute('data-from'), b = +r.getAttribute('data-to'); r.classList.toggle('is-open', h >= a && h < b); });
+        var td = new Date(tcb * 1000), doy = Math.floor((td.getTime() - Date.UTC(td.getUTCFullYear(), 0, 1)) / 864e5) + 1;
+        var ddd = ('00' + doy).slice(-3);                   // the windows of this day in TCB, by their numbers: LW 303/02
+        lw.forEach(function (t) { t.textContent = t.getAttribute('data-lw').replace('ddd', ddd); });
         now.removeAttribute('hidden');
         setTimeout(tick, 60000 - (d.getSeconds() * 1000 + d.getMilliseconds()) + 50);
       };
