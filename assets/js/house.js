@@ -11,7 +11,8 @@
    5. The slip. The lodging slip on /reply/ rises out of the desk's printer as the page reaches it.
    6. The year's light. On /visit/, the reader's today and now on the year of light at the seat; any day read out.
    7. The statement. One year for every card of the annual statement, chosen above or under the pointer.
-   8. The clock. On /service-standards/, the clock runs once across its six weeks as the page reaches it. */
+   8. The clock. On /service-standards/, the clock runs once across its six weeks as the page reaches it.
+   9. The mark at a size. On /mark/, the class mark at any size on four grounds, with its clear space and contrast. */
 (function () {
   'use strict';
   var root = document.documentElement;
@@ -877,6 +878,49 @@
       es.forEach(function (e) { if (e.isIntersecting) { clk.classList.add('is-run'); io.disconnect(); } });
     }, { threshold: .25 });
     io.observe(clk);
+  })();
+
+  /* ------------------------------------------------------------------------------------------- 9. the mark at a size */
+  var mkb = document.querySelector('[data-mkb]');
+  if (mkb) (function () {
+    /* the class mark at any size from the least, on four grounds, its clear space shown or hidden, the contrast of its
+       one colour read out (WCAG's formula, as Schedule A(5) has it) */
+    var range = mkb.querySelector('[data-mkb-size]'), out = mkb.querySelector('[data-mkb-out]');
+    var stage = mkb.querySelector('[data-mkb-stage]'), svg = stage.querySelector('svg'), read = mkb.querySelector('[data-mkb-read]');
+    var cs = mkb.querySelector('[data-mkb-cs]'), gb = slice(mkb.querySelectorAll('[data-ground]'));
+    var vb = svg.getAttribute('viewBox').split(' ').map(parseFloat), BOX = 10.3;
+    var C = { ground: ['#f3f2ee', '#121417'], paper: ['#ece4d2', '#121417'], ink: ['#121417', '#f3f2ee'], navy: ['#1a2944', '#f3f2ee'] };
+    var lum = function (h) {
+      var c = [1, 3, 5].map(function (i) { var v = parseInt(h.substr(i, 2), 16) / 255; return v <= .04045 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); });
+      return .2126 * c[0] + .7152 * c[1] + .0722 * c[2];
+    };
+    var g = 'ground';
+    function draw() {
+      var px = +range.value, k = px / BOX;
+      svg.style.width = (vb[2] * k).toFixed(1) + 'px'; svg.style.height = (vb[3] * k).toFixed(1) + 'px';
+      svg.classList.toggle('is-cs', cs.checked);
+      stage.setAttribute('data-ground', g);
+      var a = lum(C[g][0]), b = lum(C[g][1]), r = (Math.max(a, b) + .05) / (Math.min(a, b) + .05);
+      out.textContent = px + ' px';
+      range.setAttribute('aria-valuetext', px + ' pixels across the outer arc');
+      read.textContent = px + ' px across the outer arc, from the least of 12 \u00b7 contrast ' + r.toFixed(1) + ' to 1, from the least of 4.5';
+    }
+    range.addEventListener('input', draw);
+    cs.addEventListener('change', draw);
+    gb.forEach(function (b, i) {
+      b.addEventListener('click', function () { pick(i); });
+      b.addEventListener('keydown', function (e) {
+        var j = { ArrowRight: i + 1, ArrowDown: i + 1, ArrowLeft: i - 1, ArrowUp: i - 1, Home: 0, End: gb.length - 1 }[e.key];
+        if (j === undefined) return;
+        e.preventDefault(); pick((j + gb.length) % gb.length, true);
+      });
+    });
+    function pick(i, focus) {
+      g = gb[i].getAttribute('data-ground');
+      gb.forEach(function (b, j) { b.setAttribute('aria-checked', j === i ? 'true' : 'false'); b.setAttribute('tabindex', j === i ? '0' : '-1'); if (j === i && focus) b.focus(); });
+      draw();
+    }
+    mkb.hidden = false; draw();
   })();
 
   /* ------------------------------------------------------------------------------------------- 4. the carriers */
