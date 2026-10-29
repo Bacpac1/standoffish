@@ -7,7 +7,9 @@
    3. The desks. Find a desk: the atlas's views as tabs with their counts, a search and a filter by service over the
       map, its list and the directory; a desk opens beside the map; Earth zooms and pans. Whole without it.
    4. The carriers. Each node of the network's drawing gives its card and lights what it works with; the day of link
-      windows marks the hour in TCB. */
+      windows marks the hour in TCB.
+   5. The slip. The lodging slip on /reply/ rises out of the desk's printer as the page reaches it.
+   6. The year's light. On /visit/, the reader's today and now on the year of light at the seat; any day read out. */
 (function () {
   'use strict';
   var root = document.documentElement;
@@ -719,6 +721,102 @@
     window.addEventListener('resize', function () { thumb(true); measure(); hot(null); });
     var h0 = decodeURIComponent(location.hash.slice(1));      // from elsewhere: /desks/#tromso, /desks/#mars
     if (D[h0]) go(h0, { focus: false }); else if (h0 === 'earth-orbit' || h0 === 'mars') tab(h0);
+  })();
+
+  /* ------------------------------------------------------------------------------------------- 5. the slip */
+  var slip = document.querySelector('[data-slip]');
+  if (slip) (function () {
+    /* the lodging slip rises out of the desk's printer, its first line first, as the page reaches it; under the pointer,
+       a part of the slip and its name beside it light each other */
+    var parts = slice(slip.closest('section').querySelectorAll('[data-k]'));
+    parts.forEach(function (p) {
+      var k = p.getAttribute('data-k');
+      p.addEventListener('pointerenter', function (e) {
+        if (e.pointerType !== 'mouse') return;
+        parts.forEach(function (q) { q.classList.toggle('is-on', q.getAttribute('data-k') === k); });
+      });
+      p.addEventListener('pointerleave', function () { parts.forEach(function (q) { q.classList.remove('is-on'); }); });
+    });
+    if (mq.matches || !('IntersectionObserver' in window)) return;
+    var r = slip.getBoundingClientRect();
+    if (r.top < innerHeight && r.bottom > 0) return;          // already in view on arrival: it stands, printed
+    slip.classList.add('is-ready');
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (e) { if (e.isIntersecting) { slip.classList.add('is-printed'); io.disconnect(); } });
+    }, { threshold: .3 });
+    io.observe(slip);
+  })();
+
+  /* ------------------------------------------------------------------------------------------- 6. the year's light */
+  var yl = document.querySelector('[data-yl]');
+  if (yl) (function () {
+    /* the reader's today and now on the year of light (UTC+1), and any day read out: under the pointer, a tap, or the
+       arrow keys (a day; Page Up and Page Down, a month; Home and End, the year's ends). The figures are the build's. */
+    var M; try { M = JSON.parse(yl.getAttribute('data-yl')); } catch (e) { return; }
+    var G = M.geo, D = M.d, svg = yl.querySelector('svg'), dot = yl.querySelector('[data-yl-now]');
+    var cur = yl.querySelector('[data-yl-cur]'), read = yl.querySelector('[data-yl-read]'), key = yl.querySelector('[data-yl-key]');
+    var box = yl.querySelector('.yl__scroll');
+    var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October',
+                  'November', 'December'];
+    var two = function (n) { return (n < 10 ? '0' : '') + n; };
+    var hm = function (m) { m = ((Math.round(m) % 1440) + 1440) % 1440; return two(Math.floor(m / 60)) + ':' + two(m % 60); };
+    var dur = function (m) { m = Math.round(m); return Math.floor(m / 60) + ' h ' + two(m % 60) + ' min'; };
+    var dateOf = function (d) { var t = new Date(Date.UTC(G.year, 0, 1 + d)); return t.getUTCDate() + ' ' + MONTHS[t.getUTCMonth()]; };
+    var deg = function (v) { return Math.abs(Math.round(v)) + '\u00b0'; };
+    var xOf = function (d) { return G.x0 + (d + .5) * (G.x1 - G.x0) / G.days; };
+    function words(d) {                            // [noon, highest, lowest, lowest at, rise, twilight from, set, twilight to]
+      var r = D[d], out = [dateOf(d)];
+      if (r[4] === -2) out.push('Midnight sun', 'highest ' + deg(r[1]) + ' at ' + hm(r[0]), 'lowest ' + deg(r[2]) + ' at ' + hm(r[3]));
+      else if (r[4] >= 0) out.push('Sunrise ' + hm(r[4]), 'sunset ' + hm(r[6]), dur(r[6] - r[4]) + ' of daylight');
+      else {
+        out.push('Polar night');
+        if (r[5] >= 0) out.push('twilight ' + hm(r[5]) + ' to ' + hm(r[7]));
+        out.push('the sun ' + deg(r[1]) + ' below the horizon at ' + hm(r[0]));
+      }
+      return out.join(' \u00b7 ');
+    }
+    var today = 0, at = 0;
+    function show(d, isToday) {
+      at = d; var x = xOf(d).toFixed(1);
+      cur.setAttribute('x1', x); cur.setAttribute('x2', x);
+      if (isToday) cur.setAttribute('hidden', ''); else cur.removeAttribute('hidden');
+      read.textContent = (isToday ? 'Today, ' : '') + words(d);
+      key.setAttribute('aria-valuenow', d + 1); key.setAttribute('aria-valuetext', words(d));
+    }
+    function tick() {                              // today, and the hour now, at UTC+1
+      var t = new Date(Date.now() + 36e5), d = Math.floor((t - Date.UTC(t.getUTCFullYear(), 0, 1)) / 864e5);
+      today = Math.max(0, Math.min(G.days - 1, d));
+      var x = xOf(today).toFixed(1), y = (G.y0 + (t.getUTCHours() * 60 + t.getUTCMinutes()) / 1440 * (G.y1 - G.y0)).toFixed(1);
+      var ln = dot.querySelector('line'), c = dot.querySelector('circle');
+      ln.setAttribute('x1', x); ln.setAttribute('x2', x); c.setAttribute('cx', x); c.setAttribute('cy', y);
+      dot.removeAttribute('hidden');
+      if (at === today || cur.hasAttribute('hidden')) show(today, true);
+      setTimeout(tick, 60000 - (t.getUTCSeconds() * 1000 + t.getUTCMilliseconds()) + 50);
+    }
+    key.style.left = (G.x0 / G.vw * 100) + '%'; key.style.width = ((G.x1 - G.x0) / G.vw * 100) + '%';
+    key.style.top = (G.y0 / G.vh * 100) + '%'; key.style.height = ((G.y1 - G.y0) / G.vh * 100) + '%';
+    var dayAt = function (e) {
+      var r = key.getBoundingClientRect();
+      return Math.max(0, Math.min(G.days - 1, Math.floor((e.clientX - r.left) / r.width * G.days)));
+    };
+    var down = null;
+    key.addEventListener('pointermove', function (e) { if (e.pointerType !== 'touch') show(dayAt(e)); });
+    key.addEventListener('pointerleave', function (e) { if (e.pointerType !== 'touch' && document.activeElement !== key) show(today, true); });
+    key.addEventListener('pointerdown', function (e) { down = [e.clientX, e.clientY]; });
+    key.addEventListener('pointerup', function (e) {                    // a tap reads its day; a swipe scrolls the box
+      if (down && Math.abs(e.clientX - down[0]) + Math.abs(e.clientY - down[1]) < 8) show(dayAt(e));
+      down = null;
+    });
+    key.addEventListener('keydown', function (e) {
+      var to = { ArrowRight: at + 1, ArrowLeft: at - 1, PageUp: at - 30, PageDown: at + 30, Home: 0, End: G.days - 1 }[e.key];
+      if (to === undefined) return;
+      e.preventDefault(); show(Math.max(0, Math.min(G.days - 1, to)));
+    });
+    key.addEventListener('focus', function () { show(at); });
+    key.addEventListener('blur', function () { show(today, true); });
+    key.removeAttribute('hidden'); read.removeAttribute('hidden');
+    tick();
+    if (box.scrollWidth > box.clientWidth + 1) box.scrollLeft = xOf(today) / G.vw * box.scrollWidth - box.clientWidth / 2;
   })();
 
   /* ------------------------------------------------------------------------------------------- 4. the carriers */

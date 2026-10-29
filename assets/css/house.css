@@ -234,6 +234,91 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
 .now { font: 400 13px/1.5 var(--mono); color: var(--soft); }
 .parts dd .now { display: block; margin-top: 6px; }
 
+/* the year's light at the seat on /visit/ (round 23): the sun over Longyearbyen through the year, by the hours of
+   each day; the day in pale gold, warmer as the sun climbs; the twilights in blue; the night deepest. The reader's
+   today and now marked; a day read out under the pointer or the arrow keys. Wider than a phone, it scrolls in its box. */
+.yl { --yl-night: #0e172d; --yl-astro: #19284a; --yl-naut: #29416f; --yl-civil: #5673a6; --yl-day: #e3dcc5;
+  --yl-d10: #ecd8a0; --yl-d20: #f4cd76; --yl-d30: #fbbf48;
+  margin-top: clamp(44px, 5vw, 76px); padding-top: 16px; border-top: 1px solid var(--hair); }
+.yl__k { margin: 0 0 18px; font: 500 11.5px/1.4 var(--mono); letter-spacing: .08em; color: var(--faint); }
+.yl__scroll { overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; }
+.yl__plot { position: relative; min-width: 780px; }
+.yl__svg { display: block; width: 100%; height: auto; }
+.yl__night { fill: var(--yl-night); }
+.yl__b--astro { fill: var(--yl-astro); } .yl__b--naut { fill: var(--yl-naut); } .yl__b--civil { fill: var(--yl-civil); }
+.yl__b--day { fill: var(--yl-day); } .yl__b--d10 { fill: var(--yl-d10); } .yl__b--d20 { fill: var(--yl-d20); }
+.yl__b--d30 { fill: var(--yl-d30); }
+.yl__h { stroke: #fff; stroke-opacity: .16; }
+.yl__m { stroke: #fff; stroke-opacity: .07; }
+.yl__t { font: 400 12.5px var(--mono); fill: #5b5d62; }
+.yl__t--k { font-size: 11.5px; letter-spacing: .1em; fill: #4a4c51; }
+.yl__br { fill: none; stroke: #8d8e92; stroke-width: 1; }
+.yl__now line { stroke: #fff; stroke-width: 1.5; stroke-dasharray: 3 3; }
+.yl__now circle { fill: #fff; stroke: var(--ink); stroke-width: 2.5; }
+.yl__cur { stroke: #fff; stroke-width: 2; filter: drop-shadow(0 0 1.5px rgba(0, 0, 0, .55)); }
+.yl__key { position: absolute; border-radius: 10px; cursor: crosshair; touch-action: pan-x pan-y; }
+.yl__read { min-height: 1.5em; margin: 16px 0 0; font: 500 16px/1.5 var(--sans); color: var(--ink); }
+.yl__cap { max-width: 76ch; margin: 8px 0 0; font-size: 15px; line-height: 1.5; color: var(--soft); }
+.yl__legend { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 16px 0 0; padding: 0; list-style: none;
+  font: 400 12px/1.4 var(--mono); color: var(--soft); }
+.yl__sw { display: inline-block; width: 12px; height: 12px; margin-right: 8px; border-radius: 3px; vertical-align: -1px; }
+.yl__sw--night { background: var(--yl-night); } .yl__sw--astro { background: var(--yl-astro); }
+.yl__sw--naut { background: var(--yl-naut); } .yl__sw--civil { background: var(--yl-civil); }
+.yl__sw--day { background: var(--yl-day); box-shadow: inset 0 0 0 1px rgba(18, 20, 23, .12); }
+.yl__sw--d10 { background: var(--yl-d10); } .yl__sw--d20 { background: var(--yl-d20); } .yl__sw--d30 { background: var(--yl-d30); }
+
+/* the lodging slip on /reply/ (round 23): thermal paper out of the desk's printer, its torn edge, the desk's stamp;
+   its parts and their names beside it light each other under the pointer */
+.slipsec__body { grid-column: 4 / -1; display: grid; grid-template-columns: minmax(0, 384px) minmax(0, 1fr);
+  gap: clamp(28px, 5vw, 80px); align-items: start; padding-top: 22px; border-top: 1px solid var(--hair); }
+.slip { margin: 0; min-width: 0; }
+.slip__feed { position: relative; z-index: 1; margin-bottom: -6px; padding: 14px 12px 0; overflow: hidden; }
+.slip__paper { position: relative; padding: 24px 22px 30px; background: #fcfbf7; color: #26282c;
+  font: 400 12.5px/1.55 var(--mono); filter: drop-shadow(0 1px 1px rgba(20, 22, 26, .1)) drop-shadow(0 10px 16px rgba(20, 22, 26, .09)); }
+.slip__paper::before { content: ""; position: absolute; left: 0; right: 0; bottom: 100%; height: 7px;
+  background: conic-gradient(from 135deg at 50% 0, #fcfbf7 90deg, transparent 0) 0 0 / 14px 7px repeat-x; }
+.slip__mouth { position: relative; z-index: 2; height: 12px; margin-inline: -6px; border-radius: 7px;
+  background: linear-gradient(#3a3d42, #121417 70%); box-shadow: 0 -1px 0 rgba(255, 255, 255, .55), inset 0 2px 3px rgba(0, 0, 0, .5); }
+.slip__spec { position: absolute; inset: 0; z-index: 0; display: grid; place-items: center; margin: 0; overflow: hidden;
+  font: 700 46px/1 var(--sans); font-stretch: 112%; letter-spacing: .28em; color: rgba(18, 20, 23, .045); transform: rotate(-26deg); pointer-events: none; }
+.slip__paper > :not(.slip__spec):not(.slip__stamp) { position: relative; z-index: 1; }
+.slip__head { padding-bottom: 12px; border-bottom: 1px dashed #c9c5ba; }
+.slip__reg { margin: 0; font: 640 10.5px/1.3 var(--sans); font-stretch: 125%; letter-spacing: .24em; }
+.slip__desk { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 12px 0 0;
+  font: 500 11.5px/1.3 var(--mono); letter-spacing: .06em; }
+.slip__code { font: 600 22px/1 var(--mono); letter-spacing: .04em; }
+.slip__at { margin: 4px 0 0; font-size: 11.5px; color: #5b5d62; }
+.slip__nk { margin: 18px 0 0; font: 500 10.5px/1.3 var(--mono); letter-spacing: .12em; color: #5b5d62; }
+.slip__no { margin: 4px 0 0; font: 500 clamp(22px, 2.3vw, 27px)/1.2 var(--mono); color: var(--ink); white-space: nowrap; }
+.slip .slip__rows { display: grid; gap: 9px; margin: 18px 0 0; padding-top: 14px; border-top: 1px dashed #c9c5ba; border-bottom: 0; }
+.slip .slip__rows > div { display: grid; grid-template-columns: 10.5ch minmax(0, 1fr); column-gap: 14px; align-items: baseline;
+  padding: 0; border: 0; }
+.slip .slip__rows dt { font: 500 10px/1.3 var(--mono); letter-spacing: .1em; color: #67686d; }
+.slip .slip__rows dd { margin: 0; max-width: none; font: 400 12.5px/1.45 var(--mono); color: #26282c; }
+.slip__end { margin-top: 18px; padding-top: 12px; border-top: 1.5px solid #26282c; }
+.slip__lodged { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; margin: 0; font: 600 13px/1.4 var(--mono); }
+.slip__eor { display: flex; align-items: center; gap: 10px; margin: 16px 0 0; font: 500 10.5px/1 var(--mono); letter-spacing: .3em; color: #5b5d62; }
+.slip__eor::before, .slip__eor::after { content: ""; flex: 1; border-top: 1px solid #d3cfc4; }
+.slip__stamp { position: absolute; z-index: 2; right: 18px; bottom: 84px; display: grid; gap: 2px; margin: 0; padding: 6px 11px;
+  border: 1.6px solid #b8400f; border-radius: 6px; color: #b8400f; font: 600 10.5px/1.2 var(--mono); letter-spacing: .1em;
+  text-align: center; transform: rotate(-7deg); mix-blend-mode: multiply; opacity: .9; }
+.slip [data-k] { border-radius: 2px; transition: background-color .14s ease-out, box-shadow .14s ease-out; }
+.slip [data-k].is-on { background: #ffefb8; box-shadow: 0 0 0 3px #ffefb8; }
+.slip__cap { margin-top: 16px; padding-inline: 6px; font-size: 14px; line-height: 1.5; color: var(--soft); }
+.slip__cap .cite { display: block; margin-top: 4px; font: 400 12px/1.4 var(--mono); color: var(--faint); }
+.slip__keys { display: grid; gap: 24px; align-content: start; margin: 0; padding: 4px 0 0; list-style: none; }
+.slip__kt { display: flex; align-items: center; gap: 10px; margin: 0; font: 560 16px/1.3 var(--sans); }
+.slip__kn { display: inline-grid; place-items: center; flex: none; width: 22px; height: 22px; border: 1px solid var(--ink); border-radius: 50%;
+  font: 500 11px/1 var(--mono); transition: background-color .14s ease-out, color .14s ease-out; }
+.slip__keys li.is-on .slip__kn { background: var(--ink); color: var(--ground); }
+.slip__kd { margin: 6px 0 0 32px; font-size: 15px; line-height: 1.5; color: #2b2d31; max-width: 46ch; }
+.slip__kd .cite { display: block; margin-top: 4px; font: 400 12px/1.4 var(--mono); color: var(--faint); }
+.slip.is-ready .slip__paper { transform: translateY(103%); }
+.slip.is-ready.is-printed .slip__paper { transform: none; transition: transform 1.5s cubic-bezier(.3, .05, .25, 1); }
+@media (max-width: 900px) { .slipsec__body { grid-column: 1 / -1; } }
+@media (max-width: 640px) { .slipsec__body { grid-template-columns: minmax(0, 1fr); } .slip { max-width: 384px; } }
+@media (prefers-reduced-motion: reduce) { .slip [data-k], .slip__kn { transition: none; } }
+
 /* cross-document transitions: the photograph keeps its place between the home and its page */
 @media (prefers-reduced-motion: no-preference) {
   @view-transition { navigation: auto; }
