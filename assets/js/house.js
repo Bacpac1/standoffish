@@ -3,7 +3,8 @@
    1. The rooms. Each of the Register's photographs has a depth (near = white). As the page is read, the camera
       passes the room by a few millimetres: the act at the centre of the picture stays where it is, the room
       opens around it. The picture's frame and its stamp stay put. WebGL2 only; never under reduced motion.
-   2. The seat. The time in Longyearbyen, and whether the sun rises there today. */
+   2. The seat. The time in Longyearbyen, and whether the sun rises there today.
+   3. The desks. A filter by service over the list of desks, which is whole without it. */
 (function () {
   'use strict';
   var root = document.documentElement;
@@ -229,5 +230,27 @@
       setTimeout(show, 60000 - (now.getSeconds() * 1000 + now.getMilliseconds()) + 50);
     };
     show();
+  }
+
+  /* ------------------------------------------------------------------------------------------- 3. the desks */
+  var filt = document.querySelector('[data-desk-filter]');
+  if (filt) {
+    var all = function (sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); };
+    var desks = all('.desk[data-f]'), boxes = all('[data-group], .dcont, .dregion');
+    var count = filt.querySelector('[data-desk-count]');
+    var buttons = Array.prototype.slice.call(filt.querySelectorAll('button[data-f]'));
+    var apply = function (f) {
+      var n = 0;
+      desks.forEach(function (d) {
+        var on = f === 'all' || (' ' + d.getAttribute('data-f') + ' ').indexOf(' ' + f + ' ') >= 0;
+        d.hidden = !on; if (on) n++;
+      });
+      boxes.forEach(function (b) { b.hidden = !b.querySelector('.desk:not([hidden])'); });
+      buttons.forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-f') === f ? 'true' : 'false'); });
+      count.textContent = n + (n === 1 ? ' desk' : ' desks');
+    };
+    buttons.forEach(function (b) { b.addEventListener('click', function () { apply(b.getAttribute('data-f')); }); });
+    filt.hidden = false;
+    apply('all');
   }
 })();
