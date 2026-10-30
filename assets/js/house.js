@@ -971,23 +971,150 @@
              stop: function () { r.gone = true; r.on = false; r.sync(); if (io) io.disconnect(); crowd.splice(crowd.indexOf(r), 1); } };
   }
 
+  // The house's machines (round 25): purpose-built and as common as the furniture, each drawn over the picture from
+  // boxes in the house's tones, the near faces' meeting folded and the outline round what is seen. A machine's light,
+  // a short strip in the accent, is the nearest thing to an eye it has (the industry code bars the infant schema).
+  var LIT = '#5b8dd3';
+  function Box(par, T, tone) {
+    tone = tone || {};
+    var o = { g: mk('g', {}, par) };
+    o.top = mk('path', { 'class': 'lv-fill', fill: tone.top || INK.top }, o.g);
+    o.fy = mk('path', { 'class': 'lv-fill', fill: tone.y || INK.left }, o.g);
+    o.fx = mk('path', { 'class': 'lv-fill', fill: tone.x || INK.right }, o.g);
+    var k = T.k || 1;                                          // a phone's picture: its machines' lines lighter
+    o.fold = mk('path', { 'class': 'lv-line', fill: 'none', stroke: INK.ink, 'stroke-width': 0.55 * k, 'stroke-linejoin': 'round' }, o.g);
+    o.sil = mk('path', { 'class': 'lv-line', fill: 'none', stroke: INK.ink, 'stroke-width': (tone.w || 0.85) * k, 'stroke-linejoin': 'round' }, o.g);
+    o.set = function (x0, x1, y0, y1, z0, z1) {
+      if (x1 - x0 < 0.05 || y1 - y0 < 0.05 || z1 - z0 < 0.05) { o.g.style.display = 'none'; return o; }
+      o.g.style.display = '';
+      var a = T(x0, y0, z1), b = T(x1, y0, z1), c = T(x1, y1, z1), d = T(x0, y1, z1), e = T(x1, y0, z0), f = T(x1, y1, z0), h = T(x0, y1, z0);
+      o.top.setAttribute('d', poly([a, b, c, d]));
+      o.fy.setAttribute('d', poly([d, c, f, h]));
+      o.fx.setAttribute('d', poly([b, e, f, c]));
+      o.fold.setAttribute('d', line([d, c, b]) + line([c, f]));
+      o.sil.setAttribute('d', poly([a, b, e, f, h, d]));
+      return o;
+    };
+    o.hide = function () { o.g.style.display = 'none'; return o; };
+    return o;
+  }
+  // a flat strip on a box's near face: on the plane y = c from x0 to x1, or on the plane x = c from y0 to y1
+  function Strip(par, T, fill) {
+    var o = { p: mk('path', { 'class': 'lv-fill', fill: fill }, par) };
+    o.y = function (c, x0, x1, z0, z1) { o.p.setAttribute('d', poly([T(x0, c, z0), T(x1, c, z0), T(x1, c, z1), T(x0, c, z1)])); return o; };
+    o.x = function (c, y0, y1, z0, z1) { o.p.setAttribute('d', poly([T(c, y0, z0), T(c, y1, z0), T(c, y1, z1), T(c, y0, z1)])); return o; };
+    return o;
+  }
+  // a machine's moves, written in their order: each channel held, then eased (cubic-bezier(.4, 0, .2, 1)) to its next
+  // value; go() moves channels together and advances the plan's clock, also() moves others alongside it
+  function Plan(init) {
+    var K = {}, now = 0;
+    for (var k in init) K[k] = [[0, init[k]]];
+    function key(k, v, t0, t1) { var ks = K[k], l = ks[ks.length - 1]; if (t0 > l[0]) ks.push([t0, l[1]]); ks.push([t1, v]); }
+    return {
+      at: function () { return now; },
+      wait: function (d) { now += d; return now; },
+      go: function (m, d) { for (var k in m) key(k, m[k], now, now + d); now += d; return now; },
+      also: function (m, t0, d) { for (var k in m) key(k, m[k], t0, t0 + d); return t0 + d; },
+      val: function (k, t) {
+        var ks = K[k];
+        if (t <= ks[0][0]) return ks[0][1];
+        for (var i = 1; i < ks.length; i++) if (t <= ks[i][0]) {
+          var a = ks[i - 1], b = ks[i];
+          return b[0] > a[0] ? a[1] + (b[1] - a[1]) * std((t - a[0]) / (b[0] - a[0])) : b[1];
+        }
+        return ks[ks.length - 1][1];
+      }
+    };
+  }
+  function ride(d) { return 0.45 + Math.abs(d) / 180; }     // a run along the floor: its time for its length (cm)
+  // the right end wall stands before what is near it in the room: what is behind it stays hidden
+  function behindWall(svg, g, T, w) {
+    var cp = mk('clipPath', { id: 'lv-' + Math.random().toString(36).slice(2, 8) }, svg), hp = [], vb = svg.viewBox.baseVal;
+    for (var i = 0; i < 8; i++) hp.push(T(i & 1 ? w[3] : w[0], i & 2 ? w[4] : w[1], i & 4 ? w[5] : w[2]));
+    mk('path', { 'clip-rule': 'evenodd', d: 'M-10 -10H' + f1(vb.width + 10) + 'V' + f1(vb.height + 10) + 'H-10Z' + poly(hull(hp)) }, cp);
+    g.setAttribute('clip-path', 'url(#' + cp.id + ')');
+  }
+  // a machine's running gear, the same in each: a plinth set in under its body (its wheels), the body, a band of
+  // bumper round its foot, its light on its near face, a lid let into its top
+  function Chassis(par, T) {
+    var o = { plinth: Box(par, T, { top: INK.recess, y: INK.recess, x: INK.recess, w: 0.55 }), body: Box(par, T),
+              bump: Strip(par, T, INK.recess), bumpx: Strip(par, T, INK.recess), lamp: Strip(par, T, LIT),
+              lid: Box(par, T, { top: INK.paper, w: 0.55 }) };
+    // x: its middle; y0, y1: its far and near faces; w: its half width; z0: the floor; h: its height; lit: its
+    // light's strength; lw: its light's length, as a part of the width
+    o.set = function (x, y0, y1, w, z0, h, lit, lw) {
+      lw = lw || 0.36;
+      o.plinth.set(x - w + 3, x + w - 3, y0 + 3, y1 - 3, z0, z0 + 1.6);
+      o.body.set(x - w, x + w, y0, y1, z0 + 1.6, z0 + h);
+      var bh = z0 + 2.2 + Math.min(3.2, 0.2 * h);
+      o.bump.y(y1 + 0.02, x - w + 0.3, x + w - 0.3, z0 + 2.2, bh);
+      o.bumpx.x(x + w + 0.02, y0 + 0.3, y1 - 0.3, z0 + 2.2, bh);
+      o.lamp.y(y1 + 0.04, x - lw * w, x + lw * w, z0 + h - 5.4, z0 + h - 4.2);
+      o.lamp.p.style.opacity = lit.toFixed(3);
+      o.lid.set(x - w + 3, x + w - 3, y0 + 3, y1 - 3, z0 + h, z0 + h + 1.1);
+    };
+    return o;
+  }
+
   var SCENES = {
-    // Replies, a turn of 12 s, in the house's own causes: at each position in turn (the first at 0.8 s, the third at
-    // 3.4 s, the second at 5.3 s) an envelope stands in the slot, its foot already in it, and the slot draws it in, 20 cm
-    // in 0.48 s, straight down; the bezel answers (0.18 s); then the record is set on the three displays, the position's
-    // own first and its neighbours after, 0.12 s apart, each line whole. The records stand together; at 8.2 s the
-    // window's bar runs once (0.8 s) and what was held is carried (0.24 s); the displays go back to rest, a little lit,
-    // their line at their foot.
-    reply: function (L, T, g) {
-      var S = [0.8, 5.3, 3.4], EXP = 20, IN = 0.48, ANS = 0.18, STEP = 0.12, WIN = 8.2, BAR = 0.8, CLR = 0.24;
-      var order = [0, 2, 1];                                     // the positions in the order they lodge
+    // Replies, a turn of 17.2 s, in the house's own causes. The courier comes up to each position in turn, from the
+    // left: it runs into the bay, reaches over the counter with the envelope it holds, sets the envelope's foot in the
+    // slot and lets go; the slot draws it in, 20 cm in 0.48 s, straight down, and the bezel answers (0.18 s); the
+    // record is set on the three displays, the position's own first and its neighbours after, 0.12 s apart, each line
+    // whole. Between positions the courier takes the next envelope from its tote. At the window (1.6 s after the third)
+    // the bar runs once (0.8 s) and what was held is carried (0.24 s); the displays go back to rest, a little lit, their
+    // line at their foot. The courier goes out by the door with its tote empty and comes back with it full.
+    reply: function (L, T, g, dim, svg) {
+      var EXP = 20, IN = 0.48, ANS = 0.18, STEP = 0.12, BAR = 0.8, CLR = 0.24, F0 = L.floor;
+      var order = [0, 1, 2];                                     // the positions in the order they lodge
+      var TOP = L.pos[0].slot[4];                                // the counters' top, at the slot
+      var XS = L.pos.map(function (p) { return (p.slot[0] + p.slot[2]) / 2; });
+      var YS = (L.pos[0].slot[1] + L.pos[0].slot[3]) / 2;
+      // the courier: its body 42 by 40 cm and 21 high; the tote at its head (toward the counters), its mast behind;
+      // the arm on a collar on the mast, reaching toward the counters, its jaw holding an envelope (DL, 22 by 11 cm,
+      // on its short edge) by its head. LANE and BAY: the body's head out in the room and in a bay at the counter.
+      var LANE = 112, BAYY = 79, OUTX = L.wall[0] - 23, RIM = F0 + 32;
+      var TOTE = [13, 9, 5];                                     // where each envelope stands in the tote, from its head
+      var ZPICK = F0 + 43, ZLIFT = TOP + 23.6, ZPUT = TOP + 19;  // the jaw: at an envelope in the tote; carrying; at the slot
+      var EPUT = BAYY + 18 - YS;                                 // the arm's reach over the counter, to the slot
+      var P = Plan({ x: XS[0], yb: LANE, za: ZLIFT, e: 18 - TOTE[0] });
+      var put = [], picked = [], S = [], out = 0, back = 0;
+      P.wait(0.3);
+      XS.forEach(function (x, p) {
+        if (p) {                                                 // the run to the next position, taking its envelope
+          var t0 = P.at();
+          P.also({ e: 18 - TOTE[p] }, t0 + 0.05, 0.3);
+          P.also({ za: ZPICK }, t0 + 0.4, 0.35);
+          picked[p] = t0 + 0.8;
+          P.also({ za: ZLIFT }, t0 + 0.85, 0.45);
+          P.go({ x: x }, ride(x - XS[p - 1]));
+        }
+        P.go({ yb: BAYY }, 0.5);
+        P.go({ e: EPUT }, 0.7);
+        put[p] = P.go({ za: ZPUT }, 0.28);
+        S[p] = P.wait(0.12);                                     // the jaw opens; the slot takes it
+        P.go({ za: ZLIFT, e: 6 }, 0.55);
+        P.go({ yb: LANE }, 0.5);
+      });
+      P.go({ x: OUTX }, ride(OUTX - XS[2]));
+      out = P.at();
+      back = P.wait(0.6);                                        // out of sight by the door: the tote filled again
+      var t1 = P.at();
+      P.also({ e: 18 - TOTE[0] }, t1 + 1.6, 0.3);
+      P.also({ za: ZPICK }, t1 + 1.95, 0.35);
+      picked[0] = t1 + 2.35;
+      P.also({ za: ZLIFT }, t1 + 2.4, 0.45);
+      P.go({ x: XS[0] }, ride(OUTX - XS[0]));
+      var TURN = P.at(), WIN = S[2] + 1.6;
+
       var pos = L.pos.map(function (p, q) {
         var d = p.disp, y = d[4], b = p.bezel, sl = p.slot;
         var o = { g: mk('g', {}, g), d: d };
         o.flash = mk('path', { 'class': 'lv-fill', fill: '#7d9fce', 'fill-rule': 'evenodd',
                                d: poly([T(b[0], b[1], b[4]), T(b[2], b[1], b[4]), T(b[2], b[3], b[4]), T(b[0], b[3], b[4])]) +
                                   poly([T(sl[0], sl[1], sl[4]), T(sl[2], sl[1], sl[4]), T(sl[2], sl[3], sl[4]), T(sl[0], sl[3], sl[4])]) }, o.g);
-        // the envelope: on its short edge in the middle of the slot, its face to the room
+        // the envelope in the slot: on its short edge in the middle of the slot, its face to the room
         o.env = mk('g', {}, o.g);
         o.ef = mk('path', { 'class': 'lv-fill', fill: INK.paper }, o.env);
         o.et = mk('path', { 'class': 'lv-fill', fill: INK.top }, o.env);
@@ -1003,28 +1130,76 @@
         o.bar = mk('path', { 'class': 'lv-line', fill: 'none', stroke: INK.accent, 'stroke-width': 1.4, 'stroke-linecap': 'round' }, o.g);
         return o;
       });
+      // an envelope standing, as a thin box: its face (to the room), its head and its edge
+      function envelope(par) {
+        var o = { g: mk('g', {}, par) };
+        o.f = mk('path', { 'class': 'lv-fill', fill: INK.paper }, o.g);
+        o.t = mk('path', { 'class': 'lv-fill', fill: INK.top }, o.g);
+        o.r = mk('path', { 'class': 'lv-fill', fill: INK.right }, o.g);
+        o.o = mk('path', { 'class': 'lv-line', fill: 'none', stroke: INK.ink, 'stroke-width': 0.85 * (T.k || 1), 'stroke-linejoin': 'round' }, o.g);
+        o.set = function (x, y, za, zb) {
+          if (zb - za < 0.3) { o.g.style.display = 'none'; return; }
+          o.g.style.display = '';
+          var xa = x - 5.5, xb = x + 5.5, ya = y - 0.25, yb = y + 0.25;
+          o.f.setAttribute('d', poly([T(xa, yb, za), T(xb, yb, za), T(xb, yb, zb), T(xa, yb, zb)]));
+          o.t.setAttribute('d', poly([T(xa, ya, zb), T(xb, ya, zb), T(xb, yb, zb), T(xa, yb, zb)]));
+          o.r.setAttribute('d', poly([T(xb, ya, za), T(xb, yb, za), T(xb, yb, zb), T(xb, ya, zb)]));
+          o.o.setAttribute('d', poly([T(xa, yb, za), T(xa, yb, zb), T(xa, ya, zb), T(xb, ya, zb), T(xb, ya, za)]) + line([T(xb, yb, za), T(xb, yb, zb), T(xa, yb, zb)]));
+        };
+        return o;
+      }
+      // the courier, drawn after the positions: it stands before them
+      var rb = mk('g', {}, g);
+      behindWall(svg, rb, T, L.wall);
+      var ch = Chassis(rb, T);
+      var tote = Box(rb, T, { top: INK.recess });
+      var inTote = [envelope(rb), envelope(rb), envelope(rb)];   // from the far end of the tote: 2, 1, 0
+      var arm2 = Box(rb, T, { w: 0.55 }), arm1 = Box(rb, T, { w: 0.55 }), held = envelope(rb), jaw = Box(rb, T);
+      var mast = Box(rb, T), cap = Box(rb, T), collar = Box(rb, T);
       // when the record of position p reaches the display of position q: the own display first, then the nearer
       function at(p, q) {
         var n = [0, 1, 2].sort(function (a, b) { return Math.abs(a - p) - Math.abs(b - p) || a - b; }).indexOf(q);
         return S[p] + IN + ANS + STEP * n;
       }
       return function (t) {
-        t = t % 12;
+        t = t % TURN;
+        // the courier
+        var x = P.val('x', t), yb = P.val('yb', t), za = P.val('za', t), e = P.val('e', t), yg = yb + 18 - e;
+        var busy = t < out ? 0.45 + 0.55 * clamp((t - 0.3) / 0.3, 0, 1) : 0.45;
+        ch.set(x, yb, yb + 40, 21, F0, 21, busy);
+        tote.set(x - 9, x + 9, yb + 2, yb + 16, F0 + 21, RIM);
+        // what is in the tote: after the door, three; each taken in its turn
+        var n = [t < picked[1] || t >= back, t < picked[2] || t >= back, t >= back && t < picked[0]];  // 1, 2, 0
+        [[2, 5], [1, 9], [0, 13]].forEach(function (k, i) {
+          var here = k[0] === 0 ? n[2] : n[k[0] - 1];
+          if (here) inTote[i].set(x, yb + k[1], RIM, F0 + 44); else inTote[i].set(0, 0, 0, 0);
+        });
+        // the arm: two lengths, the inner drawn out of the outer
+        var root = yb + 18, mid = Math.max(yg + 1.5, root - 36);
+        arm2.set(x - 2, x + 2, yg + 1.5, mid, za + 2.2, za + 5.3);
+        arm1.set(x - 3, x + 3, mid, root, za + 1.5, za + 6);
+        var holding = (t < put[0]) || (t >= picked[1] && t < put[1]) || (t >= picked[2] && t < put[2]) || (t >= picked[0]);
+        if (holding) held.set(x, yg, e < 18 ? Math.max(za - 21, RIM) : za - 21, za - 2.5); else held.set(0, 0, 0, 0);
+        jaw.set(x - 7, x + 7, yg - 1.6, yg + 1.6, za - 2.5, za + 1.5);
+        mast.set(x - 3.5, x + 3.5, yb + 20, yb + 26, F0 + 22.1, F0 + 140);
+        cap.set(x - 4.5, x + 4.5, yb + 19, yb + 27, F0 + 140, F0 + 142.5);
+        collar.set(x - 5.5, x + 5.5, yb + 18, yb + 28, za + 0.5, za + 7.5);
+        // the positions
         pos.forEach(function (o, q) {
           var d = o.d, y = d[4];
-          // the envelope: shown standing (0.3 s), drawn in at its time
-          var e = t - S[q], show = clamp((e + 0.7) / 0.3, 0, 1), exp = e < 0 ? EXP : EXP * (1 - std(e / IN));
-          if (e < -0.7 || exp <= 0.2) o.env.style.opacity = '0';
+          // the envelope in the slot: set there by the courier, drawn in once the jaw has let it go
+          var e2 = t - S[q], exp = e2 < 0 ? EXP : EXP * (1 - std(e2 / IN));
+          if (t < put[q] || exp <= 0.2) o.env.style.opacity = '0';
           else {
-            o.env.style.opacity = show.toFixed(3);
-            var xa = o.ex - 5.5, xb = o.ex + 5.5, ya = o.ey - 0.25, yb = o.ey + 0.25, za = o.ez, zb = o.ez + exp;
-            o.ef.setAttribute('d', poly([T(xa, yb, za), T(xb, yb, za), T(xb, yb, zb), T(xa, yb, zb)]));
-            o.et.setAttribute('d', poly([T(xa, ya, zb), T(xb, ya, zb), T(xb, yb, zb), T(xa, yb, zb)]));
-            o.er.setAttribute('d', poly([T(xb, ya, za), T(xb, yb, za), T(xb, yb, zb), T(xb, ya, zb)]));
-            o.eo.setAttribute('d', poly([T(xa, yb, za), T(xa, yb, zb), T(xa, ya, zb), T(xb, ya, zb), T(xb, ya, za)]) + line([T(xb, yb, za), T(xb, yb, zb), T(xa, yb, zb)]));
+            o.env.style.opacity = '1';
+            var xa = o.ex - 5.5, xb = o.ex + 5.5, ya = o.ey - 0.25, yb2 = o.ey + 0.25, z0 = o.ez, z1 = o.ez + exp;
+            o.ef.setAttribute('d', poly([T(xa, yb2, z0), T(xb, yb2, z0), T(xb, yb2, z1), T(xa, yb2, z1)]));
+            o.et.setAttribute('d', poly([T(xa, ya, z1), T(xb, ya, z1), T(xb, yb2, z1), T(xa, yb2, z1)]));
+            o.er.setAttribute('d', poly([T(xb, ya, z0), T(xb, yb2, z0), T(xb, yb2, z1), T(xb, ya, z1)]));
+            o.eo.setAttribute('d', poly([T(xa, yb2, z0), T(xa, yb2, z1), T(xa, ya, z1), T(xb, ya, z1), T(xb, ya, z0)]) + line([T(xb, yb2, z0), T(xb, yb2, z1), T(xa, yb2, z1)]));
           }
           // the bezel answers once the envelope is in
-          var a = e - IN;
+          var a = e2 - IN;
           o.flash.style.opacity = a >= 0 && a < ANS ? (0.75 * Math.sin(Math.PI * a / ANS)).toFixed(3) : '0';
           // the display: lit from the first record set on it until what was held is carried
           var first = Math.min(at(0, q), at(1, q), at(2, q)) - 0.15, gone = clamp((t - WIN - BAR) / CLR, 0, 1);
@@ -1047,9 +1222,11 @@
     // Certification, a day of 20 s from ten in the morning: twelve seconds of daylight, two of dusk, four of night (at
     // twice the pace, eased in and out over a quarter of a second) and two of dawn; the clock's one hand goes on with
     // it, always forward; the high window's glass from the day's #DDE5E5 to dusk and night; the room's faces a little
-    // darker at night, at most six in a hundred, the lines as they are
-    certify: function (L, T, g, dim) {
-      var c = L.clock, cx = c[0], cy = c[1], cz = c[2], r = c[3], hand = c[4], gl = L.glass;
+    // darker at night, at most six in a hundred, the lines as they are. The floor's unit keeps its dock at the back
+    // wall, under the high window, by day; at dusk it goes over the floor between the bench and the standing desk, out
+    // to the front and along it, and is back before dawn.
+    certify: function (L, T, g, dim, svg) {
+      var c = L.clock, cx = c[0], cy = c[1], cz = c[2], r = c[3], hand = c[4], gl = L.glass, F0 = L.floor;
       var face = [];
       for (var i = 0; i < 48; i++) { var an = 2 * Math.PI * i / 48; face.push(T(cx + 0.87 * r * Math.cos(an), cy, cz + 0.87 * r * Math.sin(an))); }
       var glass = mk('path', { 'class': 'lv-fill', d: poly([T(gl[0], gl[4], gl[2]), T(gl[1], gl[4], gl[2]), T(gl[1], gl[4], gl[3]), T(gl[0], gl[4], gl[3])]) }, g);
@@ -1076,6 +1253,19 @@
         return SKY[0][1];
       }
       function dark(h) { return h < 5 || h > 21 ? 1 : h < 7 ? 1 - (h - 5) / 2 : h > 19 ? (h - 19) / 2 : 0; }
+      // the floor's unit, 48 by 40 cm and 10 high, and its dock: a plate on the floor, its contacts on the back wall.
+      // Its runs keep to the floor that nothing in the room stands before: between the bench and the standing desk
+      // (the desk's top passes over what is that far from it) and along the front, short of the desk's near legs.
+      var X0 = L.glass[0] + 30, Y0 = cy + 24, wy = cy - 4;
+      var rb = mk('g', {}, g);
+      behindWall(svg, rb, T, L.wall);
+      Box(rb, T, { top: '#e7ecea', w: 0.55 }).set(X0 - 30, X0 + 30, wy + 0.5, wy + 58, F0, F0 + 0.5);
+      Box(rb, T).set(X0 - 9, X0 + 9, wy, wy + 4, F0 + 0.5, F0 + 15);
+      var ch = Chassis(rb, T), pod = Box(rb, T, { w: 0.55 }), podLamp = Strip(rb, T, LIT);
+      var P = Plan({ x: X0, y: Y0 });
+      P.wait(10.2);
+      P.go({ y: 298 }, 1.45); P.go({ x: X0 + 108 }, 0.8); P.wait(0.1); P.go({ x: X0 }, 0.8); P.go({ y: Y0 }, 1.45);
+      var home = P.at();
       return function (t) {
         var h = hourAt(t), dk = inout(dark(h));
         glass.setAttribute('fill', sky(h));
@@ -1083,24 +1273,26 @@
         var a = (90 - 30 * h) * Math.PI / 180;
         hd.setAttribute('d', line([T(cx, cy, cz), T(cx + hand * r * Math.cos(a), cy, cz + hand * r * Math.sin(a))]));
         if (dim) dim.style.opacity = dk.toFixed(3);
+        var u = t % DAY, x = P.val('x', u), y = P.val('y', u);
+        var lit = u < 9.9 || u > home + 0.4 ? 0.35 : u < 10.2 ? 0.35 + 0.65 * (u - 9.9) / 0.3 : u < home ? 1 : 1 - 0.65 * (u - home) / 0.4;
+        ch.set(x, y - 20, y + 20, 24, F0, 10, lit, 0.62);
+        // its sensing pod at the back of its lid, touch and distance only: no lens
+        pod.set(x - 8, x + 8, y - 15, y - 6, F0 + 11.1, F0 + 14.6);
+        podLamp.y(y - 5.96, x - 5, x + 5, F0 + 12.4, F0 + 13.3);
+        podLamp.p.style.opacity = lit.toFixed(3);
       };
     },
 
-    // Records, a turn of 24 s: the marked row's eight drawers, from the left, at their times (0.8, 3.2, 6.0, 8.8,
-    // 12.8, 15.2, 18.0 and 20.8 s), one at a time: the store calls each (its sealed edge lit, 0.35 s), runs it out on
-    // its slides 11 cm (0.55 s), holds it (0.4 s) and closes it (0.6 s), cubic-bezier(.4, 0, .2, 1); the slide seen
-    // under the drawer's side while it is out, the edge going out after (0.5 s)
+    // Records, a turn of about 33 s: the store's runner goes along the racks from the left, to each drawer of the
+    // marked row in turn: its carriage, raised to the row on its mast, reaches the drawer's pull (0.3 s; the drawer's
+    // sealed edge lights as it is called), draws it out on its slides 11 cm (0.55 s), holds it while a card is moved
+    // (1.05 s) and runs it back (0.6 s), cubic-bezier(.4, 0, .2, 1), and lets it go; the slide seen under the drawer's
+    // side while it is out. At the first drawer of each rack a card is lifted out onto the carriage; at the second it is
+    // set in: a record carried from one drawer to the next. After the eighth the runner goes back to its place at the
+    // left of the racks, its carriage let down.
     records: function (L, T, g, dim, svg) {
-      var yf = L.yf, BAY = L.bay, MOD = L.mod, w = L.wall, OUT = 11, OPEN = 0.55, HOLD = 0.4, SHUT = 0.6;
-      var AT = [0.8, 3.2, 6.0, 8.8, 12.8, 15.2, 18.0, 20.8];
-      // the right end wall stands before the far end of the racks: what is behind it stays hidden
-      var cp = mk('clipPath', { id: 'lv-rec-' + Math.random().toString(36).slice(2, 8) }, svg);
-      var hp = [];
-      for (var i = 0; i < 8; i++) hp.push(T(i & 1 ? w[3] : w[0], i & 2 ? w[4] : w[1], i & 4 ? w[5] : w[2]));
-      var vb = svg.viewBox.baseVal;
-      mk('path', { 'clip-rule': 'evenodd', d: 'M-10 -10H' + f1(vb.width + 10) + 'V' + f1(vb.height + 10) + 'H-10Z' + poly(hull(hp)) }, cp);
-      g.setAttribute('clip-path', 'url(#' + cp.id + ')');
-      var LIT = '#5b8dd3';                                      // a drawer's sealed edge, lit while the store serves it
+      var yf = L.yf, BAY = L.bay, MOD = L.mod, OUT = 11, F0 = L.floor;
+      behindWall(svg, g, T, L.wall);
       var ds = L.drawers.map(function (dw) {
         var o = { x0: dw[0], z0: dw[1] }, sz = dw[1] + MOD - 0.6, sy = yf + 2.3;
         o.sig = mk('path', { 'class': 'lv-fill', fill: LIT, d: poly([T(dw[0] + 0.8, sy, sz - 3.4), T(dw[0] + BAY - 0.8, sy, sz - 3.4),
@@ -1118,15 +1310,43 @@
         o.sil = mk('path', { 'class': 'lv-line', fill: 'none', stroke: INK.ink, 'stroke-width': 0.85, 'stroke-linejoin': 'round' }, o.g);
         return o;
       });
-      var END = OPEN + HOLD + SHUT;
+      // the runner: its body 56 by 50 cm and 28 high, before the racks; its mast at its back, the carriage on the mast,
+      // its face to the drawers, on a slide out of a collar
+      var CIN = yf + 3.5, COUT = CIN + OUT + 0.8;                // the carriage's face: at a drawer's pull; clear of it
+      var XD = L.drawers.map(function (dw) { return dw[0] + BAY / 2; });
+      var DOCK = XD[0] - 39, ZW = L.drawers[0][1] + 1, ZR = ZW - 48;
+      var P = Plan({ x: DOCK, cz: ZR, cf: COUT }), held = [], cs = [], MOVE = 0.85;
+      P.wait(0.5);
+      P.go({ cz: ZW }, 0.6);
+      XD.forEach(function (x, i) {
+        P.go({ x: x }, ride(x - (i ? XD[i - 1] : DOCK)));
+        var tc = P.go({ cf: CIN }, 0.3);
+        cs.push(P.go({ cf: CIN + OUT }, 0.55) + 0.1);            // the card moves while the drawer is held out
+        P.wait(MOVE + 0.2);
+        var tr = P.go({ cf: CIN }, 0.6);
+        P.go({ cf: COUT }, 0.25);
+        held.push([tc, tr]);
+      });
+      P.go({ x: DOCK, cz: ZR }, ride(XD[7] - DOCK));
+      var TURN = P.wait(0.6);
+      var rb = mk('g', {}, g);
+      var ch = Chassis(rb, T), car = Box(rb, T), slide = Box(rb, T, { w: 0.55 }), card = Box(rb, T, { y: INK.paper, w: 0.55 }),
+          lip = Box(rb, T, { w: 0.55 }), mast = Box(rb, T), cap = Box(rb, T), collar = Box(rb, T);
+      var CH = 9, CW = 22;                                       // the card: 44 by 9 cm, standing
+      // where the card is in its move from a drawer to the carriage (u from 0 to MOVE; back again for a drawer it is
+      // set in): up out of the drawer, over its front, down into the carriage's lip
+      function cardMove(u, yIn, zIn, zTop, yOn, zOn) {
+        var z = u < 0.35 ? zIn + (zTop - zIn) * std(u / 0.35) : u < 0.65 ? zTop : zTop + (zOn - zTop) * std((u - 0.65) / 0.2);
+        return [yIn + (yOn - yIn) * std((u - 0.35) / 0.3), z];
+      }
       return function (t) {
-        t = t % 24;
+        t = t % TURN;
+        var x = P.val('x', t), cz = P.val('cz', t), cf = P.val('cf', t), busy = 0;
         ds.forEach(function (o, i) {
-          var a = t - AT[i], d;
-          // its sealed edge lights as the store calls the drawer (0.35 s before it moves), and goes out after it closes
-          o.sig.style.opacity = (a < -0.35 ? 0 : a < 0 ? out3((a + 0.35) / 0.35) : a < END ? 1 : 1 - clamp((a - END) / 0.5, 0, 1)).toFixed(3);
-          if (a <= 0 || a >= END) d = 0;
-          else d = OUT * (a < OPEN ? std(a / OPEN) : a < OPEN + HOLD ? 1 : 1 - std((a - OPEN - HOLD) / SHUT));
+          var h = held[i], d = t >= h[0] && t <= h[1] ? clamp(cf - CIN, 0, OUT) : 0;
+          // its sealed edge lights as the runner reaches it, and goes out after it is let go
+          o.sig.style.opacity = (t < h[0] - 0.3 ? 0 : t < h[0] ? out3((t - h[0] + 0.3) / 0.3) : t < h[1] ? 1 : 1 - clamp((t - h[1]) / 0.5, 0, 1)).toFixed(3);
+          if (t >= h[0] - 0.3 && t <= h[1] + 0.25) busy = 1;
           if (d < 0.3) { o.g.style.display = 'none'; return; }
           o.g.style.display = '';
           var xa = o.x0 + 0.8, xb = o.x0 + BAY - 0.8, za = o.z0 + 0.6, zb = o.z0 + MOD - 0.6, yb = yf + 2.2 + d, yp = yf + d;
@@ -1140,8 +1360,8 @@
           var xm = o.x0 + BAY / 2, zm = o.z0 + MOD / 2 - 0.8;
           o.pull.setAttribute('d', poly([T(xm - 6, yb + 1.2, zm - 0.6), T(xm + 6, yb + 1.2, zm - 0.6), T(xm + 6, yb + 1.2, zm + 0.6), T(xm - 6, yb + 1.2, zm + 0.6)]));
           // the sheets standing in the tray, their heads seen from above
-          var sh = '';
-          for (var k = 1; k <= 3; k++) { var ys = yp - 5.5 * k; if (ys > y1 + 0.5) sh += line([T(xa + 2.5, ys, zb), T(xb - 2.5, ys, zb)]); }
+          var sh = '', inCard = i % 2 ? t > cs[i] + MOVE : t < cs[i];
+          for (var k = inCard ? 0.5 : 1; k <= 3; k += k < 1 ? 0.5 : 1) { var ys = yp - 5.5 * k; if (ys > y1 + 0.5) sh += line([T(xa + 2.5, ys, zb), T(xb - 2.5, ys, zb)]); }
           o.sheets.setAttribute('d', sh);
           // the folds: the front's head and its side; the panel's back, on the top and on the side; the tray's rim
           o.folds.setAttribute('d', line([T(xa, yb, zb), T(xb, yb, zb)]) +
@@ -1153,6 +1373,28 @@
             ? poly([T(xa, y1, zb), T(xb, y1, zb), T(xb, y3, zb), T(xb, y3, za), T(xb, yb, za), T(xa, yb, za), T(xa, yb, zb)])
             : poly([T(xa, y1, zb), T(xb, y1, zb), T(xb, yb, zb), T(xb, yb, za), T(xa, yb, za), T(xa, yb, zb)]));
         });
+        // the runner
+        var yb0 = yf + 20;
+        ch.set(x, yb0, yb0 + 50, 28, F0, 28, busy ? 1 : 0.45);
+        car.set(x - 24, x + 24, cf, cf + 4.5, cz, cz + 10);
+        slide.set(x - 2.5, x + 2.5, cf + 4.5, yb0 + 2, cz + 3.5, cz + 6.5);
+        // the card: from the first drawer of a rack onto the carriage, from the carriage into the second
+        var shown = false;
+        for (var j = 0; j < 4; j++) {
+          var a = cs[2 * j], b = cs[2 * j + 1];
+          if (t < a || t >= b + MOVE) continue;
+          var dw = L.drawers[t < b ? 2 * j : 2 * j + 1], zb = dw[1] + MOD - 0.6, zIn = dw[1] + 1.4;
+          var yIn = yf + OUT - 2.75, yOn = cf + 2.2, zOn = cz + 10.2, zTop = zb + 0.8, c;
+          c = t < a + MOVE ? cardMove(t - a, yIn, zIn, zTop, yOn, zOn) : t < b ? [yOn, zOn] : cardMove(MOVE - (t - b), yIn, zIn, zTop, yOn, zOn);
+          var over = c[0] < yf + OUT + 2.2;                      // over the drawer: what is below its top is in it
+          card.set(x - CW, x + CW, c[0] - 0.25, c[0] + 0.25, over ? Math.max(c[1], zb) : c[1], c[1] + CH);
+          shown = true;
+        }
+        if (!shown) card.hide();
+        lip.set(x - 23, x + 23, cf + 2.9, cf + 4.5, cz + 10, cz + 11.6);
+        mast.set(x - 4, x + 4, yb0 + 2, yb0 + 10, F0 + 29.1, F0 + 154);
+        cap.set(x - 5, x + 5, yb0 + 1, yb0 + 11, F0 + 154, F0 + 157);
+        collar.set(x - 6, x + 6, yb0 + 0.5, yb0 + 11.5, cz + 1, cz + 9.5);
       };
     }
   };
@@ -1185,6 +1427,7 @@
         small = s;
         var F = L.frames[s ? 's' : 'l'];
         var T = function (x, y, z) { return [((x - y) * C - F[0]) * F[2] + F[3], ((x + y) / 2 - z - F[1]) * F[2] + F[3]]; };
+        T.k = s ? 0.7 : 1;
         svg = mk('svg', { 'class': 'draw__live', viewBox: '0 0 ' + F[4] + ' ' + F[5], 'aria-hidden': 'true', focusable: 'false' });
         var g = mk('g', {}, svg);
         if (L.kind === 'certify') {             // the night over the whole drawing: its own shape, a little darker
