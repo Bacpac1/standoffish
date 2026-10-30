@@ -982,7 +982,7 @@
     o.top = mk('path', { 'class': 'lv-fill', fill: tone.top || INK.top }, o.g);
     o.fy = mk('path', { 'class': 'lv-fill', fill: tone.y || INK.left }, o.g);
     o.fx = mk('path', { 'class': 'lv-fill', fill: tone.x || INK.right }, o.g);
-    o.fold = mk('path', { 'class': 'lv-line', fill: 'none', stroke: INK.ink, 'stroke-width': 0.55 * k, 'stroke-linejoin': 'round' }, o.g);
+    o.fold = mk('path', { 'class': 'lv-line', fill: 'none', stroke: INK.ink, 'stroke-width': (tone.f || 0.55) * k, 'stroke-linejoin': 'round' }, o.g);
     o.sil = mk('path', { 'class': 'lv-line', fill: 'none', stroke: INK.ink, 'stroke-width': (tone.w || 0.85) * k, 'stroke-linejoin': 'round' }, o.g);
     o.set = function (x0, x1, y0, y1, z0, z1) {
       if (x1 - x0 < 0.05 || y1 - y0 < 0.05 || z1 - z0 < 0.05) { o.g.style.display = 'none'; return o; }
@@ -1480,6 +1480,131 @@
         shoe.set(x - 8, x + 8, ys - 1, yb0 + 11, cz - 1, cz + 12);
         cap.set(x - 6.5, x + 6.5, ys - 0.5, yb0 + 10.5, F0 + 156, F0 + 158);
       };
+    },
+
+    // The seat at Longyearbyen (round 26), a turn of 44 s in Astra's cadence: most of the house stands still, one
+    // thing moves at a time, two at most. A blank custody case rises into the write seat (0.6 s); the head comes down
+    // over it and writes (2.4 s, its light on) and goes up; the press beam comes down along its seam once and goes up;
+    // the stop drops and the case runs on the rollers to the lift (2.2 s); the lift takes it down through the floor to
+    // the store (3 s); there it runs on to the crane's table, and the crane carries it along its aisle and up to its
+    // lane (4 s), stands (0.45 s) and runs it into the lane (0.8 s), where its face takes its place among the others;
+    // the crane goes back to the lift and the lift goes up. Then a reply's case runs along its deck to the window seat
+    // and waits; at the window the contacts come down on it (0.6 s), its light comes on once while they hold (2.4 s),
+    // they go up (1 s) and the case goes back to its place on the deck. Without the script, and under reduced motion,
+    // the drawing stands as written: the cases in the store, the replies waiting, the machines parked.
+    seat: function (L, T, g, dim, svg) {
+      T.k = 1;
+      var M = L[T.small ? 's' : 'l'], F0 = M.floor, CW = M.case[0] / 2, CD = M.case[1] / 2, CH = M.case[2];
+      var PL = M.plat, LX = (PL[0] + PL[3]) / 2, ZTOP = PL[5], ZFOOT = M.crane[1];
+      var XT = M.lanes[M.target[0]], ZT = F0 + M.lv0 + M.target[1] * M.level, MOUTH = M.rack[2];
+      var SX = M.seat[0], SY = M.seat[1], SZ = M.seat[2], RX = M.held[2], WX = M.win[0], DZ = M.deck[2];
+      // the store's group, hidden where the hall's floor stands before it, under the hall's group
+      var gs = mk('g', {}, g), gh = mk('g', {}, g);
+      var cp = mk('clipPath', { id: 'lv-' + Math.random().toString(36).slice(2, 8) }, svg), hp = [], vb = svg.viewBox.baseVal;
+      for (var i = 0; i < 8; i++) hp.push(T(i & 1 ? M.x1 : 0, i & 2 ? M.ys : 0, i & 4 ? M.slab[1] : M.slab[0]));
+      mk('path', { 'clip-rule': 'evenodd', d: 'M-10 -10H' + f1(vb.width + 10) + 'V' + f1(vb.height + 10) + 'H-10Z' + poly(hull(hp)) }, cp);
+      gs.setAttribute('clip-path', 'url(#' + cp.id + ')');
+      var thin = { w: 0.85, f: 0.55 }, firm = { w: 1.4, f: 0.85 };
+      // a custody case: its body and the seam along its face
+      function Case(par) {
+        var o = { b: Box(par, T, thin), seam: mk('path', { 'class': 'lv-line', fill: 'none', stroke: INK.detail, 'stroke-width': 0.55 }, par) };
+        o.set = function (x, y, z0, y0min, z0min) {     // its middle, its foot; what is seen of it starts at y0min, z0min
+          var ya = Math.max(y - CD, y0min == null ? -1e9 : y0min), za = Math.max(z0 + 0.2, z0min == null ? -1e9 : z0min), zb = z0 + CH;
+          o.b.set(x - CW, x + CW, ya, y + CD, za, zb);
+          o.seam.setAttribute('d', zb - za > CH * 0.6 && y + CD - ya > 1 ? line([T(x - CW + 3, y + CD, z0 + CH / 2), T(x + CW - 3, y + CD, z0 + CH / 2)]) : '');
+        };
+        o.hide = function () { o.b.hide(); o.seam.setAttribute('d', ''); };
+        return o;
+      }
+      // the store: the lift's platform and a case on it (behind the crane), the crane, a case on its table
+      var platS = Box(gs, T, thin), caseL = Case(gs);
+      var truck = Box(gs, T, firm), table = Box(gs, T, thin);
+      var rollers = mk('path', { 'class': 'lv-line', fill: 'none', stroke: INK.detail, 'stroke-width': 0.55 }, gs);
+      var caseK = Case(gs), shoe = Box(gs, T, thin), mast = Box(gs, T, firm);
+      // the hall: the lift's platform and the case on it, at the seat and on the rollers; the head, its light, the
+      // press beam, the stop; the reply's case, the contacts, the window seat's light
+      var platH = Box(gh, T, thin), caseH = Case(gh), head = Box(gh, T, firm);
+      var hl = mk('path', { 'class': 'lv-fill', fill: LIT }, gh);
+      var beam = Box(gh, T, thin), stop = Box(gh, T, thin), reply = Case(gh), bar = Box(gh, T, thin);
+      var wl = mk('path', { 'class': 'lv-fill', fill: LIT, d: poly([T(M.lamp[0], M.lamp[2] + 0.02, M.lamp[3]), T(M.lamp[1], M.lamp[2] + 0.02, M.lamp[3]),
+                                                              T(M.lamp[1], M.lamp[2] + 0.02, M.lamp[4]), T(M.lamp[0], M.lamp[2] + 0.02, M.lamp[4])]) }, gh);
+      // the turn
+      var P = Plan({ cz: SZ - CH - 0.5, cx: SX, hz: M.head[2], bz: M.beam[2], st: M.stop[5], pz: ZTOP, kx: LX, kz: ZFOOT,
+                     ky: SY, rx: RX, wz: M.bar[2] });
+      P.go({ cz: SZ }, 0.6);                                     // a blank case rises into the seat
+      P.go({ hz: SZ + CH + 2 }, 0.4);                            // the head comes down over it
+      var w0 = P.at(), w1 = P.wait(2.4);                         // it writes
+      P.go({ hz: M.head[2] }, 0.4);
+      P.go({ bz: SZ + CH + 0.4 }, 0.5);                          // the press beam, along its seam
+      P.wait(0.25);
+      P.go({ bz: M.beam[2] }, 0.45);
+      P.go({ st: SZ + 0.5 }, 0.2);                               // the stop drops
+      var r0 = P.at();
+      P.run('cx', LX, 2.2);                                      // along the rollers, on to the lift
+      var l0 = P.go({ st: M.stop[5] }, 0.3);                     // the stop rises again behind it
+      var l1 = P.run('pz', ZFOOT, 3.0);                          // down through the floor to the store
+      P.wait(0.4);
+      var k0 = P.at();
+      P.go({ ky: 92 }, 0.6);                                     // on to the crane's table
+      P.wait(0.4);
+      var t0 = P.at();
+      P.also({ kz: ZT }, t0, 4.0);
+      P.run('kx', XT, 4.0);                                      // along the aisle and up to its lane
+      P.wait(0.45);
+      var i0 = P.at(), i1 = P.go({ ky: MOUTH - CD }, 0.8);       // into the lane
+      P.wait(0.45);
+      var b0 = P.at();
+      P.also({ kz: ZFOOT }, b0, 3.2);
+      P.also({ pz: ZTOP }, b0, 3.0);
+      P.run('kx', LX, 3.2);                                      // the crane back to the lift; the lift back up
+      P.run('rx', WX, 2.4);                                      // a reply's case to the window seat
+      P.wait(8.6);                                               // it waits
+      var o0 = P.at();
+      P.go({ wz: DZ + CH + 0.4 }, 0.6);                          // at the window the contacts come down on it
+      var o1 = P.wait(2.4);
+      P.go({ wz: M.bar[2] }, 1.0);
+      P.run('rx', RX, 2.4);                                      // back to its place on the deck
+      var TURN = 44;
+      return function (t) {
+        t = t % TURN;
+        var cz = P.val('cz', t), cx = P.val('cx', t), pz = P.val('pz', t), kx = P.val('kx', t), kz = P.val('kz', t), ky = P.val('ky', t);
+        // the lift's platform: over the floor in the hall, under it in the store
+        var pa = pz - 6;
+        if (pz > M.slab[1]) { platH.set(PL[0], PL[3], PL[1], PL[4], Math.max(pa, M.slab[1]), pz); platS.hide(); }
+        else { platS.set(PL[0], PL[3], PL[1], PL[4], pa, pz); platH.hide(); }
+        // the case: in the seat (rising out of the cabinet), on the rollers, on the lift, on the crane, into its lane
+        caseH.hide(); caseL.hide(); caseK.hide();
+        if (t < r0) caseH.set(SX, SY, cz, null, SZ);
+        else if (t < l0) caseH.set(cx, SY, SZ);
+        else if (t < k0) {
+          var foot = pz;
+          if (foot + CH > M.slab[1]) caseH.set(LX, SY, foot, null, M.slab[1]); else caseL.set(LX, SY, foot);
+        }
+        else if (t < i1) caseK.set(kx, ky, t < t0 ? kz : kz, t >= i0 ? MOUTH : null);
+        // the crane
+        truck.set(kx - 46, kx + 46, 112, 168, F0 + 3, F0 + 28);
+        mast.set(kx - 8, kx + 8, 136, 154, F0 + 28, -64);
+        shoe.set(kx - 12, kx + 12, 112, 138, kz - 14, kz + 4);
+        table.set(kx - 32, kx + 32, 70, 112, kz - 9, kz);
+        var rl = '';
+        for (var y = 74; y < 112; y += 6) rl += line([T(kx - 30, y, kz), T(kx + 30, y, kz)]);
+        rollers.setAttribute('d', rl);
+        // the head, its light while it writes; the press beam; the stop
+        var hz = P.val('hz', t);
+        head.set(M.head[0], M.head[3], M.head[1], M.head[4], hz, hz + 22);
+        var lit = clamp((t - w0) / 0.18, 0, 1) - clamp((t - w1) / 0.18, 0, 1);
+        hl.setAttribute('d', poly([T(M.head[0] + 7, M.head[4] + 0.03, hz + 14), T(M.head[3] - 7, M.head[4] + 0.03, hz + 14),
+                                   T(M.head[3] - 7, M.head[4] + 0.03, hz + 15.6), T(M.head[0] + 7, M.head[4] + 0.03, hz + 15.6)]));
+        hl.style.opacity = lit.toFixed(3);
+        var bz = P.val('bz', t);
+        beam.set(M.beam[0], M.beam[3], M.beam[1], M.beam[4], bz, bz + 6);
+        stop.set(M.stop[0], M.stop[3], M.stop[1], M.stop[4], M.stop[2], P.val('st', t));
+        // the reply's case, the contacts, the light at the window
+        reply.set(P.val('rx', t), M.held.length ? 42 : 42, DZ);
+        var wz = P.val('wz', t);
+        bar.set(M.bar[0], M.bar[3], M.bar[1], M.bar[4], wz, wz + 6);
+        wl.style.opacity = (clamp((t - o0 - 0.6) / 0.18, 0, 1) - clamp((t - o1) / 0.18, 0, 1)).toFixed(3);
+      };
     }
   };
 
@@ -1502,7 +1627,7 @@
         });
       }
       function build() {
-        var src = img.currentSrc || img.src, s = /-s\.svg/.test(src);
+        var src = img.currentSrc || img.src, s = /-s(-bare)?\.svg/.test(src);
         if (svg && s === small) { place(); return; }
         if (run) { base += run.now(); run.stop(); }
         var t0 = base;
@@ -1511,7 +1636,7 @@
         small = s;
         var F = L.frames[s ? 's' : 'l'];
         var T = function (x, y, z) { return [((x - y) * C - F[0]) * F[2] + F[3], ((x + y) / 2 - z - F[1]) * F[2] + F[3]]; };
-        T.k = s ? 0.7 : 1;
+        T.k = s ? 0.7 : 1; T.small = s;
         svg = mk('svg', { 'class': 'draw__live', viewBox: '0 0 ' + F[4] + ' ' + F[5], 'aria-hidden': 'true', focusable: 'false' });
         var g = mk('g', {}, svg);
         if (L.kind === 'certify') {             // the night over the whole drawing: its own shape, a little darker
@@ -1525,8 +1650,25 @@
         place();
         var frame = SCENES[L.kind](L, T, g, dim, svg);
         run = runner(img, function (t) { frame(t + t0); });
+        if (L.bare) bare(true);
       }
-      function start() { build(); live.push({ stop: function () { if (run) run.stop(); if (svg) svg.remove(); if (dim) dim.remove(); fig.classList.remove('is-live'); } }); }
+      // a picture whose moving parts the page draws over it (the seat, round 26): while they are drawn, the still
+      // picture without them, fetched first so the change is not seen; back to the whole picture when they stop
+      var isBare = false;
+      function bare(on) {
+        if (on === isBare) return;
+        isBare = on;
+        var swap = function (v) { return on ? v.replace(/(-bare)?\.svg$/, '-bare.svg') : v.replace(/-bare\.svg$/, '.svg'); };
+        var go = function () {
+          slice(pic.querySelectorAll('source')).forEach(function (e) { e.setAttribute('srcset', swap(e.getAttribute('srcset'))); });
+          img.setAttribute('src', swap(img.getAttribute('src')));
+        };
+        if (!on) { go(); return; }
+        var pre = new Image();
+        pre.onload = function () { if (isBare) go(); };
+        pre.src = swap(img.currentSrc || img.src);
+      }
+      function start() { build(); live.push({ stop: function () { if (run) run.stop(); if (svg) svg.remove(); if (dim) dim.remove(); fig.classList.remove('is-live'); bare(false); } }); }
       if (img.complete && img.naturalWidth) start(); else img.addEventListener('load', start, { once: true });
       img.addEventListener('load', build);                       // a phone's picture and a wider one: each its frame
       if ('ResizeObserver' in window) new ResizeObserver(place).observe(img);
