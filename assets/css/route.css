@@ -50,7 +50,7 @@ dl, dd { margin: 0; }
            transition: border-color .12s ease, background-color .12s ease; }
 .rt__ctl:hover { border-color: currentColor; }
 .rt__ctl:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
-.is-out { opacity: 0; transition: opacity .12s linear; }
+.rt__draw .is-gone { display: none; }
 
 /* fields, as every route's surface lists them */
 .f-list > div { display: grid; grid-template-columns: minmax(7.5em, 2fr) minmax(0, 3fr); gap: 4px 14px; padding-block: 9px;
@@ -84,6 +84,11 @@ dl, dd { margin: 0; }
 .hl__far { stroke: rgb(233 238 248 / .3); stroke-width: 1px; stroke-dasharray: 2 6; }
 .hl__trail { stroke: var(--acc); stroke-width: 2px; stroke-linecap: round; opacity: .8; }
 .hl__pk { fill: var(--acc); stroke: var(--bg); stroke-width: 1.5px; vector-effect: non-scaling-stroke; }
+.hl__cb { fill: #fdf1ea; stroke: var(--acc); stroke-width: 1.2px; vector-effect: non-scaling-stroke; }
+.hl__cs { fill: var(--acc); }
+.hl__wtr { fill: none; stroke: var(--acc); stroke-width: 1.5px; vector-effect: non-scaling-stroke; stroke-linecap: round;
+           stroke-dasharray: 1; opacity: 0; }
+.hl__lamp { fill: #ffd8c8; opacity: 0; }
 .hl__labs { display: flex; justify-content: space-between; gap: 16px; margin-top: 8px; }
 .hl__lab { margin: 0; display: grid; gap: 4px; }
 .hl__lab span { font: 500 12.5px/1 var(--mono); letter-spacing: .06em; }
@@ -110,7 +115,10 @@ dl, dd { margin: 0; }
 .th__scene { position: relative; min-width: 0; }
 .th__pic { position: relative; max-width: 520px; margin-inline: auto; }
 .th__way, .th__end { fill: none; stroke: var(--fg); stroke-width: 1.5px; vector-effect: non-scaling-stroke; stroke-linecap: round; }
-.th__w path { fill: var(--fg); stroke: #fff; stroke-width: 1.5px; vector-effect: non-scaling-stroke; paint-order: stroke; stroke-linejoin: round; }
+.th__w path, .th__d { fill: var(--fg); stroke: #fff; stroke-width: 1.5px; vector-effect: non-scaling-stroke; paint-order: stroke; stroke-linejoin: round; }
+.th__caret { stroke: #e8e7e1; stroke-width: 1.5px; vector-effect: non-scaling-stroke; opacity: 0; }
+.th__type { fill: none; stroke: #a9a8a2; stroke-width: 1.2px; vector-effect: non-scaling-stroke; stroke-dasharray: 1; stroke-dashoffset: 1; opacity: 0; }
+.th__caret.is-on, .th__type.is-on { opacity: 1; }
 .th__lab { position: absolute; margin: 0; font: 400 12.5px/1.3 var(--mono); color: var(--dim); white-space: nowrap; }
 .th__lab span { display: block; }
 /* above the way's start (18.89 %, 47.21 % of the picture, by tools/drawings24c.py) */
@@ -132,13 +140,23 @@ dl, dd { margin: 0; }
 .li__when b { font-weight: 500; text-align: right; }
 .li__gap { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--line); font: 400 19px/1.3 var(--serif); }
 .li__scene { position: relative; min-width: 0; }
+.li__shadows { opacity: 0; }
+.li__sh { fill: var(--fg); }
+.li__hours tr th, .li__hours tr td { transition: background-color .3s ease; }
+.li__hours tr.is-now th, .li__hours tr.is-now td { background: rgb(128 84 55 / .1); }
 
 /* ======================================================================== Fallow · 2072: the directory of quiet ground */
 .rt--fallow { --bg: #e5e9df; --fg: #283c32; --dim: #4f5c53; --acc: #8c7134; --line: rgb(40 60 50 / .16); }
 .rt--fallow .rt__say { font-weight: 440; font-stretch: 94%; }
 .fa { display: grid; grid-template-columns: minmax(0, 8fr) minmax(0, 4fr); gap: clamp(22px, 4vw, 56px); align-items: center; }
 .fa__field { position: relative; min-width: 0; }
+.fa__scene { position: relative; min-width: 0; }
 .fa__line { fill: none; stroke: var(--acc); stroke-width: 2px; vector-effect: non-scaling-stroke; stroke-linecap: round; }
+.fa__ct, .fa__cl, .fa__cr { stroke: var(--fg); stroke-width: .85px; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.fa__ct { fill: #74837a; } .fa__cl { fill: #5d6b62; } .fa__cr { fill: #4b584f; }
+.fa__cm { stroke: var(--fg); stroke-width: 1px; vector-effect: non-scaling-stroke; }
+.fa__lamp { fill: #e3c46a; }
+.fa__mark { stroke: var(--acc); stroke-width: 4px; vector-effect: non-scaling-stroke; stroke-linecap: round; opacity: 0; }
 /* the sign's plate, over the sign the drawing sets on the line (its top at 50.68 %, 39.68 %, by tools/drawings24c.py) */
 .fa__sign { position: absolute; left: 50.68%; bottom: calc(60.32% + 14px); translate: -50% 0; margin: 0; padding: 6px 9px;
             background: var(--fg); color: var(--bg); font: 600 11.5px/1.25 var(--mono); letter-spacing: .06em; white-space: nowrap; }

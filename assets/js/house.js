@@ -758,6 +758,33 @@
     mkb.hidden = false; draw();
   })();
 
+  /* ------------------------------------------------------------------------------------------- 10. the home's map */
+  // each desk on the home's map is a link to its entry in Find a desk (which opens it there); under the pointer or
+  // the focus its town and kind are named beside it
+  (function () {
+    var fig = document.querySelector('[data-dmap]');
+    if (!fig) return;
+    var tip = fig.querySelector('[data-dmap-tip]');
+    if (!tip) return;
+    function show(a) {
+      var m = a.querySelector('.dm__mk') || a, r = m.getBoundingClientRect(), f = fig.getBoundingClientRect();
+      tip.textContent = a.getAttribute('data-t') + ' ';
+      var k = document.createElement('span'); k.textContent = '\u00b7 ' + a.getAttribute('data-k'); tip.appendChild(k);
+      tip.hidden = false;
+      var x = Math.round(r.left + r.width / 2 - f.left), y = Math.round(r.top - f.top - 10);
+      x = Math.max(tip.offsetWidth / 2 + 4, Math.min(f.width - tip.offsetWidth / 2 - 4, x));
+      tip.style.transform = 'translate(' + x + 'px, ' + y + 'px) translate(-50%, -100%)';
+      tip.classList.add('is-on');
+    }
+    function hide() { tip.classList.remove('is-on'); }
+    Array.prototype.forEach.call(fig.querySelectorAll('a.dm'), function (a) {
+      a.addEventListener('mouseenter', function () { show(a); });
+      a.addEventListener('focus', function () { show(a); });
+      a.addEventListener('mouseleave', hide);
+      a.addEventListener('blur', hide);
+    });
+  })();
+
   /* ------------------------------------------------------------------------------------------- 4. the carriers */
   var netw = document.querySelector('[data-netw]');
   if (netw) (function () {

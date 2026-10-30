@@ -564,12 +564,12 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
 
 /* ------------------------------------------------------------------------------------------- the desks (round 16) */
 /* the map: Earth in dots, the desks on it. The land is a hair darker than the ground; the marks are the link's blue */
-.dmap { margin: clamp(28px, 3.4vw, 48px) 0 0; }
-.dmap__svg { display: block; width: 100%; height: auto; }
+.dmap { position: relative; margin: clamp(28px, 3.4vw, 48px) 0 0; }
+.dmap__svg { display: block; width: 100%; height: auto; overflow: visible; }
 .dmap__land { fill: none; stroke: #c3cccd; stroke-width: 4.2; stroke-linecap: round; }
-.dmap .dm--agent circle { fill: var(--link); }
-.dmap .dm--reply circle { fill: var(--ground); stroke: var(--link); stroke-width: 2.6; }
-.dmap .dm--seat rect { fill: var(--ink); }
+/* a desk under the pointer grows a little and shows its ring; a click opens it in Find a desk */
+.dmap .dm__mk { transform-box: fill-box; transform-origin: center; transition: transform .14s ease-out; }
+.dmap .dm:hover .dm__mk, .dmap .dm:focus-visible .dm__mk { transform: scale(1.35); }
 .dmap__key { display: flex; flex-wrap: wrap; gap: 6px 22px; margin-top: 14px; font: 400 13px/1.4 var(--mono); color: var(--soft); }
 .dmap__key .k::before { content: ""; display: inline-block; width: 9px; height: 9px; margin-right: 8px; vertical-align: -1px; }
 .k--seat::before { background: var(--ink); }
@@ -668,10 +668,11 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
 .atlas__zc button:hover { background: #f1f3f2; }
 .atlas__zc button[aria-disabled="true"] { color: #b3bcbe; cursor: default; background: transparent; }
 .atlas__zc button:focus-visible { outline-offset: -3px; }
-.atlas__tip { position: absolute; left: 0; top: 0; z-index: 4; margin: 0; padding: 6px 10px; border-radius: 8px;
+.atlas__tip, .dmap__tip { position: absolute; left: 0; top: 0; z-index: 4; margin: 0; padding: 6px 10px; border-radius: 8px;
   background: var(--ink); color: var(--ground); font: 520 12.5px/1.25 var(--sans); white-space: nowrap; pointer-events: none;
   opacity: 0; transition: opacity .14s ease-out; }
-.atlas__tip.is-on { opacity: 1; }
+.atlas__tip.is-on, .dmap__tip.is-on { opacity: 1; }
+.dmap__tip span { color: #b9c4c8; font-weight: 420; }
 /* the panel: the list of the desks in view, or one desk */
 .atlas__panel { position: relative; min-width: 0; background: #fff; border-radius: 16px; box-shadow: inset 0 0 0 1px #e0e5e4; }
 .atlas__list, .atlas__detail { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; border-radius: 16px; }

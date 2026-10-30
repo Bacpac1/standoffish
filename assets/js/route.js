@@ -91,11 +91,33 @@
       } }
   };
 
-  // ------------------------------------------------------------------ the 2090s (round 24c)
-  // The page is whole at once, its text the final record. Hail and Thrice re-enact their process once, when the
-  // drawing is in view (60 % of it for a quarter second); a control under it pauses, resumes and replays. It stops
-  // at its end state if the drawing leaves the view or the page is hidden. Lintel and Fallow are still.
-  function curve(d, n) {                              // a cubic "M x y C x y x y x y" at even lengths along it
+  // ------------------------------------------------------------------ the 2090s (round 24d): loops
+  // The page is whole at once; its text is the final record. The drawing lives: the system's own work goes round and
+  // round, and the rule the page states holds every time: Hail's cards come in from Earth and are held at CDX3, the
+  // way on to the vessel empty; Thrice's witnesses come in threes and stop short of a terminal; a week passes over
+  // Lintel's empty plot, every day --:--; Fallow's collectors work their furrows and turn at the line. A control under
+  // the drawing pauses it and plays it; out of view, or with the page hidden, it waits. Under reduced motion, and
+  // without the script, the drawing stands still as written.
+  var NS = 'http://www.w3.org/2000/svg';
+  function mk(tag, attrs, parent) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function num(el, a) { return el.getAttribute(a).split(' ').map(Number); }
+  function f1(v) { return v.toFixed(1); }
+  function at(el, x, y, extra) { el.setAttribute('transform', 'translate(' + f1(x) + ' ' + f1(y) + ')' + (extra || '')); }
+  function inout(x) { x = clamp(x, 0, 1); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; }
+  function out3(x) { x = clamp(x, 0, 1); return 1 - Math.pow(1 - x, 3); }
+  // an even pace, slowing to a stop over its last part: position 0..1 at time u 0..1
+  function pace(u, slow) {
+    u = clamp(u, 0, 1);
+    var ud = 1 - slow, v = 1 / (ud + slow / 2);
+    return u <= ud ? v * u : v * ud + v * (u - ud) - v * (u - ud) * (u - ud) / (2 * slow);
+  }
+  // a cubic "M x y C x y x y x y" at even lengths along it
+  function curve(d, n) {
     var v = d.match(/-?[\d.]+/g).map(Number), P = [], acc = [0];
     for (var i = 0; i <= n; i++) {
       var u = i / n, a = (1 - u) * (1 - u) * (1 - u), b = 3 * u * (1 - u) * (1 - u), c = 3 * u * u * (1 - u), e = u * u * u;
@@ -109,84 +131,250 @@
       return [P[i - 1][0] + (P[i][0] - P[i - 1][0]) * w, P[i - 1][1] + (P[i][1] - P[i - 1][1]) * w];
     };
   }
-  // an even pace, slowing to a stop over the last part (no overshoot): position 0..1 at time u 0..1
-  function pace(u, slow) {
-    u = clamp(u, 0, 1);
-    var ud = 1 - slow, v = 1 / (ud + slow / 2);
-    return u <= ud ? v * u : v * ud + v * (u - ud) - v * (u - ud) * (u - ud) / (2 * slow);
+  // the drawing's own projection (tools/drawings24c.py writes it on the picture): a point of the model, in its units
+  function projector(svg) {
+    var p = num(svg, 'data-proj'), C = Math.cos(Math.PI / 6);
+    return function (x, y, z) { return [((x - y) * C - p[0]) * p[2] + p[3], ((x + y) / 2 - z - p[1]) * p[2] + p[3]]; };
   }
-  function at(el, x, y) { el.setAttribute('transform', 'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ')'); }
+  function hull(pts) {
+    pts = pts.slice().sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; });
+    function turn(o, a, b) { return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]); }
+    var lo = [], hi = [];
+    pts.forEach(function (p) { while (lo.length > 1 && turn(lo[lo.length - 2], lo[lo.length - 1], p) <= 0) lo.pop(); lo.push(p); });
+    pts.slice().reverse().forEach(function (p) { while (hi.length > 1 && turn(hi[hi.length - 2], hi[hi.length - 1], p) <= 0) hi.pop(); hi.push(p); });
+    return lo.slice(0, -1).concat(hi.slice(0, -1));
+  }
+  function poly(pts) { return 'M' + pts.map(function (p) { return f1(p[0]) + ' ' + f1(p[1]); }).join('L') + 'Z'; }
 
-  var EV = {
-    hail: function () {
-      var tr = $('.hl__trail'), pk = $('.hl__pk');
-      if (!tr || !pk) return null;
-      var way = curve(tr.getAttribute('d'), 160);
-      function put(f) { var q = way(f); at(pk, q[0], q[1]); }
-      // 0.72 s along the way, the last 0.12 s slowing into the slot
-      return { dur: 0.72, marks: [pk], reset: function () { put(0); }, frame: function (t) { put(pace(t / 0.72, 0.12 / 0.72)); },
-               end: function () { put(1); } };
+  var LOOP = {
+    // Hail: a card leaves a terminal on Earth's edge every 1.15 s, by one of four ways in turn, and is 1.5 s on its
+    // way; it waits in the tray before the slot, three long, moving up as each new one lands; the first goes into the
+    // relay (0.35 s). The bay's lamp answers each landing. The way on to FCH(T) stays empty. One turn: 4.6 s.
+    hail: function (svg) {
+      var g = svg.querySelector('.hl__over');
+      if (!g) return null;
+      var slot = num(g, 'data-slot'), tr = num(g, 'data-tray'), ways = g.getAttribute('data-ways').split(';');
+      var tray = [[tr[0], tr[1]], [tr[2], tr[3]], [tr[4], tr[5]]];
+      var still = [g.querySelector('.hl__pk'), g.querySelector('.hl__trail')];
+      var live = mk('g', { 'class': 'hl__live' }, g);
+      var trails = ways.map(function (d) { return mk('path', { 'class': 'hl__wtr', d: d, pathLength: 1 }, live); });
+      var curves = ways.map(function (d) { return curve(d, 140); });
+      var lamp = mk('circle', { 'class': 'hl__lamp', r: 2.4, cx: f1(slot[0] + 19), cy: f1(slot[1] - 15) }, live);
+      var POOL = 7, cards = [];
+      for (var i = 0; i < POOL; i++) {                  // a postcard: its face, its stamp
+        var cg = mk('g', { 'class': 'hl__pc' }, live);
+        mk('rect', { 'class': 'hl__cb', x: -7.5, y: -5, width: 15, height: 10, rx: 1.2 }, cg);
+        mk('rect', { 'class': 'hl__cs', x: 2.4, y: -3.2, width: 3.2, height: 3.2 }, cg);
+        cards.push(cg);
+      }
+      var P = 1.15, FLY = 1.5, SHIFT = 0.3, IN = 0.35;
+      return {
+        start: function () { still.forEach(function (e) { e.classList.add('is-gone'); }); live.classList.remove('is-gone'); },
+        stop: function () { still.forEach(function (e) { e.classList.remove('is-gone'); }); live.classList.add('is-gone'); },
+        frame: function (t) {
+          t += 3 * P + FLY + IN;                           // the tray is full from the first frame
+          var used = {}, lampOn = 0;
+          trails.forEach(function (e) { e.style.opacity = '0'; });
+          var n1 = Math.floor(t / P), n0 = Math.max(0, Math.floor((t - FLY - 3 * P - IN) / P));
+          for (var n = n0; n <= n1; n++) {
+            var t0 = n * P, el = cards[n % POOL], k = n % ways.length, x, y, op = 1, sc = 1;
+            used[n % POOL] = true;
+            if (t < t0 + FLY) {
+              var u = (t - t0) / FLY, q = curves[k](inout(u));
+              x = q[0]; y = q[1];
+              trails[k].style.opacity = '.75';
+              trails[k].style.strokeDashoffset = (1 - inout(u)).toFixed(4);
+            } else {
+              var since = t - t0 - FLY, c = Math.floor((since + SHIFT) / P), tau = since + SHIFT - c * P;   // those ahead move up as it lands
+              if (since < 1.2) { trails[k].style.opacity = (0.75 * (1 - since / 1.2)).toFixed(3); trails[k].style.strokeDashoffset = '0'; }
+              if (since < 0.5) lampOn = Math.max(lampOn, 1 - since / 0.5);
+              if (c < 3) {
+                var from = tray[Math.min(2, 3 - c)] || tray[2], to = tray[2 - c], s2 = c === 0 ? 1 : inout(tau / SHIFT);
+                if (c === 0) { from = tray[2]; }
+                x = from[0] + (to[0] - from[0]) * s2; y = from[1] + (to[1] - from[1]) * s2;
+              } else if (tau < IN) {
+                var s3 = inout(tau / IN);
+                x = tray[0][0] + (slot[0] - tray[0][0]) * s3; y = tray[0][1] + (slot[1] - tray[0][1]) * s3;
+                op = 1 - s3 * s3; sc = 1 - 0.25 * s3;
+              } else { op = 0; x = slot[0]; y = slot[1]; }
+            }
+            at(el, x, y, sc !== 1 ? ' scale(' + sc.toFixed(3) + ')' : '');
+            el.style.opacity = op.toFixed(3);
+          }
+          cards.forEach(function (e, i) { if (!used[i]) e.style.opacity = '0'; });
+          lamp.style.opacity = lampOn.toFixed(3);
+        }
+      };
     },
-    thrice: function () {
-      var g = $('.th__over'), ws = $$('.th__w');
-      if (!g || !ws.length) return null;
-      var w = g.getAttribute('data-way').split(' ').map(Number), dx = w[2] - w[0], dy = w[3] - w[1], L = Math.hypot(dx, dy);
-      var ux = dx / L, uy = dy / L;
-      var M = ws.map(function (el) { var d = +el.getAttribute('data-d'); return { el: el, x1: w[2] - ux * d, y1: w[3] - uy * d - 7.5 }; });
-      function put(i, p) { var m = M[i]; at(m.el, w[0] + (m.x1 - w[0]) * p, w[1] - 7.5 + (m.y1 - w[1] + 7.5) * p); }
-      // each 0.62 s, 0.09 s apart, the last 0.14 s slowing; 0.8 s in all
-      return { dur: 0.8, marks: ws,
-               reset: function () { M.forEach(function (m, i) { put(i, 0); }); },
-               frame: function (t) { M.forEach(function (m, i) { put(i, pace((t - i * 0.09) / 0.62, 0.14 / 0.62)); }); },
-               end: function () { M.forEach(function (m, i) { put(i, 1); }); } };
+
+    // Thrice: every 2.6 s a booking is written on a terminal (its line, 0.8 s) and three witnesses come in from the
+    // CONSTANT desk (each 1.5 s, 0.09 s apart, slowing at the end); they stop in the queue short of the post, three
+    // threes long; as each three joins, those ahead move up (0.7 s) and the first three, at the post the longest, go
+    // (0.5 s). The caret blinks. The time at the door stays --:--.
+    thrice: function (svg) {
+      var g = svg.querySelector('.th__over');
+      if (!g) return null;
+      var w = num(g, 'data-way'), dx = w[2] - w[0], dy = w[3] - w[1], L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L;
+      var still = Array.prototype.slice.call(g.querySelectorAll('.th__w'));
+      var caret = g.querySelector('.th__caret'), typed = g.querySelector('.th__type');
+      var live = mk('g', { 'class': 'th__live' }, g);
+      var POOL = 15, ds = [];
+      for (var i = 0; i < POOL; i++) ds.push(mk('path', { 'class': 'th__d', d: 'M0 -7.5L5 0L0 7.5L-5 0Z' }, live));
+      var P = 2.6, WALK = 1.5, GAP = 0.09, MOVE = 0.7, GO = 0.5, HEAD = 28, ROW = 66, STEP = 18;
+      function spot(k, i) { var d = HEAD + ROW * k + STEP * i; return [w[2] - ux * d, w[3] - uy * d - 7.5]; }
+      return {
+        start: function () { still.forEach(function (e) { e.classList.add('is-gone'); }); live.classList.remove('is-gone'); caret.classList.add('is-on'); typed.classList.add('is-on'); },
+        stop: function () { still.forEach(function (e) { e.classList.remove('is-gone'); }); live.classList.add('is-gone'); caret.classList.remove('is-on'); typed.classList.remove('is-on'); caret.style.opacity = ''; typed.style.strokeDashoffset = ''; },
+        frame: function (t) {
+          t += 2 * P + MOVE;                                // the queue is full from the first frame
+          var used = {}, n1 = Math.floor(t / P), n0 = Math.max(0, Math.floor((t - GO) / P) - 3);
+          for (var n = n0; n <= n1; n++) {
+            var t0 = n * P, since = t - t0;
+            for (var i = 0; i < 3; i++) {
+              var el = ds[(n * 3 + i) % POOL], x, y, op = 1, lift = 0;
+              used[(n * 3 + i) % POOL] = true;
+              var c = Math.floor(since / P), tau = since - c * P;        // c: the threes that joined after this one
+              if (c === 0) {
+                var u = (since - i * GAP) / WALK, p = pace(u, 0.14 / WALK * 1.5), f = spot(2, i);
+                x = w[0] + (f[0] - w[0]) * p; y = (w[1] - 7.5) + (f[1] - w[1] + 7.5) * p;
+                if (u > 0 && u < 1) y -= Math.abs(Math.sin(u * WALK * Math.PI * 4)) * 1.1;   // the step
+                if (u <= 0) op = 0;
+              } else if (c <= 2) {
+                var a = spot(3 - c, i), b = spot(2 - c, i), s2 = inout((tau - 0.3 - i * 0.05) / MOVE);
+                x = a[0] + (b[0] - a[0]) * s2; y = a[1] + (b[1] - a[1]) * s2;
+              } else {
+                var e = spot(0, i), s3 = clamp(tau / GO, 0, 1);
+                x = e[0]; y = e[1]; op = 1 - s3; lift = 4 * out3(s3);
+              }
+              at(el, x, y - lift);
+              el.style.opacity = op.toFixed(3);
+            }
+          }
+          ds.forEach(function (e, i) { if (!used[i]) e.style.opacity = '0'; });
+          var ph = (t % P) / P;
+          caret.style.opacity = (t % 1.0) < 0.55 ? '1' : '0';
+          typed.style.strokeDashoffset = (ph < 0.31 ? 1 - out3(ph / 0.31) : ph < 0.92 ? 0 : 1).toFixed(3);
+        }
+      };
+    },
+
+    // Lintel: a day every 4.2 s (3.2 s of light, 1 s of night), a week round: the sun goes over the plot, east to
+    // west, and the doorway's and the stakes' shadows turn on the ground; the night darkens the place a little; the
+    // hours table shows the day that passes, every day --:--.
+    lintel: function (svg) {
+      var sky = svg.querySelector('.li__sky'), sh = svg.querySelector('.li__shadows');
+      var ground = sh && sh.previousElementSibling;                // the plot's own face, painted just before its shadows
+      var day = [247, 243, 234], dusk = [229, 223, 209];
+      if (!sky || !sh) return null;
+      var T = projector(svg), plane = +sky.getAttribute('data-plane');
+      var boxes = sky.getAttribute('data-casters').split(';').map(function (b) { return b.split(' ').map(Number); });
+      var paths = boxes.map(function () { return mk('path', { 'class': 'li__sh' }, sh); });
+      var rows = $$('.li__hours tr');
+      var DAY = 4.2, LIGHT = 3.2;
+      return {
+        start: function () { sh.classList.remove('is-gone'); },
+        stop: function () { sh.classList.add('is-gone'); if (ground) ground.style.fill = ''; rows.forEach(function (r) { r.classList.remove('is-now'); }); },
+        frame: function (t) {
+          var d = Math.floor(t / DAY) % 7, h = t % DAY;
+          rows.forEach(function (r, i) { r.classList.toggle('is-now', i === d); });
+          var dark = h < LIGHT ? Math.max(0, 1 - h / 0.35, 1 - (LIGHT - h) / 0.35) : 1;
+          if (ground) {
+            var k2 = clamp(dark, 0, 1);
+            ground.style.fill = 'rgb(' + day.map(function (v, i) { return Math.round(v + (dusk[i] - v) * k2); }).join(' ') + ')';
+          }
+          if (h >= LIGHT) { sh.style.opacity = '0'; return; }
+          var u = h / LIGHT, az = (-35 + 250 * u) * Math.PI / 180, el = (10 + 38 * Math.sin(Math.PI * u)) * Math.PI / 180;
+          var Lx = Math.cos(el) * Math.cos(az), Ly = Math.cos(el) * Math.sin(az), Lz = Math.sin(el);
+          sh.style.opacity = (0.15 * clamp(Math.min(u / 0.12, (1 - u) / 0.12), 0, 1)).toFixed(3);
+          boxes.forEach(function (b, i) {
+            var pts = [];
+            for (var a = 0; a < 8; a++) {
+              var x = a & 1 ? b[3] : b[0], y = a & 2 ? b[4] : b[1], z = Math.max(plane, a & 4 ? b[5] : b[2]);
+              var k = (z - plane) / Lz;
+              pts.push(T(x - Lx * k, y - Ly * k, plane));
+            }
+            paths[i].setAttribute('d', poly(hull(pts)));
+          });
+        }
+      };
+    },
+
+    // Fallow: four collectors work four furrows, each at its own pace (6.6 to 8 s a round): along the furrow to the
+    // line, a stop at it (the line answers where it is touched), and back. Past the line, nothing.
+    fallow: function (svg) {
+      var T = projector(svg), touch = svg.querySelector('.fa__touch');
+      if (!touch) return null;
+      var X = +touch.getAttribute('data-line'), lanes = {};
+      Array.prototype.forEach.call(svg.querySelectorAll('.fa__lane'), function (g) { lanes[g.getAttribute('data-y')] = g; });
+      var spec = [[120, 7.2, 0.1], [300, 8.0, 0.55], [480, 6.6, 0.3], [660, 7.6, 0.8]], LEN = 70, WID = 34, HGT = 20;
+      var cols = spec.map(function (c) {
+        var g = mk('g', { 'class': 'fa__col' }, lanes[c[0]] || touch);
+        return { y: c[0], per: c[1], ph: c[2], g: g,
+                 top: mk('path', { 'class': 'fa__ct' }, g), left: mk('path', { 'class': 'fa__cl' }, g), right: mk('path', { 'class': 'fa__cr' }, g),
+                 mast: mk('path', { 'class': 'fa__cm' }, g), lamp: mk('circle', { 'class': 'fa__lamp', r: 1.6 }, g),
+                 mark: mk('path', { 'class': 'fa__mark', d: 'M' + T(X, c[0] - 26, 0).map(f1).join(' ') + 'L' + T(X, c[0] + 26, 0).map(f1).join(' ') }, touch) };
+      });
+      var x0 = 30, x1 = X - LEN - 5;
+      return {
+        start: function () { cols.forEach(function (c) { c.g.classList.remove('is-gone'); }); },
+        stop: function () { cols.forEach(function (c) { c.g.classList.add('is-gone'); c.mark.style.opacity = '0'; }); },
+        frame: function (t) {
+          cols.forEach(function (c) {
+            var u = ((t / c.per) + c.ph) % 1, x, hit = 0;
+            if (u < 0.42) x = x0 + (x1 - x0) * inout(u / 0.42);
+            else if (u < 0.5) { x = x1; hit = 1 - (u - 0.42) / 0.08; }
+            else if (u < 0.92) x = x1 - (x1 - x0) * inout((u - 0.5) / 0.42);
+            else x = x0;
+            var y0 = c.y - WID / 2, y1 = c.y + WID / 2, z0 = 0, z1 = HGT, xa = x, xb = x + LEN;
+            c.top.setAttribute('d', poly([T(xa, y0, z1), T(xb, y0, z1), T(xb, y1, z1), T(xa, y1, z1)]));
+            c.left.setAttribute('d', poly([T(xa, y1, z0), T(xb, y1, z0), T(xb, y1, z1), T(xa, y1, z1)]));
+            c.right.setAttribute('d', poly([T(xb, y0, z0), T(xb, y1, z0), T(xb, y1, z1), T(xb, y0, z1)]));
+            var mx = xa + 14, my = c.y;
+            c.mast.setAttribute('d', 'M' + T(mx, my, z1).map(f1).join(' ') + 'L' + T(mx, my, z1 + 18).map(f1).join(' '));
+            var lp = T(mx, my, z1 + 19);
+            c.lamp.setAttribute('cx', f1(lp[0])); c.lamp.setAttribute('cy', f1(lp[1]));
+            c.lamp.style.opacity = ((t + c.ph * 3) % 0.9) < 0.3 ? '1' : '.25';
+            c.mark.style.opacity = (hit > 0 ? 0.25 + 0.75 * hit : 0).toFixed(3);
+          });
+        }
+      };
     }
   };
 
-  function player(scene, ev) {
+  function runner(scene, loop) {
     var row = document.createElement('p'), btn = document.createElement('button');
     row.className = 'rt__ctlrow'; btn.type = 'button'; btn.className = 'rt__ctl';
-    row.appendChild(btn);
-    var state = 'idle', acc = 0, t0 = 0, raf = 0, wait = 0, seen = false;
-    function label(x) { btn.textContent = x; }
+    row.appendChild(btn); scene.appendChild(row);
+    var user = false, seen = false, hidden = document.hidden, running = false, t = 0, last = 0, raf = 0;
+    function label() { btn.textContent = user ? 'Play' : 'Pause'; }
     function step(ts) {
-      if (state !== 'play') return;
-      var t = acc + (ts - t0) / 1000;
-      if (t >= ev.dur) { done(); return; }
-      ev.frame(t);
+      if (!running) return;
+      if (last) t += Math.min(0.1, (ts - last) / 1000);
+      last = ts;
+      loop.frame(t);
       raf = requestAnimationFrame(step);
     }
-    function run() { state = 'play'; label('Pause'); raf = requestAnimationFrame(function (ts) { t0 = ts; step(ts); }); }
-    function start() { acc = 0; ev.reset(); run(); }
-    function done() { cancelAnimationFrame(raf); state = 'done'; ev.end(); label('Replay'); }
-    function pause() { cancelAnimationFrame(raf); acc += (performance.now() - t0) / 1000; state = 'paused'; label('Resume'); }
-    function replay() {
-      state = 'fade';
-      ev.marks.forEach(function (m) { m.classList.add('is-out'); });
-      setTimeout(function () {
-        ev.reset();
-        ev.marks.forEach(function (m) { m.classList.remove('is-out'); });
-        setTimeout(start, 80);
-      }, 120);
+    function sync() {
+      var go = !user && seen && !hidden;
+      if (go && !running) { running = true; last = 0; raf = requestAnimationFrame(step); }
+      else if (!go && running) { running = false; cancelAnimationFrame(raf); }
+      label();
     }
-    btn.addEventListener('click', function () {
-      if (state === 'play') pause(); else if (state === 'paused') run(); else if (state === 'done' || state === 'idle') replay();
-    });
-    ev.reset();
-    label('Play');
-    scene.appendChild(row);
-    // once, when the drawing is in view; out of view or with the page hidden, it stops at its end
+    btn.addEventListener('click', function () { user = !user; sync(); });
+    loop.start();
+    loop.frame(0);
+    label();
     if ('IntersectionObserver' in window) {
       new IntersectionObserver(function (es) {
         es.forEach(function (e) {
-          var r = e.intersectionRatio;
-          if (r >= 0.6 && !seen && !wait) wait = setTimeout(function () { wait = 0; if (!seen) { seen = true; start(); } }, 250);
-          if (r < 0.6 && wait) { clearTimeout(wait); wait = 0; }
-          if (r < 0.1 && state === 'play') done();
+          if (e.intersectionRatio >= 0.3) seen = true;
+          else if (e.intersectionRatio < 0.1) seen = false;
         });
-      }, { threshold: [0, 0.1, 0.6] }).observe(scene.querySelector('svg') || scene);
-    } else { seen = true; start(); }
-    document.addEventListener('visibilitychange', function () { if (document.hidden && state === 'play') done(); });
-    return { stop: function () { if (wait) clearTimeout(wait); seen = true; if (state !== 'done') done(); row.remove(); } };
+        sync();
+      }, { threshold: [0, 0.1, 0.3] }).observe(scene.querySelector('svg') || scene);
+    } else { seen = true; sync(); }
+    document.addEventListener('visibilitychange', function () { hidden = document.hidden; sync(); });
+    return { stop: function () { running = false; cancelAnimationFrame(raf); loop.stop(); row.remove(); } };
   }
 
   // Lintel: how early the reader's terminal is, from its own date
@@ -219,16 +407,16 @@
     function el(k) { var b = document.createElement('b'); b.className = k; return b; }
   }
 
-  if (id === 'lintel') { set($('[data-today]'), iso); gap(); return; }
-  if (id === 'fallow') return;
-  if (EV[id]) {
-    var ev = EV[id](), scene = $('[data-scene]');
-    if (!ev || !scene) return;
-    if (reduce) return;                                   // the end state, as written
-    var pl = player(scene, ev);
+  if (id === 'lintel') { set($('[data-today]'), iso); gap(); }
+  if (LOOP[id]) {
+    var scene = $('[data-scene]'), svg = scene && scene.querySelector('svg.rt__draw');
+    if (!svg || reduce) return;                           // the drawing still, as written
+    var loop = LOOP[id](svg);
+    if (!loop) return;
+    var run = runner(scene, loop);
     if (window.matchMedia) {
       var mq = matchMedia('(prefers-reduced-motion: reduce)');
-      var off = function () { if (mq.matches) pl.stop(); };
+      var off = function () { if (mq.matches) run.stop(); };
       if (mq.addEventListener) mq.addEventListener('change', off); else if (mq.addListener) mq.addListener(off);
     }
     return;
