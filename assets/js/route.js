@@ -30,24 +30,6 @@
   }
 
   var R = {
-    // the 2090s: the page is whole at once; one thing moves, from a quarter second, and is still within a second and a
-    // quarter (round 24b)
-    hail: { end: 1.45, init: function () { hail(0); }, tick: function (t) { hail(t); }, final: function () { hail(1e9); } },
-
-    thrice: { end: 1.2, init: function () { set($('[data-eta]'), '20:00'); walk(0); },
-      tick: function (t) {
-        walk(t);
-        var el = $('[data-eta]');
-        if (t >= 1.07) { set(el, '––:––'); return; }
-        var s = 1200 - Math.round(clamp((t - 0.25) / 0.82, 0, 1) * 29);
-        set(el, pad(Math.floor(s / 60)) + ':' + pad(s % 60));
-      },
-      final: function () { set($('[data-eta]'), '––:––'); walk(1e9); } },
-
-    lintel: { end: 0.8, init: function () { set($('[data-today]'), iso); gap(); }, final: function () { set($('[data-today]'), iso); gap(); } },
-
-    fallow: { end: 1.1, init: function () { fallow(0); }, tick: function (t) { fallow(t); }, final: function () { fallow(1e9); } },
-
     understudy: { end: 2.6, init: function () {
         set($('[data-us-eta]'), '00:19:00'); set($('[data-us-date]'), '30 June 2073');
         var st = $('.us__stand'); if (st) st.classList.remove('on', 'gone');
@@ -109,64 +91,102 @@
       } }
   };
 
-  // a cubic way "M x y C x y x y x y" as points at even lengths along it (for a thing that keeps its pace)
-  function curve(d, n) {
+  // ------------------------------------------------------------------ the 2090s (round 24c)
+  // The page is whole at once, its text the final record. Hail and Thrice re-enact their process once, when the
+  // drawing is in view (60 % of it for a quarter second); a control under it pauses, resumes and replays. It stops
+  // at its end state if the drawing leaves the view or the page is hidden. Lintel and Fallow are still.
+  function curve(d, n) {                              // a cubic "M x y C x y x y x y" at even lengths along it
     var v = d.match(/-?[\d.]+/g).map(Number), P = [], acc = [0];
     for (var i = 0; i <= n; i++) {
       var u = i / n, a = (1 - u) * (1 - u) * (1 - u), b = 3 * u * (1 - u) * (1 - u), c = 3 * u * u * (1 - u), e = u * u * u;
       P.push([a * v[0] + b * v[2] + c * v[4] + e * v[6], a * v[1] + b * v[3] + c * v[5] + e * v[7]]);
       if (i) acc.push(acc[i - 1] + Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]));
     }
-    return function (f) {                                   // the point at the fraction f of the way's length
+    return function (f) {
       var L = acc[n] * clamp(f, 0, 1), i = 1;
       while (i < n && acc[i] < L) i++;
       var w = (L - acc[i - 1]) / ((acc[i] - acc[i - 1]) || 1);
       return [P[i - 1][0] + (P[i][0] - P[i - 1][0]) * w, P[i - 1][1] + (P[i][1] - P[i - 1][1]) * w];
     };
   }
-
-  // Hail: the card leaves the reader's terminal at a quarter second, is at the relay 0.7 s later, settles in its bay
-  // (0.12 s), and the bay answers once (0.24 s); the way it came stays drawn
-  var HL = null;
-  function hail(t) {
-    if (HL === null) {
-      var tr = $('.hl__trail'), pk = $('.hl__pk'), svg = $('.hl__over');
-      if (!tr || !pk || !svg) { HL = false; return; }
-      var vb = svg.getAttribute('viewBox').split(' ').map(Number);
-      HL = { tr: tr, pk: pk, at: curve(tr.getAttribute('d'), 120), w: vb[2], h: vb[3], ring: $('.hl__ring') };
-    }
-    if (!HL) return;
-    var f = clamp((t - 0.25) / 0.7, 0, 1);
-    f = f < .5 ? 2 * f * f : 1 - Math.pow(-2 * f + 2, 2) / 2;                 // out of the terminal, into the bay
-    var q = HL.at(f);
-    HL.pk.style.left = (q[0] / HL.w * 100).toFixed(3) + '%';
-    HL.pk.style.top = (q[1] / HL.h * 100).toFixed(3) + '%';
-    HL.tr.style.strokeDashoffset = (1 - f).toFixed(4);
-    var s = t < 0.95 ? 1 : t < 1.07 ? 1.18 - 0.18 * ease((t - 0.95) / 0.12) : 1;
-    HL.pk.style.transform = s === 1 ? '' : 'scale(' + s.toFixed(3) + ')';
-    if (HL.ring) HL.ring.classList.toggle('on', t >= 1.07 && t < 1e8);
+  // an even pace, slowing to a stop over the last part (no overshoot): position 0..1 at time u 0..1
+  function pace(u, slow) {
+    u = clamp(u, 0, 1);
+    var ud = 1 - slow, v = 1 / (ud + slow / 2);
+    return u <= ud ? v * u : v * ud + v * (u - ud) - v * (u - ud) * (u - ud) / (2 * slow);
   }
+  function at(el, x, y) { el.setAttribute('transform', 'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ')'); }
 
-  // Thrice: the three walk in along the way (y = k x + b in the drawing's units, from x0), each 0.64 s, 0.09 s apart,
-  // at an even pace and then slowing over the last 0.14 s; they stop short of its end
-  var W = null;
-  function walk(t) {
-    if (W === null) {
-      var svg = $('.th__over'), ws = $$('.th__w');
-      if (!svg || !ws.length) { W = []; return; }
-      var L = svg.getAttribute('data-line').split(' ').map(Number);
-      W = ws.map(function (g) {
-        var m = /translate\(([-\d.]+) /.exec(g.getAttribute('transform'));
-        return { g: g, x1: +m[1], k: L[0], b: L[1], x0: L[2] };
-      });
+  var EV = {
+    hail: function () {
+      var tr = $('.hl__trail'), pk = $('.hl__pk');
+      if (!tr || !pk) return null;
+      var way = curve(tr.getAttribute('d'), 160);
+      function put(f) { var q = way(f); at(pk, q[0], q[1]); }
+      // 0.72 s along the way, the last 0.12 s slowing into the slot
+      return { dur: 0.72, marks: [pk], reset: function () { put(0); }, frame: function (t) { put(pace(t / 0.72, 0.12 / 0.72)); },
+               end: function () { put(1); } };
+    },
+    thrice: function () {
+      var g = $('.th__over'), ws = $$('.th__w');
+      if (!g || !ws.length) return null;
+      var w = g.getAttribute('data-way').split(' ').map(Number), dx = w[2] - w[0], dy = w[3] - w[1], L = Math.hypot(dx, dy);
+      var ux = dx / L, uy = dy / L;
+      var M = ws.map(function (el) { var d = +el.getAttribute('data-d'); return { el: el, x1: w[2] - ux * d, y1: w[3] - uy * d - 7.5 }; });
+      function put(i, p) { var m = M[i]; at(m.el, w[0] + (m.x1 - w[0]) * p, w[1] - 7.5 + (m.y1 - w[1] + 7.5) * p); }
+      // each 0.62 s, 0.09 s apart, the last 0.14 s slowing; 0.8 s in all
+      return { dur: 0.8, marks: ws,
+               reset: function () { M.forEach(function (m, i) { put(i, 0); }); },
+               frame: function (t) { M.forEach(function (m, i) { put(i, pace((t - i * 0.09) / 0.62, 0.14 / 0.62)); }); },
+               end: function () { M.forEach(function (m, i) { put(i, 1); }); } };
     }
-    var ud = 0.5 / 0.64, v = 1 / (ud + (1 - ud) / 2);
-    W.forEach(function (w, i) {
-      var u = clamp((t - 0.25 - i * 0.09) / 0.64, 0, 1);
-      var p = u <= ud ? v * u : v * ud + v * (u - ud) - v * (u - ud) * (u - ud) / (2 * (1 - ud));
-      var x = w.x0 + (w.x1 - w.x0) * clamp(p, 0, 1);
-      w.g.setAttribute('transform', 'translate(' + x.toFixed(0) + ' ' + (w.k * x + w.b - 140).toFixed(0) + ')');
+  };
+
+  function player(scene, ev) {
+    var row = document.createElement('p'), btn = document.createElement('button');
+    row.className = 'rt__ctlrow'; btn.type = 'button'; btn.className = 'rt__ctl';
+    row.appendChild(btn);
+    var state = 'idle', acc = 0, t0 = 0, raf = 0, wait = 0, seen = false;
+    function label(x) { btn.textContent = x; }
+    function step(ts) {
+      if (state !== 'play') return;
+      var t = acc + (ts - t0) / 1000;
+      if (t >= ev.dur) { done(); return; }
+      ev.frame(t);
+      raf = requestAnimationFrame(step);
+    }
+    function run() { state = 'play'; label('Pause'); raf = requestAnimationFrame(function (ts) { t0 = ts; step(ts); }); }
+    function start() { acc = 0; ev.reset(); run(); }
+    function done() { cancelAnimationFrame(raf); state = 'done'; ev.end(); label('Replay'); }
+    function pause() { cancelAnimationFrame(raf); acc += (performance.now() - t0) / 1000; state = 'paused'; label('Resume'); }
+    function replay() {
+      state = 'fade';
+      ev.marks.forEach(function (m) { m.classList.add('is-out'); });
+      setTimeout(function () {
+        ev.reset();
+        ev.marks.forEach(function (m) { m.classList.remove('is-out'); });
+        setTimeout(start, 80);
+      }, 120);
+    }
+    btn.addEventListener('click', function () {
+      if (state === 'play') pause(); else if (state === 'paused') run(); else if (state === 'done' || state === 'idle') replay();
     });
+    ev.reset();
+    label('Play');
+    scene.appendChild(row);
+    // once, when the drawing is in view; out of view or with the page hidden, it stops at its end
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          var r = e.intersectionRatio;
+          if (r >= 0.6 && !seen && !wait) wait = setTimeout(function () { wait = 0; if (!seen) { seen = true; start(); } }, 250);
+          if (r < 0.6 && wait) { clearTimeout(wait); wait = 0; }
+          if (r < 0.1 && state === 'play') done();
+        });
+      }, { threshold: [0, 0.1, 0.6] }).observe(scene.querySelector('svg') || scene);
+    } else { seen = true; start(); }
+    document.addEventListener('visibilitychange', function () { if (document.hidden && state === 'play') done(); });
+    return { stop: function () { if (wait) clearTimeout(wait); seen = true; if (state !== 'done') done(); row.remove(); } };
   }
 
   // Lintel: how early the reader's terminal is, from its own date
@@ -180,24 +200,6 @@
     var days = Math.round((target - d) / 864e5);
     set(el, y + (y === 1 ? ' year' : ' years') + ', ' + days + (days === 1 ? ' day' : ' days') + ' early.');
     box.hidden = false;
-  }
-
-  // Fallow: collection runs along the furrows to the line in 0.75 s and stops there; then there are no collectors
-  var FA = null;
-  function fallow(t) {
-    if (FA === null) {
-      var svg = $('.fa__over'), fr = $('.fa__front');
-      if (!svg || !fr) { FA = false; return; }
-      FA = { fr: fr, a: svg.getAttribute('data-from').split(' ').map(Number), b: svg.getAttribute('data-to').split(' ').map(Number),
-             n: $('[data-fa-count]') };
-    }
-    if (!FA) return;
-    var f = clamp((t - 0.25) / 0.75, 0, 1), on = t < 1.0;
-    f = f * f * (1.6 - 0.6 * f);                             // gathering pace; it stops at the line, not before it
-    var p = FA.a.map(function (a, i) { return (a + (FA.b[i] - a) * f).toFixed(0); });
-    FA.fr.setAttribute('d', 'M' + p[0] + ' ' + p[1] + 'L' + p[2] + ' ' + p[3]);
-    FA.fr.classList.toggle('run', on);
-    set(FA.n, on ? '12' : '0');
   }
 
   // the telegraphic address in Morse on the tape: a dot, a dash three dots long, letters three apart, words seven
@@ -217,6 +219,21 @@
     function el(k) { var b = document.createElement('b'); b.className = k; return b; }
   }
 
+  if (id === 'lintel') { set($('[data-today]'), iso); gap(); return; }
+  if (id === 'fallow') return;
+  if (EV[id]) {
+    var ev = EV[id](), scene = $('[data-scene]');
+    if (!ev || !scene) return;
+    if (reduce) return;                                   // the end state, as written
+    var pl = player(scene, ev);
+    if (window.matchMedia) {
+      var mq = matchMedia('(prefers-reduced-motion: reduce)');
+      var off = function () { if (mq.matches) pl.stop(); };
+      if (mq.addEventListener) mq.addEventListener('change', off); else if (mq.addListener) mq.addListener(off);
+    }
+    return;
+  }
+
   var r = R[id] || {};
   var timed = $$('[data-at]').map(function (el) { return { el: el, at: +el.getAttribute('data-at') }; });
   var END = Math.max(r.end || 0, timed.reduce(function (m, x) { return Math.max(m, x.at); }, 0) + 0.1,
@@ -228,7 +245,7 @@
   }
   if (reduce) { if (r.init) r.init(); finish(); return; }
   // the event again, on request, once it is over: everything back to its start, then the same seconds
-  var stage = $('[data-scene]') || $('.rt__stage'), again = null;
+  var stage = $('.rt__stage'), again = null;
   function play() {
     if (again) again.classList.remove('is-on');
     timed.forEach(function (x) { x.el.classList.remove('on'); });

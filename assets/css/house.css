@@ -91,8 +91,16 @@ a { color: inherit; text-decoration: none; }
 .wk__line { margin: 0 0 10px; max-width: 30ch; font-size: clamp(18px, 1.5vw, 21px); line-height: 1.38; color: var(--soft); }
 .wk__pic { margin: 0; }
 /* a drawing (round 24): a vector picture on the page's own ground, whole, no frame; its stamp in its own corner */
+.wk__pic picture { display: block; }
 .wk__pic .draw, .draw { display: block; width: 100%; height: auto; }
-.work .wk__pic .draw { max-width: 1040px; margin-inline: auto; }
+/* the drawings made in code (24c) are near square: each work's words beside its drawing, the sides taking turns */
+.work .wk { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); column-gap: clamp(24px, 4vw, 64px);
+            align-items: center; }
+.work .wk:nth-child(even) .wk__head { order: 2; }
+.work .wk__head { display: block; margin: 0; }
+.work .wk__h { font-size: clamp(40px, 4.6vw, 72px); }
+.work .wk__side { margin-top: 18px; padding-bottom: 0; }
+.work .wk__pic .draw { width: auto; max-width: 100%; max-height: 560px; margin-inline: auto; }
 /* on a work's own page the drawing stands in a band 440 px high, so its particulars begin within the first view */
 .page .wk__pic .draw { width: auto; max-width: 100%; max-height: 440px; margin-inline: auto; }
 @supports (animation-timeline: view()) {
@@ -424,6 +432,8 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
 
 /* ------------------------------------------------------------------------------------------- narrower */
 @media (max-width: 900px) {
+  .work .wk { grid-template-columns: minmax(0, 1fr); row-gap: 24px; }
+  .work .wk:nth-child(even) .wk__head { order: 0; }
   .wk__h, .reg__h, .page__h { grid-column: 1 / -1; }
   .wk__side, .reg__side, .page__line { grid-column: 1 / -1; padding-bottom: 0; margin-top: 16px; }
   .rgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
