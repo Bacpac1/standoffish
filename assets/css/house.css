@@ -216,13 +216,15 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
 .gf__legal a + a { margin-left: 12px; padding-left: 12px; border-left: 1px solid #bac3c4; }
 .gf__legal a:hover, .gf__jur:hover { color: var(--ink); text-decoration: underline; text-underline-offset: .2em; }
 .gf__jur { margin-left: auto; }
-/* the channel's accounts on the streams of the 2020s: small chips at the very foot */
-.gf__streams { display: flex; align-items: center; gap: 10px; margin: 0; padding: 8px 0 40px; list-style: none; }
-.gf__streams-k { margin-right: 4px; font: 500 12px/1 var(--mono); letter-spacing: .06em; color: var(--soft); }
+/* the channel's accounts on the streams of the 2020s at the very foot: each named in type beside its colour */
+.gf__streams { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 20px; margin: 0; padding: 8px 0 40px; list-style: none; }
+.gf__streams-k { margin-right: -4px; font: 500 12px/1 var(--mono); letter-spacing: .06em; color: var(--soft); }
 .ct-plat__fine { margin: 12px 0 0; font: 400 13.5px/1.5 var(--mono); color: var(--faint); }
-.gf__streams a { display: block; padding: 3px; border-radius: 6px; }
-.gf__streams .chip { display: block; width: 18px; height: 18px; border-radius: 5px; }
-.gf__streams a:hover .chip, .gf__streams a:focus-visible .chip { outline: 1.5px solid var(--ink); outline-offset: 2px; }
+.gf__streams a { display: inline-flex; align-items: center; gap: 7px; padding: 3px 0; color: #45474b; white-space: nowrap; }
+.gf__streams .chip { display: block; width: 12px; height: 12px; border-radius: 3.5px; }
+.gf__streams a:hover .gf__sn, .gf__streams a:focus-visible .gf__sn { text-decoration: underline; text-underline-offset: .22em;
+                                                                     text-decoration-thickness: 1px; }
+@media (max-width: 600px) { .gf__streams { column-gap: 14px; } }
 
 /* ------------------------------------------------------------------------------------------- a work's page */
 .page { padding-block: clamp(48px, 7vw, 104px) 0; }
