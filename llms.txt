@@ -44,10 +44,12 @@ What a reader, human or machine, should know:
 - [Site map](https://www.standoffish.net/site-map/)
 - [NSL: the channel card (Form OWP-1), the List of Sheets, the Sheets, and the Visual Materials](https://www.standoffish.net/channels/nsl/)
 - [NSL01: its sending record (Form OWP-3), its frames, and the card](https://www.standoffish.net/channels/nsl/01/)
+- [NSL02: its sending record (Form OWP-3), its frames, and the card](https://www.standoffish.net/channels/nsl/02/)
 - [The card, the List and the records as plain text](https://www.standoffish.net/owp.txt)
 
 ## Films
 - NOSLEN | 01 FUCHA (148 s): https://www.youtube.com/watch?v=HXxsP3T38Lo
+- NOSLEN | 02 IRIS (222 s): https://www.youtube.com/watch?v=9j6RqZ1OZug
 
 ## The channel card, as published (fiction, 2095)
 
