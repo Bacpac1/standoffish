@@ -1698,10 +1698,10 @@
     var hp = [];
     for (var i = 0; i < 8; i++) hp.push(P(i & 1 ? M.x1 : 0, i & 2 ? M.ys : 0, i & 4 ? M.slab[1] : M.slab[0]));
     hp = hull(hp);
-    var last = 0;
+    var last = 0, cost = 0;
     return function (t) {
       var now = window.performance ? performance.now() : Date.now();
-      if (last && now - last < 30) return;                // thirty pictures a second are enough for its pace
+      if (last && cost > 8 && now - last < 30) return;     // where a picture costs more than 8 ms, thirty a second
       last = now;
       var r = img.getBoundingClientRect();
       d = Math.min(2, window.devicePixelRatio || 1); kd = r.width / F[4];
@@ -1718,6 +1718,8 @@
       new RK.Painter(ctx, P, lw).draw(f.store);
       ctx.restore();
       new RK.Painter(ctx, P, lw).draw(f.hall);
+      var done = window.performance ? performance.now() : Date.now();
+      cost = cost ? cost * 0.9 + (done - now) * 0.1 : done - now;
     };
   }
 

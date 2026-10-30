@@ -73,7 +73,7 @@ var RK = (function () {
     out = out || [];
     var self = this, d = this.desc;
     (function walk(name, M) {
-      (d.links[name].boxes || []).forEach(function (b) { var w = world(b, M, q, name); if (w) out.push(w); });
+      (d.links[name].boxes || []).forEach(function (b, j) { var w = world(b, M, q, name); if (w) { w.j = j; out.push(w); } });
       (self.kids[name] || []).forEach(function (j) {
         var v = q[j.name] != null ? q[j.name] : (j.rest || 0), J = j.seat;
         if (j.type === 'rev') J = mul(J, rot(j.axis, v * Math.PI / 180));
@@ -132,7 +132,19 @@ var RK = (function () {
     if (best) return (best[1] > 0) === (best[0] > 0) ? 1 : -1;
     return a.depth <= b.depth ? 1 : -1;
   }
-  // the boxes far to near, each with its picture (pc) and its picture's bounds (r)
+  // two convex outlines in the picture held apart by a side of the first (touching counts as apart)
+  function apart(A, B) {
+    for (var i = 0; i < A.length; i++) {
+      var p = A[i], q = A[(i + 1) % A.length], nx = q[1] - p[1], ny = p[0] - q[0], j, v;
+      var a0 = Infinity, a1 = -Infinity, b0 = Infinity, b1 = -Infinity;
+      for (j = 0; j < A.length; j++) { v = A[j][0] * nx + A[j][1] * ny; if (v < a0) a0 = v; if (v > a1) a1 = v; }
+      for (j = 0; j < B.length; j++) { v = B[j][0] * nx + B[j][1] * ny; if (v < b0) b0 = v; if (v > b1) b1 = v; }
+      var e = 0.05 * Math.sqrt(nx * nx + ny * ny);
+      if (a1 <= b0 + e || b1 <= a0 + e) return true;
+    }
+    return false;
+  }
+  // the boxes far to near, each with its picture (pc), its picture's bounds (r) and outline (h)
   function order(boxes, P) {
     var n = boxes.length, i, j;
     for (i = 0; i < n; i++) {
@@ -141,20 +153,21 @@ var RK = (function () {
         var p = P(b.c[j][0], b.c[j][1], b.c[j][2]); pc[j] = p;
         if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0]; if (p[1] < y0) y0 = p[1]; if (p[1] > y1) y1 = p[1];
       }
-      b.pc = pc; b.r = [x0, y0, x1, y1]; b.k = i;
+      b.pc = pc; b.r = [x0, y0, x1, y1]; b.k = i; b.h = hull(pc);
     }
     var idx = boxes.slice().sort(function (p, q) { return p.r[0] - q.r[0]; });
-    var succ = [], indeg = new Array(n);
-    for (i = 0; i < n; i++) { succ.push([]); indeg[i] = 0; }
+    var succ = [], pred = [], indeg = new Array(n);
+    for (i = 0; i < n; i++) { succ.push([]); pred.push([]); indeg[i] = 0; }
     for (var u = 0; u < n; u++) {
       var A = idx[u];
       for (var v = u + 1; v < n; v++) {
         var Bx = idx[v];
         if (Bx.r[0] >= A.r[2] - 0.05) break;
         if (Bx.r[1] >= A.r[3] - 0.05 || A.r[1] >= Bx.r[3] - 0.05) continue;
+        if (apart(A.h, Bx.h) || apart(Bx.h, A.h)) continue;   // their pictures only near: neither hides the other
         var c = cmp(A, Bx);
-        if (c > 0) { succ[A.k].push(Bx.k); indeg[Bx.k]++; }
-        else if (c < 0) { succ[Bx.k].push(A.k); indeg[A.k]++; }
+        if (c > 0) { succ[A.k].push(Bx.k); pred[Bx.k].push(A.k); indeg[Bx.k]++; }
+        else if (c < 0) { succ[Bx.k].push(A.k); pred[A.k].push(Bx.k); indeg[A.k]++; }
       }
     }
     var done = new Array(n), out = [], ready = [];
@@ -167,7 +180,29 @@ var RK = (function () {
         pick = ready[m]; ready[m] = ready[ready.length - 1]; ready.pop();
         if (done[pick]) continue;
       } else {
-        for (j = 0; j < n; j++) if (!done[j] && (pick < 0 || boxes[j].depth < boxes[pick].depth)) pick = j;
+        // a cycle: what waits only on what waits on it. Walk back from the farthest box left along boxes it still
+        // waits on until one comes round again; of that loop, the farthest goes down first, and nothing else is
+        // put before its turn
+        var u = -1, seen = {};
+        for (j = 0; j < n; j++) if (!done[j] && (u < 0 || boxes[j].depth < boxes[u].depth)) u = j;
+        while (!(u in seen)) {
+          seen[u] = 1;
+          var pv = pred[u], nx = -1;
+          for (var w = 0; w < pv.length; w++) if (!done[pv[w]]) { nx = pv[w]; break; }
+          if (nx < 0) break;
+          u = nx;
+        }
+        var start = u;
+        pick = u;
+        do {
+          var pu = pred[u], nu = -1;
+          for (var w2 = 0; w2 < pu.length; w2++) if (!done[pu[w2]]) { nu = pu[w2]; break; }
+          if (nu < 0) break;
+          u = nu;
+          if (boxes[u].depth < boxes[pick].depth) pick = u;
+        } while (u !== start);
+        order.forced = (order.forced || 0) + 1;
+        if (order.log) { var cyc = [], uu = start; do { cyc.push(boxes[uu].id || boxes[uu].link); var pp = pred[uu], nn = -1; for (var w3 = 0; w3 < pp.length; w3++) if (!done[pp[w3]]) { nn = pp[w3]; break; } if (nn < 0) break; uu = nn; } while (uu !== start && cyc.length < 12); order.log.push(cyc); }
       }
       done[pick] = true; out.push(boxes[pick]);
       var s = succ[pick];
@@ -340,7 +375,7 @@ var RK = (function () {
     return out;
   }
 
-  return { Machine: Machine, Renderer: Renderer, Painter: Painter, order: order, iso: iso, extent: extent, box: box,
+  return { Machine: Machine, Renderer: Renderer, Painter: Painter, order: order, cmp: cmp, apart: apart, iso: iso, extent: extent, box: box,
            svg: svg, crossings: crossings, mul: mul, rot: rot, move: move, at: at, INK: INK };
 })();
 /* The house's machines, each from its parts (robokit.js), in its own frame: x forward, y to its left, z up; its foot
@@ -814,7 +849,7 @@ var RK_SEAT = (function () {
   // the lift's car: a plate on its guides, two places of runners (forks pass between them), a beam under their front,
   // its light; a case on each place, run off on to the dock table
   function liftUnit(x0) {
-    var car = [B(10, 0, -34, 84, 3, 34, W(THIN)), B(2, 52, -10, 100, 3, 3, W(FINE)), B(40, 3, -22, 20, 0.1, 1.6, { lamp: 'lit' })];
+    var car = [B(10, 0, -24, 84, 3, 24, W(THIN)), B(2, 52, -10, 100, 3, 3, W(FINE)), B(40, 3, -20, 20, 0.1, 1.6, { lamp: 'lit' })];
     [26, 78].forEach(function (px) { car.push(B(px - 18, 3, -3, 6, 52, 3, W(FINE)), B(px + 12, 3, -3, 6, 52, 3, W(FINE))); });
     return { name: 'lift', root: 'm', links: {
       m: { boxes: [] }, car: { boxes: car },
@@ -835,7 +870,7 @@ var RK_SEAT = (function () {
     var zones = [L.cells.A, L.cells.B].filter(function (z) { return z.length; }), NP = zones.length, ROUND = CYC * NP;
     var XO = L.buf.out, XI = L.buf.inn, YB = (L.buf.y[0] + L.buf.y[1]) / 2, YL = L.lane, CYL = L.cells.y, CZ = L.cells.z;
     var DOCK = L.dock, XLL = L.lift[0] + 26, XLR = L.lift[0] + 78, YLP = L.lift[2] + 28;
-    var INTAKE = CYL + 35 - YL, INSIDE = INTAKE - 16;          // the cabinet's front, and a case wholly in it (porter's y)
+    var INTAKE = CYL + 35.1 - YL, INSIDE = INTAKE - 16;        // the cabinet's front (its intake's face), a case wholly in it
     var DOCKY = YB - YL;                                        // the dock table's middle (porter's y)
     var CR = M.cell.work(0), CWK = M.cell.work(2.0), ARMS = ['p_sh', 'p_el', 'p_wr', 'w_sh', 'w_el', 'w_wr', 's_sh', 's_el', 's_wr'];
     // the level of a cycle, and the cycle of a level's shuttle: the levels four apart, the right rack's, then the left's
@@ -893,8 +928,8 @@ var RK_SEAT = (function () {
     // for the next porter
     function dock(t, out) {
       var tau = mod(t, CYC), h = L.case[2];
-      if (tau >= 4) out.push(RK.box(XO - 24, YB - 16, DOCK + 0.2, XO + 24, YB + 16, DOCK + h, { tone: 'paper', w: THIN }));
-      if (tau >= 2 && tau < 6) out.push(RK.box(XI - 24, YB - 16, DOCK + 0.2, XI + 24, YB + 16, DOCK + h, { tone: 'paper', w: THIN }));
+      if (tau >= 4) out.push(RK.box(XO - 24, YB - 16, DOCK + 0.2, XO + 24, YB + 16, DOCK + h, { tone: 'paper', w: THIN, link: 'dock-out' }));
+      if (tau >= 2 && tau < 6) out.push(RK.box(XI - 24, YB - 16, DOCK + 0.2, XI + 24, YB + 16, DOCK + h, { tone: 'paper', w: THIN, link: 'dock-in' }));
     }
 
     // ------------------------------------------------------------------- the lift
@@ -985,14 +1020,14 @@ var RK_SEAT = (function () {
       var rx = u < 2.4 ? RX + (WX - RX) * seg(u, 0, 2.4) : u < 10.75 ? WX : RX + (WX - RX) * (1 - seg(u, 10.75, 13.15));
       var wz = BZ + (DZ + h + 0.4 + TL - BZ) * (seg(u, 6.4, 7) - seg(u, 9.8, 10.4));
       var lit = clamp((u - 7.1) / 0.18, 0, 1) - clamp((u - 9.62) / 0.18, 0, 1);
-      out.push(RK.box(rx - 24, 26, DZ + 0.2, rx + 24, 58, DZ + h, { tone: 'paper', w: THIN }),
-               RK.box(rx - 21, 58, DZ + 5, rx + 21, 58.1, DZ + 5.1, { w: FINE }));
+      out.push(RK.box(rx - 24, 26, DZ + 0.2, rx + 24, 58, DZ + h, { tone: 'paper', w: THIN, link: 'copy' }),
+               RK.box(rx - 21, 58, DZ + 5, rx + 21, 58.1, DZ + 5.1, { w: FINE, link: 'copy-seam' }));
       for (var i = 0; i < 3; i++) {
         var x0 = L.teeth[0] + L.teeth[1] * i;
-        out.push(RK.box(x0, L.teeth[3], wz - TL, x0 + L.teeth[2], L.teeth[4], wz, { w: FINE }));
+        out.push(RK.box(x0, L.teeth[3], wz - TL, x0 + L.teeth[2], L.teeth[4], wz, { w: FINE, link: 'tooth' + i }));
       }
-      out.push(RK.box(L.bar[0], L.bar[1], wz, L.bar[3], L.bar[4], wz + 6, { w: THIN }),
-               RK.box(L.lamp[0], L.lamp[2], L.lamp[3], L.lamp[1], L.lamp[2] + 0.05, L.lamp[4], { lit: lit }));
+      out.push(RK.box(L.bar[0], L.bar[1], wz, L.bar[3], L.bar[4], wz + 6, { w: THIN, link: 'comb' }),
+               RK.box(L.lamp[0], L.lamp[2], L.lamp[3], L.lamp[1], L.lamp[2] + 0.05, L.lamp[4], { lit: lit, link: 'seat-lamp' }));
     }
 
     // the section at t: what stands in the store (under the hall's floor) and in the hall
@@ -1000,9 +1035,9 @@ var RK_SEAT = (function () {
       var store = [], hall = [], q = lift(t);
       U.lift.place(q, null, q.z >= 0 ? hall : store);
       for (var k = 0; k < NL; k++) { shuttle(k, 'L', t, store); shuttle(k, 'R', t, store); }
-      store.push(RK.box(post, L.rack.y[0], ZF, post + 8, L.rack.y[1], LV[NL - 1] + 34, { w: 0.85 }));
+      store.push(RK.box(post, L.rack.y[0], ZF, post + 8, L.rack.y[1], LV[NL - 1] + 34, { w: 0.85, link: 'post' }));
       U.steward.place(M.steward.work(t), RK.move(SX, SY, ZF), store);
-      store.push(RK.box(SX + 85, SY - 30, ZF, SX + 155, SY + 30, ZF + 52, { w: THIN }));
+      store.push(RK.box(SX + 85, SY - 30, ZF, SX + 155, SY + 30, ZF + 52, { w: THIN, link: 'stand' }));
       U.shuttle.place(SPARE, RK.move(SX + 120, SY, ZF + 52), store);
       floorUnit(t, store);
       cells(t, hall); porters(t, hall); dock(t, hall); copies(t, hall);
