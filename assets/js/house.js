@@ -1141,7 +1141,7 @@
 
   /* ------------------------------------------------------------------------------------------- 12. the map's day */
   // The home's map of the desks keeps a day of the reader's own date (round 24e), a day in 24 s from the hour it is
-  // now: the night side goes west over Earth, the land in it darker, deepest where the sun is furthest under; the
+  // now: the night side goes west over Earth, the land in it darker, deeper where the sun is twelve degrees under; the
   // desks shut at their sunset and open at their sunrise, each opening a ring; the seat stands as it is. Out of view,
   // or with the page hidden, the day waits. Without the script, and under reduced motion, the map is still: every desk
   // open, no night.
@@ -1170,32 +1170,35 @@
     var ra = Math.atan2(Math.cos(eps) * Math.sin(lam), Math.cos(lam)) / rad;
     var gmst = (280.46061837 + 360.98564736629 * n) % 360;
     var sub0 = ((ra - gmst) % 360 + 540) % 360 - 180;           // the longitude under the sun now
-    // the night: the land under it drawn again, darker, in two depths
-    var td = Math.tan(dec * rad);
-    function night(sub) {                                        // the side of Earth where the sun is under the horizon
-      var pts = [];
-      for (var lon = -180; lon <= 180; lon += 3) pts.push(at(lon, Math.atan(-Math.cos((lon - sub) * rad) / td) / rad));
-      var yE = dec < 0 ? -30 : H + 30;
-      pts.push([1030, pts[pts.length - 1][1]], [1030, yE], [-30, yE], [-30, pts[0][1]]);
-      return 'M' + pts.map(function (p) { return p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join('L') + 'Z';
+    // the land's dots, each its place on Earth (the map's projection undone, once)
+    function unat(px, py) {
+      var x = px / S - XMAX, y = YTOP - py / S, th = y / A1, t2, t6;
+      for (var k = 0; k < 10; k++) {
+        t2 = th * th; t6 = t2 * t2 * t2;
+        th -= (th * (A1 + A2 * t2 + t6 * (A3 + A4 * t2)) - y) / (A1 + 3 * A2 * t2 + t6 * (7 * A3 + 9 * A4 * t2));
+      }
+      t2 = th * th; t6 = t2 * t2 * t2;
+      var sp = Math.sin(th) / M;
+      if (Math.abs(sp) > 1) return null;
+      return [3 * x * (9 * A4 * t6 * t2 + 7 * A3 * t6 + 3 * A2 * t2 + A1) / (2 * Math.sqrt(3) * Math.cos(th)) / rad, Math.asin(sp)];
     }
-    var NS = 'http://www.w3.org/2000/svg', id = 'dmn' + Math.random().toString(36).slice(2, 7);
+    var dots = [], re = /M(-?[\d.]+) (-?[\d.]+)h0/g, m, ld = land.getAttribute('d');
+    while ((m = re.exec(ld))) {
+      var ll = unat(+m[1], +m[2]);
+      if (ll) dots.push({ s: 'M' + m[1] + ' ' + m[2] + 'h0', lon: ll[0], sp: Math.sin(ll[1]), cp: Math.cos(ll[1]), k: 0 });
+    }
+    // the night: the land's dots under it drawn again, darker, in two depths (the sun under the horizon; more than
+    // twelve degrees under it), redrawn as the dots change, ten times a second at most
+    var NS = 'http://www.w3.org/2000/svg';
     function el(tag, attrs, parent, before) {
       var e = document.createElementNS(NS, tag);
       for (var k in attrs) e.setAttribute(k, attrs[k]);
       if (before) parent.insertBefore(e, before); else if (parent) parent.appendChild(e);
       return e;
     }
-    var defs = el('defs', {}, svg, svg.firstChild);
-    var clips = ['a', 'b', 'c'].map(function (k) { return el('path', {}, el('clipPath', { id: id + k }, defs)); });
     var after = land.nextSibling;
-    var dusk = land.cloneNode(false); dusk.setAttribute('class', 'dmap__land dmap__land--dusk');
-    dusk.setAttribute('clip-path', 'url(#' + id + 'a)');
-    svg.insertBefore(dusk, after);
-    var deep = el('g', { 'clip-path': 'url(#' + id + 'b)', 'class': 'dmap__night' }, svg, after);
-    var dk = land.cloneNode(false); dk.setAttribute('class', 'dmap__land dmap__land--night');
-    dk.setAttribute('clip-path', 'url(#' + id + 'c)');
-    deep.appendChild(dk);
+    var dusk = el('path', { 'class': 'dmap__land dmap__land--dusk', d: '' }, svg, after);
+    var deep = el('path', { 'class': 'dmap__land dmap__land--night', d: '' }, svg, after);
     // the desks (the seat aside): each its place, and a ring for its sunrise
     var desks = Array.prototype.slice.call(svg.querySelectorAll('a.dm[data-ll]')).filter(function (a) {
       return !a.classList.contains('dm--seat');
@@ -1204,12 +1207,23 @@
       return { a: a, lat: ll[0] * rad, lon: ll[1], open: true, dawn: -9,
                ring: el('circle', { 'class': 'dm__dawn', r: 7 }, g, g.firstChild) };
     });
-    var sinD = Math.sin(dec * rad), cosD = Math.cos(dec * rad), RISE = Math.sin(-0.833 * rad);
+    var sinD = Math.sin(dec * rad), cosD = Math.cos(dec * rad), RISE = Math.sin(-0.833 * rad), DEEP = Math.sin(-12 * rad);
+    var drawn = -1;
     function frame(t) {
       var sub = sub0 - 360 * t / DAY, fade = Math.min(1, t / 0.8).toFixed(3);
-      clips[0].setAttribute('d', night(sub));
-      clips[1].setAttribute('d', night(sub + 12));
-      clips[2].setAttribute('d', night(sub - 12));
+      if (drawn < 0 || t - drawn >= 0.1) {
+        drawn = t;
+        var changed = false;
+        dots.forEach(function (d) {
+          var e = d.sp * sinD + d.cp * cosD * Math.cos((d.lon - sub) * rad), k = e < DEEP ? 2 : e < RISE ? 1 : 0;
+          if (k !== d.k) { d.k = k; changed = true; }
+        });
+        if (changed || t === 0) {
+          var a = '', b = '';
+          dots.forEach(function (d) { if (d.k === 1) a += d.s; else if (d.k === 2) b += d.s; });
+          dusk.setAttribute('d', a); deep.setAttribute('d', b);
+        }
+      }
       dusk.style.opacity = fade; deep.style.opacity = fade;
       desks.forEach(function (d) {
         var e = Math.sin(d.lat) * sinD + Math.cos(d.lat) * cosD * Math.cos((d.lon - sub) * rad), open = e > RISE;
@@ -1229,7 +1243,7 @@
     fig.classList.add('is-day');
     var off = function () {
       if (!mq.matches) return;
-      run.stop(); dusk.remove(); deep.remove(); defs.remove(); fig.classList.remove('is-day');
+      run.stop(); dusk.remove(); deep.remove(); fig.classList.remove('is-day');
       desks.forEach(function (d) { d.ring.remove(); d.a.classList.remove('is-shut'); });
     };
     if (mq.addEventListener) mq.addEventListener('change', off); else if (mq.addListener) mq.addListener(off);

@@ -597,7 +597,6 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
    after its sunset; the ring of its sunrise */
 .dmap__land--dusk { stroke: #adb7bd; }
 .dmap__land--night { stroke: #94a0aa; }
-.dmap__land--dusk, .dmap__night { transition: opacity .8s ease; }
 .dmap .dm.is-shut .dm__mk { opacity: .34; }
 .dm__dawn { fill: none; stroke: var(--link); stroke-width: 1.4; opacity: 0; pointer-events: none; }
 .dmap .dm:hover .dm__mk, .dmap .dm:focus-visible .dm__mk { transform: scale(1.35); }
