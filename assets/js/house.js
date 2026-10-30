@@ -1490,8 +1490,8 @@
     // store (3 s), it runs on to the crane's table (0.7 s), and the crane carries it along its aisle and up to its
     // lane (4 s), stands (0.45 s) and runs it into the lane (0.8 s), where its face takes its place among the others;
     // the crane goes back to the lift and the lift goes up. Then a case of copies for the desks runs along its deck to
-    // the window seat and waits, still; at the window the contacts come down on it (0.6 s), its light comes on once
-    // they are down and holds (2.8 s), they go up (0.6 s) and the case goes back to its place on the deck. Without the
+    // the window seat and waits, still; at the window a short contact comb comes down on its end (0.6 s), its light
+    // comes on once it is down and holds (2.8 s), it goes up (0.6 s) and the case goes back to its place on the deck. Without the
     // script, and under reduced motion, the drawing stands as written: the cases in the store, the copies waiting, the
     // machines parked.
     seat: function (L, T, g, dim, svg) {
@@ -1527,7 +1527,9 @@
       // press beam, the stop; the case of copies, the contacts, the window seat's light
       var platH = Box(gh, T, thin), caseH = Case(gh), head = Box(gh, T, firm);
       var hl = mk('path', { 'class': 'lv-fill', fill: LIT }, gh);
-      var beam = Box(gh, T, thin), stop = Box(gh, T, thin), copy = Case(gh), bar = Box(gh, T, thin);
+      var beam = Box(gh, T, thin), stop = Box(gh, T, thin), copy = Case(gh), teeth = [];
+      if (M.teeth) for (var q = 0; q < 3; q++) teeth.push(Box(gh, T, thin));
+      var bar = Box(gh, T, thin), TL = M.teeth ? M.teeth[5] : 0;
       var wl = mk('path', { 'class': 'lv-fill', fill: LIT, d: poly([T(M.lamp[0], M.lamp[2] + 0.02, M.lamp[3]), T(M.lamp[1], M.lamp[2] + 0.02, M.lamp[3]),
                                                               T(M.lamp[1], M.lamp[2] + 0.02, M.lamp[4]), T(M.lamp[0], M.lamp[2] + 0.02, M.lamp[4])]) }, gh);
       // the turn
@@ -1565,7 +1567,7 @@
       P.run('rx', WX, 2.4);                                      // a case of copies to the window seat
       P.wait(4.0);                                               // it waits, still
       var o0 = P.at();
-      P.go({ wz: DZ + CH + 0.4 }, 0.6);                          // at the window the contacts come down on it
+      P.go({ wz: DZ + CH + 0.4 + TL }, 0.6);                     // at the window the contact comb comes down on its end
       var o1 = P.wait(2.8);
       P.go({ wz: M.bar[2] }, 0.6);
       P.wait(0.35);
@@ -1605,9 +1607,13 @@
         var bz = P.val('bz', t);
         beam.set(M.beam[0], M.beam[3], M.beam[1], M.beam[4], bz, bz + 6);
         stop.set(M.stop[0], M.stop[3], M.stop[1], M.stop[4], M.stop[2], P.val('st', t));
-        // the case of copies, the contacts, the light at the window: on once the contacts are down, off as they lift
+        // the case of copies, the contact comb, the light at the window: on once the comb is down, off as it lifts
         copy.set(P.val('rx', t), 42, DZ);
         var wz = P.val('wz', t);
+        for (var q = 0; q < teeth.length; q++) {
+          var tx0 = M.teeth[0] + M.teeth[1] * q;
+          teeth[q].set(tx0, tx0 + M.teeth[2], M.teeth[3], M.teeth[4], wz - TL, wz);
+        }
         bar.set(M.bar[0], M.bar[3], M.bar[1], M.bar[4], wz, wz + 6);
         wl.style.opacity = (clamp((t - o0 - 0.7) / 0.18, 0, 1) - clamp((t - o1 + 0.18) / 0.18, 0, 1)).toFixed(3);
       };
