@@ -27,7 +27,8 @@
   });
 
   /* The strip of every frame scrolls by itself; here two buttons under it move it a view at a time, and rest at its
-     ends. Without this script the strip is moved by hand, as it is with these. */
+     ends, and a track on their row, from the first frame's edge, shows where the view stands on the strip (the strip's
+     own scrollbar then stands aside). Without this script the strip is moved by hand, as it is with these. */
   var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   document.querySelectorAll('.reel').forEach(function (r) {
     var nav = document.createElement('div');
@@ -42,11 +43,18 @@
       nav.appendChild(b);
       return b;
     }
+    var track = document.createElement('div'), thumb = document.createElement('div');
+    track.className = 'reel__track'; track.setAttribute('aria-hidden', 'true');
+    thumb.className = 'reel__thumb'; track.appendChild(thumb); nav.appendChild(track);
     var prev = button(-1, 'Earlier frames', 'M10 3 5 8l5 5'), next = button(1, 'Later frames', 'M6 3l5 5-5 5');
+    r.classList.add('is-tracked');
     function state() {
       prev.disabled = r.scrollLeft <= 2;
       next.disabled = r.scrollLeft + r.clientWidth >= r.scrollWidth - 2;
       nav.hidden = r.scrollWidth <= r.clientWidth + 2;
+      var w = r.scrollWidth || 1;
+      thumb.style.width = (100 * r.clientWidth / w).toFixed(2) + '%';
+      thumb.style.left = (100 * r.scrollLeft / w).toFixed(2) + '%';
     }
     r.addEventListener('scroll', state, { passive: true });
     window.addEventListener('resize', state);

@@ -24,7 +24,7 @@ dl, dd { margin: 0; }
 .rt__brand { position: relative; z-index: 1; margin: 0; display: inline-flex; align-items: center; gap: 12px; font: 600 16px/1 var(--sans); }
 .rt__brand .rmark { width: 30px; height: 30px; }
 .rt__stage { position: relative; z-index: 1; align-self: center; justify-self: center; width: 100%; max-width: 1180px; }
-.rt__text { position: relative; z-index: 1; max-width: min(100%, 980px); }
+.rt__text { position: relative; z-index: 1; max-width: min(100%, 1000px); }
 .rt__status { margin: 0 0 14px; font: 500 12px/1.5 var(--mono); letter-spacing: .08em; color: var(--dim); }
 .rt__say { margin: 0; font: 520 clamp(28px, 4.2vw, 58px)/1.08 var(--sans); letter-spacing: -.012em; text-wrap: balance; }
 .rt__sub { margin: 14px 0 0; font: 440 clamp(17px, 1.6vw, 22px)/1.4 var(--sans); }
@@ -32,6 +32,13 @@ dl, dd { margin: 0; }
 .rt__fine a { color: var(--fg); }
 .rt__back { position: relative; z-index: 1; margin: 0; padding-top: 14px; border-top: 1px solid var(--line); font: 400 13px/1.4 var(--sans); }
 .rt__back a { text-decoration: underline; text-underline-offset: .22em; text-decoration-thickness: 1px; }
+/* the 2090s (Astra, 24e): the stage on the page's own edges, under the mark and over the statement; the statement
+   54/59 at most */
+.rt-era--now .rt__stage { justify-self: stretch; max-width: none; }
+.rt-era--now .rt__say { font-size: clamp(28px, 3.75vw, 54px); line-height: 1.09; }
+@media (min-width: 1100px) {
+  .hl, .th { grid-template-columns: 480px minmax(0, 1fr); column-gap: 64px; }
+}
 
 /* the event again (the earlier decades' pages): a small round control in the stage's corner once the event is over */
 .rt__again { position: absolute; right: 0; top: 0; z-index: 2; display: grid; place-items: center; width: 40px; height: 40px;
@@ -351,6 +358,19 @@ dl, dd { margin: 0; }
   .fa__sign { font-size: 10.5px; padding: 5px 7px; }
   .ro__log td, .ro__log th { padding-inline: 9px; }
   .ro__log td { font-size: 15px; }
+}
+@media (max-width: 760px) {
+  .rt-era--now .rt__main { display: flex; flex-direction: column; row-gap: 0; }
+  .rt-era--now .rt__stage, .rt-era--now .rt__text, .rt-era--now .hl, .rt-era--now .th, .rt-era--now .li,
+  .rt-era--now .fa { display: contents; }
+  .rt-era--now .rt__top { order: 0; margin-bottom: 18px; }
+  .rt-era--now .hl__scene, .rt-era--now .th__scene, .rt-era--now .li__scene, .rt-era--now .fa__scene { order: 1; }
+  .rt-era--now .rt__status { order: 2; margin: 24px 0 10px; }
+  .rt-era--now .rt__say { order: 3; font-size: 32px; line-height: 35px; letter-spacing: -.012em; }
+  .rt-era--now .hl__card, .rt-era--now .th__sheet, .rt-era--now .li__board, .rt-era--now .fa__f { order: 4; margin-top: 28px; }
+  .rt-era--now .rt__sub { order: 5; margin-top: 24px; }
+  .rt-era--now .rt__fine { order: 6; }
+  .rt-era--now .rt__back { order: 7; margin-top: 32px; }
 }
 @media (max-width: 460px) {
   .li__when { font-size: 13px; }

@@ -39,18 +39,25 @@ body { color: var(--ink); }
 .pn__name a:hover { color: var(--link); }
 .pn__sep { color: var(--hair); font-weight: 300; }
 .pn__here { font: 500 14px/1 var(--mono); color: var(--soft); letter-spacing: .02em; }
-.pn__links { margin: 0; display: flex; align-items: center; gap: 4px 22px; font: 460 13px/1 var(--sans); }
-.pn__links a:not(.btn) { padding-block: 10px; color: #33414a; transition: color .15s ease; }
-.pn__links a:not(.btn):hover { color: var(--link); }
+.pn__links { margin: 0 0 0 auto; display: flex; align-items: center; gap: 0 24px; font: 460 13px/18px var(--sans); }
+.pn__links a { display: inline-flex; align-items: center; min-height: 44px; color: #33414a; transition: color .15s ease; }
+.pn__links a:hover { color: var(--link); }
+/* on a phone the bar takes two rows: the name and Watch, then its sections (Astra, 24e) */
 @media (max-width: 700px) {
-  .pn__links a:not(.btn) { display: none; }
+  .pn__in { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name watch" "links links";
+            column-gap: 12px; row-gap: 0; }
+  .pn__name { grid-area: name; min-height: 52px; align-items: center; }
+  .pn__watch { grid-area: watch; }
+  .pn__links { grid-area: links; margin: 0; overflow-x: auto; scrollbar-width: none; white-space: nowrap; }
+  .pn__links::-webkit-scrollbar { display: none; }
+  .nsl [id] { scroll-margin-top: 112px; }
 }
 
 /* ------------------------------------------------------------------ the series page: the name, drafted */
-.nh { background: var(--nsl); color: var(--on-dark); padding-block: clamp(64px, 9vw, 128px) clamp(44px, 5vw, 76px);
+.nh { background: var(--nsl); color: var(--on-dark); padding-block: 80px clamp(44px, 5vw, 76px);
       overflow: hidden; }
 .nh__in { display: grid; justify-items: center; text-align: center; }
-.drafted { --track: -.02em; margin: 0; font: 600 clamp(58px, 8.6vw, 116px)/.94 var(--sans); font-stretch: 100%;
+.drafted { --track: -.02em; margin: 0; font: 600 clamp(56px, 7.8vw, 112px)/.964 var(--sans); font-stretch: 100%;
            letter-spacing: var(--track); color: var(--light-system); white-space: nowrap; }
 .drafted .k { position: relative; }
 /* typed once, right to left: N, E, L, S, O, N, at the system's key rate (six keys in 0.35 s), then it holds. Each key
@@ -71,13 +78,13 @@ body { color: var(--ink); }
 }
 @keyframes key-wait { from, to { opacity: 0; } }
 @keyframes caret-on { from, to { opacity: 1; } }
-.nh__line { margin: clamp(18px, 2vw, 26px) 0 0; max-width: 32ch; font: 560 clamp(23px, 2.5vw, 34px)/1.16 var(--sans);
+.nh__line { margin: 24px 0 0; max-width: 32ch; font: 560 clamp(23px, 2.25vw, 32px)/1.19 var(--sans);
             letter-spacing: -.012em; text-wrap: balance; }
-.nh__ctas { margin: clamp(26px, 3vw, 36px) 0 0; display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
+.nh__ctas { margin: 28px 0 0; display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
             gap: 14px 28px; font-size: 17px; }
 
 /* every frame of every Sheet, in serial order, on one strip that the reader moves along */
-.reel { margin-top: clamp(52px, 6.4vw, 92px); overflow-x: auto; overscroll-behavior-x: contain;
+.reel { margin-top: 56px; overflow-x: auto; overscroll-behavior-x: contain;
         scroll-snap-type: x proximity; scrollbar-width: thin; scrollbar-color: rgb(171 184 195 / .45) transparent;
         padding: 0 max(var(--gut), calc((100% - var(--col)) / 2)) 18px;
         scroll-padding-inline: max(var(--gut), calc((100% - var(--col)) / 2)); }
@@ -87,11 +94,16 @@ body { color: var(--ink); }
 .reel__item a { display: block; color: var(--on-dark-soft); transition: color .15s ease; }
 .reel__item a:hover { color: var(--on-dark); }
 .reel__item img { width: 100%; height: auto; border-radius: 4px; }
-.reel__cap { display: flex; justify-content: space-between; margin-top: 10px; font: 400 12.5px/1 var(--mono);
+.reel__cap { display: flex; justify-content: space-between; margin-top: 10px; font: 400 14px/20px var(--mono); color: #bac6d7;
              letter-spacing: .02em; font-variant-numeric: tabular-nums; }
 
-/* the strip's two buttons (set by the script): under it, at the column's right */
-.reel__nav { display: flex; justify-content: flex-end; gap: 12px; margin-top: 4px; }
+/* the strip's two buttons (set by the script): under it, at the column's right, a 3 px track before them from the
+   first frame's edge showing where the view stands; the strip's own scrollbar then stands aside */
+.reel__nav { display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 4px; }
+.reel__track { position: relative; flex: 1; height: 3px; margin-right: 12px; border-radius: 2px; background: rgb(171 184 195 / .22); }
+.reel__thumb { position: absolute; top: 0; height: 100%; border-radius: 2px; background: rgb(171 184 195 / .75); }
+.reel.is-tracked { scrollbar-width: none; padding-bottom: 12px; }
+.reel.is-tracked::-webkit-scrollbar { display: none; }
 .reel__b { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 1px solid rgb(241 243 242 / .28);
            border-radius: 50%; background: transparent; color: var(--on-dark); cursor: pointer;
            transition: background-color .12s ease, border-color .12s ease, opacity .12s ease; }
@@ -132,6 +144,7 @@ body { color: var(--ink); }
 .spec__panel { min-width: 0; background: var(--panel); border-radius: 8px; padding: clamp(20px, 3vw, 44px); }
 .owp { margin: 0; font: 400 15px/24px var(--mono); white-space: pre-wrap; overflow-wrap: break-word;
        font-variant-ligatures: none; tab-size: 4; max-width: 88ch; color: var(--ink); }
+.owp .nb { white-space: nowrap; }                /* an identifier kept whole on a line (24e) */
 
 /* ------------------------------------------------------------------ a Sheet's page */
 .sx { background: var(--view); color: var(--on-dark); padding-block: clamp(52px, 6.4vw, 92px) clamp(44px, 5.4vw, 80px); }
@@ -253,6 +266,10 @@ label.sw { cursor: pointer; }
   .strip, .strip--4 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (max-width: 699px) {
+  .nh { padding-top: 40px; }
+  .nh__line { font-size: 23px; line-height: 28px; max-width: 26ch; }
+  .reel { margin-top: 32px; }
+  .reel__cap { font-size: 13px; line-height: 18px; }
   .frames__list { grid-template-columns: minmax(0, 1fr); }
   .set { grid-template-columns: minmax(0, 1fr); }
   .owp { font-size: 14px; line-height: 22px; }
