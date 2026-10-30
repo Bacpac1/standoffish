@@ -1005,7 +1005,7 @@
     o.x = function (c, y0, y1, z0, z1) { o.p.setAttribute('d', poly([T(c, y0, z0), T(c, y1, z0), T(c, y1, z1), T(c, y0, z1)])); return o; };
     return o;
   }
-  // a run along the floor (Astra, round 25): away in 0.25 s, at an even pace, down in 0.35 s to a crawl for its last
+  // a run along the floor: away in 0.25 s, at an even pace, down in 0.35 s to a crawl for its last
   // 9 cm, and still; as a function of the part of the run's time gone, the part of its length done
   function drive(L, D) {
     L = Math.abs(L);
@@ -1482,16 +1482,18 @@
       };
     },
 
-    // The seat at Longyearbyen (round 26), a turn of 44 s in Astra's cadence: most of the house stands still, one
-    // thing moves at a time, two at most. A blank custody case rises into the write seat (0.6 s); the head comes down
-    // over it and writes (2.4 s, its light on) and goes up; the press beam comes down along its seam once and goes up;
-    // the stop drops and the case runs on the rollers to the lift (2.2 s); the lift takes it down through the floor to
-    // the store (3 s); there it runs on to the crane's table, and the crane carries it along its aisle and up to its
+    // The seat at Longyearbyen, a turn of 44 s: most of the house stands still, one thing moves at a time, two at
+    // most. A blank custody case rises into the write seat (0.6 s); the head comes down over it and writes (2.4 s, its
+    // light on) and goes up clear of the press beam, which comes down along the seam once and goes up; the stop drops
+    // and the case runs on the rollers to the lift (2.2 s); at each hand-off the next machine stands ready, the case
+    // crosses and settles, and only then does the last one move: the lift takes it down through the floor to the
+    // store (3 s), it runs on to the crane's table (0.7 s), and the crane carries it along its aisle and up to its
     // lane (4 s), stands (0.45 s) and runs it into the lane (0.8 s), where its face takes its place among the others;
-    // the crane goes back to the lift and the lift goes up. Then a reply's case runs along its deck to the window seat
-    // and waits; at the window the contacts come down on it (0.6 s), its light comes on once while they hold (2.4 s),
-    // they go up (1 s) and the case goes back to its place on the deck. Without the script, and under reduced motion,
-    // the drawing stands as written: the cases in the store, the replies waiting, the machines parked.
+    // the crane goes back to the lift and the lift goes up. Then a case of copies for the desks runs along its deck to
+    // the window seat and waits, still; at the window the contacts come down on it (0.6 s), its light comes on once
+    // they are down and holds (2.8 s), they go up (0.6 s) and the case goes back to its place on the deck. Without the
+    // script, and under reduced motion, the drawing stands as written: the cases in the store, the copies waiting, the
+    // machines parked.
     seat: function (L, T, g, dim, svg) {
       T.k = 1;
       var M = L[T.small ? 's' : 'l'], F0 = M.floor, CW = M.case[0] / 2, CD = M.case[1] / 2, CH = M.case[2];
@@ -1522,10 +1524,10 @@
       var rollers = mk('path', { 'class': 'lv-line', fill: 'none', stroke: INK.detail, 'stroke-width': 0.55 }, gs);
       var caseK = Case(gs), shoe = Box(gs, T, thin), mast = Box(gs, T, firm);
       // the hall: the lift's platform and the case on it, at the seat and on the rollers; the head, its light, the
-      // press beam, the stop; the reply's case, the contacts, the window seat's light
+      // press beam, the stop; the case of copies, the contacts, the window seat's light
       var platH = Box(gh, T, thin), caseH = Case(gh), head = Box(gh, T, firm);
       var hl = mk('path', { 'class': 'lv-fill', fill: LIT }, gh);
-      var beam = Box(gh, T, thin), stop = Box(gh, T, thin), reply = Case(gh), bar = Box(gh, T, thin);
+      var beam = Box(gh, T, thin), stop = Box(gh, T, thin), copy = Case(gh), bar = Box(gh, T, thin);
       var wl = mk('path', { 'class': 'lv-fill', fill: LIT, d: poly([T(M.lamp[0], M.lamp[2] + 0.02, M.lamp[3]), T(M.lamp[1], M.lamp[2] + 0.02, M.lamp[3]),
                                                               T(M.lamp[1], M.lamp[2] + 0.02, M.lamp[4]), T(M.lamp[0], M.lamp[2] + 0.02, M.lamp[4])]) }, gh);
       // the turn
@@ -1535,34 +1537,38 @@
       P.go({ hz: SZ + CH + 2 }, 0.4);                            // the head comes down over it
       var w0 = P.at(), w1 = P.wait(2.4);                         // it writes
       P.go({ hz: M.head[2] }, 0.4);
-      P.go({ bz: SZ + CH + 0.4 }, 0.5);                          // the press beam, along its seam
+      P.wait(0.2);                                               // the head clear of the beam's way
+      P.go({ bz: SZ + CH + 0.4 }, 0.45);                         // the press beam, along its seam
       P.wait(0.25);
       P.go({ bz: M.beam[2] }, 0.45);
       P.go({ st: SZ + 0.5 }, 0.2);                               // the stop drops
       var r0 = P.at();
       P.run('cx', LX, 2.2);                                      // along the rollers, on to the lift
+      P.wait(0.35);                                              // it settles
       var l0 = P.go({ st: M.stop[5] }, 0.3);                     // the stop rises again behind it
       var l1 = P.run('pz', ZFOOT, 3.0);                          // down through the floor to the store
-      P.wait(0.4);
+      P.wait(0.25);
       var k0 = P.at();
-      P.go({ ky: 92 }, 0.6);                                     // on to the crane's table
-      P.wait(0.4);
+      P.go({ ky: 92 }, 0.7);                                     // on to the crane's table
+      P.wait(0.35);
       var t0 = P.at();
       P.also({ kz: ZT }, t0, 4.0);
       P.run('kx', XT, 4.0);                                      // along the aisle and up to its lane
       P.wait(0.45);
       var i0 = P.at(), i1 = P.go({ ky: MOUTH - CD }, 0.8);       // into the lane
-      P.wait(0.45);
+      P.wait(0.35);
       var b0 = P.at();
-      P.also({ kz: ZFOOT }, b0, 3.2);
+      P.also({ kz: ZFOOT }, b0, 4.0);
       P.also({ pz: ZTOP }, b0, 3.0);
-      P.run('kx', LX, 3.2);                                      // the crane back to the lift; the lift back up
-      P.run('rx', WX, 2.4);                                      // a reply's case to the window seat
-      P.wait(8.6);                                               // it waits
+      P.run('kx', LX, 4.0);                                      // the crane back to the lift; the lift back up
+      P.wait(2.4);
+      P.run('rx', WX, 2.4);                                      // a case of copies to the window seat
+      P.wait(4.0);                                               // it waits, still
       var o0 = P.at();
       P.go({ wz: DZ + CH + 0.4 }, 0.6);                          // at the window the contacts come down on it
-      var o1 = P.wait(2.4);
-      P.go({ wz: M.bar[2] }, 1.0);
+      var o1 = P.wait(2.8);
+      P.go({ wz: M.bar[2] }, 0.6);
+      P.wait(0.35);
       P.run('rx', RX, 2.4);                                      // back to its place on the deck
       var TURN = 44;
       return function (t) {
@@ -1599,11 +1605,11 @@
         var bz = P.val('bz', t);
         beam.set(M.beam[0], M.beam[3], M.beam[1], M.beam[4], bz, bz + 6);
         stop.set(M.stop[0], M.stop[3], M.stop[1], M.stop[4], M.stop[2], P.val('st', t));
-        // the reply's case, the contacts, the light at the window
-        reply.set(P.val('rx', t), M.held.length ? 42 : 42, DZ);
+        // the case of copies, the contacts, the light at the window: on once the contacts are down, off as they lift
+        copy.set(P.val('rx', t), 42, DZ);
         var wz = P.val('wz', t);
         bar.set(M.bar[0], M.bar[3], M.bar[1], M.bar[4], wz, wz + 6);
-        wl.style.opacity = (clamp((t - o0 - 0.6) / 0.18, 0, 1) - clamp((t - o1) / 0.18, 0, 1)).toFixed(3);
+        wl.style.opacity = (clamp((t - o0 - 0.7) / 0.18, 0, 1) - clamp((t - o1 + 0.18) / 0.18, 0, 1)).toFixed(3);
       };
     }
   };
