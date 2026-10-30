@@ -1196,87 +1196,85 @@
   function lamp(t, on, off) { return 0.4 + 0.6 * (clamp((t - on) / 0.18, 0, 1) - clamp((t - off) / 0.18, 0, 1)); }
 
   var SCENES = {
-    // Replies, a turn of about 30 s, in the house's own causes. The courier works with four arms, none like another,
-    // two of them moving at once at most, the others holding: its body 56 by 46 cm and 24 high, a tote of envelopes
-    // in its head half, its mast off to its right (140 cm). A, the long arm (44 and 46 cm) on a bracket high on the
-    // mast, carries an envelope by its head in a jaw of two plates and sets it in the slot; B, a short arm low on the
-    // mast (22 and 20 cm), lifts the next envelope out of the tote and holds it up for A; C, a slide on the tote's left
-    // rim, parts the next envelope from the others; D, a strut out of a sleeve on the mast, sets its flat foot against
-    // the counter's front edge while A reaches over. The courier keeps its berth at the left end wall, under the
-    // supply's hood, where its tote is filled. It backs out, and standing in the room C parts the first envelope, B
-    // lifts it out and A takes it from B. At each position in turn, from the left, it runs into the bay and stands
-    // (0.25 s); D's foot goes to the counter's edge (0.4 s) while C parts the next envelope; A reaches over the counter
-    // (0.65 s) while B lifts that one out, sets the envelope's foot in the slot (12 mm, held 0.25 s) and lets go
-    // (0.15 s): A high over the counter, B holding the next low, D braced, the courier still. 0.18 s on the slot draws
-    // it in, 21 cm in 0.45 s, and the bezel answers; the record is set on the three displays, the position's own first
-    // and its neighbours after, 0.12 s apart. A comes back, D's foot comes off, A takes the next envelope from B, and
-    // the courier backs out of the bay. At the window (1.6 s after the third) the bar runs once (0.8 s) and what was
-    // held is carried (0.24 s); the displays go back to rest. The courier goes back to its berth, its tote is filled
-    // again (1.4 s), and the turn begins again. Its light is the mark on each arm's tool lock, lit while it holds.
+    // Replies, a turn of about 34 s, in the house's own causes. The courier (RC-4, tools/robokit/robots.js) works with
+    // four arms, none like another, two of them moving at once at most, the others holding: its body 46 by 56 cm and
+    // 24 high, a tote in its front half where three envelopes stand in a row on their short edge, a pusher behind them,
+    // its mast at its back (140 cm). A, the long arm (50 and 52 cm) from a bracket high on the mast, takes the front
+    // envelope by its head in a jaw of two plates; B, a short arm low on the mast (22 and 20 cm), holds the next one down
+    // while A draws it out; C, the pusher, brings the row forward; D, a strut out of a sleeve high on the mast, sets its
+    // flat foot against the counter's front edge while A reaches over. It keeps its berth at the left end wall, under
+    // the supply's hood, where its tote is filled. It backs out to the first position and, standing in the room (at the
+    // counter A's elbow would meet the counter's top), A goes down to the front envelope, B comes over the next and holds
+    // it, A takes the front one and lifts it clear, B lets go, and C brings the row forward while the courier runs into
+    // the bay, in under the counter's edge. D's foot goes to the edge (0.4 s); A reaches over the counter (0.7 s), sets
+    // the envelope's foot in the slot (12 mm, held 0.25 s) and lets go (0.15 s): 0.18 s on, the slot draws it in, 21 cm
+    // in 0.45 s, and the bezel answers; the record is set on the three displays, the position's own first and its
+    // neighbours after, 0.12 s apart. A comes back, D's foot comes off, the courier backs out, and at the next position
+    // takes the next envelope the same way. At the window (1.6 s after the third) the bar runs once (0.8 s) and what was
+    // held is carried (0.24 s); the displays go back to rest. The courier goes back to its berth, the pusher draws back
+    // and three envelopes are set in from the supply (1.6 s), and the turn begins again. Its light is the mark on the
+    // jaw's lock and on B's block, lit while each holds. The machine is drawn from its parts by robokit, what hides what
+    // decided again at each picture.
     reply: function (L, T, g, dim, svg) {
       var IN = 0.45, ANS = 0.18, STEP = 0.12, BAR = 0.8, CLR = 0.24, F0 = L.floor;
       var order = [0, 1, 2];                                     // the positions in the order they lodge
-      var TOP = L.pos[0].slot[4];                                // the counters' top, at the slot
-      var XS = L.pos.map(function (p) { return (p.slot[0] + p.slot[2]) / 2; });
-      var YS = (L.pos[0].slot[1] + L.pos[0].slot[3]) / 2;
       var EXP = 20.8;                                            // what stands above the slot, its foot 12 mm in
-      var W2 = 28, DP = 46, H = 24, RIM = F0 + H + 12;           // the body's half width and depth, its height; the tote's rim
-      var LANE = 112, BAYY = 75, EDGE = 78;                      // the body's head: out in the room; in a bay; the counter's edge
-      var TOTE = [5, 10, 15], ET = F0 + H + 23;                  // where each envelope stands in the tote, from its head; their heads
-      var MX = 12, MY = 34;                                      // the mast: its left face from the body's middle; its far face from the head
-      var SA = [37, F0 + 130], LA1 = 44, LA2 = 46;               // A's shoulder (from the head; its height), its lengths
-      var SB = [37, F0 + 60], LB1 = 22, LB2 = 20, BXo = 9;       // B's shoulder, its lengths, its plane (from the middle)
-      var ZPUT = TOP + 19.8, ZLIFT = TOP + 26;                   // A's jaw: the envelope's foot 12 mm in the slot; over the counter
-      var CARRY = [8, F0 + 116];                                 // A's jaw while it carries (from the head; its height)
-      var ZH = F0 + 59;                                          // an envelope's head, held up out of the tote by B for A
-      var PARK = [20, F0 + 44], BPICK = F0 + H + 20;             // B's grip at rest; at an envelope's head in the tote
-      var C0 = 19;                                               // C's slider at rest, from the head
-      var BX = 12 + 32 + 2 + W2;                                 // the courier's middle in its berth
-      var P = Plan({ x: BX, yb: LANE, ay: CARRY[0], az: CARRY[1], by: PARK[0], bz: PARK[1], cy: C0, d: 0 });
-      var put = [], S = [], bGrip = [], aGrip = [];
-      // from t: C parts envelope k (0.35 s there, 0.3 s back), then B lifts it out (0.5 s down, 0.12 s, 0.45 s up)
-      function ready(k, t) {
-        P.also({ cy: TOTE[k] + 4 }, t, 0.35);
-        P.also({ cy: C0 }, t + 0.35, 0.3);
-        P.also({ by: TOTE[k], bz: BPICK }, t + 0.65, 0.5);
-        bGrip[k] = t + 1.27;
-        return P.also({ bz: ZH - 3 }, t + 1.27, 0.45);
+      var R = RK_MACHINES.M.courier, Q = R.poses, mach = new RK.Machine(R);
+      var XS = L.pos.map(function (p) { return (p.slot[0] + p.slot[2]) / 2 - 4.5; });   // its middle: A's arm over the slot
+      var LANE = 112, BAYY = LANE + Q.LANE;                      // its head: out in the room; in a bay, in under the edge
+      var BX = 12 + 32 + 2 + 28;                                 // its middle in its berth
+      var init = { x: BX, yb: LANE, c: 0, d: 0, j: 0, p0: 10, p1: 5, p2: 0 };
+      function pose(n, q) { var m = {}; m[n + '_sh'] = q[0]; m[n + '_el'] = q[1]; m[n + '_wr'] = q[2]; return m; }
+      [pose('a', Q.REST), pose('b', Q.BREST)].forEach(function (m) { for (var k in m) init[k] = m[k]; });
+      var P = Plan(init);
+      // how far up from the tote (as a part of A's lift) the envelope's foot is out of it: its lower half shown from then
+      var UB = 1;
+      for (var i = 0; i <= 100; i++) {
+        var e = std(i / 100), z = R.wristZ([0, 1].map(function (j) { return Q.TAKE[j] + (Q.LIFT[j] - Q.TAKE[j]) * e; }));
+        if (z - 32.5 >= 36.7) { UB = i / 100; break; }
       }
-      // A takes envelope k from B (0.6 s down, 0.15 s), B lets go (0.12 s) and goes back while A lifts it
-      function take(k) {
-        P.go({ ay: TOTE[k], az: ZH - 1 }, 0.6);
-        aGrip[k] = P.wait(0.15);
-        P.wait(0.12);
-        P.also({ by: PARK[0], bz: PARK[1] }, P.at(), 0.5);
-        P.go({ ay: CARRY[0], az: CARRY[1] }, 0.55);
-      }
+      var put = [], S = [], tk = [], tb = [], press = [], rel = [], fill = [];
       P.wait(0.4);
       P.run('x', XS[0], 0.8);                                    // out of the berth (it backs out) to the first position
-      P.wait(ready(0, P.at()) - P.at());                         // standing in the room: the first envelope readied
-      take(0);
-      XS.forEach(function (x, p) {
-        if (p) P.run('x', x, 1.4);
-        P.run('yb', BAYY, 0.6);
+      XS.forEach(function (x, k) {
+        if (k) P.run('x', x, 1.4);
+        // standing in the room: the front envelope out of the tote
+        P.also({ j: -Q.OPEN }, P.at() + 0.25, 0.2);
+        P.go(pose('a', Q.TAKE), k ? 0.6 : 0.7);
+        if (k < 2) { P.go(pose('b', Q.BOVER), 0.3); P.go(pose('b', Q.PRESS), 0.15); press[k] = P.at(); }
+        tk[k] = P.go({ j: Q.SHUT }, 0.15);
+        var up = P.at();
+        P.go(pose('a', Q.LIFT), 0.85);
+        tb[k] = up + 0.85 * UB;
+        if (k < 2) {                                             // B lets go; C brings the row forward
+          rel[k] = up + 0.75;
+          P.also(pose('b', Q.BOVER), rel[k], 0.25);
+          P.also(pose('b', Q.BREST), rel[k] + 0.25, 0.4);
+          var m = { c: 5 * (k + 1) };
+          for (var j = k + 1; j < 3; j++) m['p' + j] = 10 - 5 * (j - k - 1);
+          P.also(m, rel[k] + 0.65, 0.6);
+        }
+        P.run('yb', BAYY, 0.8);                                  // in under the counter's edge
         P.wait(0.25);                                            // stood still before an arm moves
-        var t0 = P.at(), rdy = p < 2 ? ready(p + 1, t0) : 0;
-        P.also({ d: 1 }, t0, 0.4);                               // D's foot to the counter's edge
-        P.wait(0.4);
-        P.go({ ay: YS - BAYY, az: ZLIFT }, 0.65);                // A over the counter
-        P.go({ az: ZPUT }, 0.3);                                 // the envelope's foot into the slot
+        P.go({ d: Q.BRACE }, 0.4);                               // D's foot to the counter's edge
+        P.go(pose('a', Q.OVER), 0.7);                            // A over the counter
+        P.go(pose('a', Q.SET), 0.3);                             // the envelope's foot into the slot
         P.wait(0.25);
-        put[p] = P.wait(0.15);                                   // the jaw opens
-        S[p] = P.wait(0.18);                                     // the slot draws it in from here
-        P.wait(0.1);
-        P.go({ az: ZLIFT }, 0.3);
-        P.go({ ay: CARRY[0], az: CARRY[1] }, 0.45);              // A back
-        P.also({ d: 0 }, P.at(), 0.4);                           // D's foot off
-        if (p < 2) { if (P.at() < rdy) P.wait(rdy - P.at()); take(p + 1); } else P.wait(0.4);
-        P.run('yb', LANE, 0.6);
+        put[k] = P.go({ j: -Q.OPEN }, 0.15);                     // the jaw opens
+        S[k] = P.wait(0.18);                                     // the slot draws it in from here
+        P.go(pose('a', Q.OVER), 0.3);
+        P.go(pose('a', Q.LIFT), 0.6);                            // A back
+        P.go({ d: 0 }, 0.4);                                     // D's foot off
+        P.run('yb', LANE, 0.8);                                  // out of the bay
       });
+      P.also(pose('a', Q.REST), P.at(), 0.8);
+      P.also({ j: 0 }, P.at() + 0.4, 0.3);
       P.run('x', BX, 2.6);                                       // back to the berth
       var berth = P.at();
-      var TURN = P.wait(1.4), WIN = S[2] + 1.6;                  // filled under the hood
-      var fill = [berth + 0.3, berth + 0.6, berth + 0.9];        // the envelopes set in the tote: the far one first
+      P.also({ p1: 5, p2: 0 }, berth, 0.01);                     // (the slides of the gone envelopes, unseen)
+      P.also({ c: 0 }, berth + 0.1, 0.4);                        // the pusher draws back
+      fill = [berth + 0.6, berth + 0.9, berth + 1.2];            // the envelopes set in from the supply: the far one first
+      var TURN = P.wait(1.6), WIN = S[2] + 1.6;
 
       var pos = L.pos.map(function (p, q) {
         var d = p.disp, y = d[4], b = p.bezel, sl = p.slot;
@@ -1300,101 +1298,34 @@
         o.bar = mk('path', { 'class': 'lv-line', fill: 'none', stroke: INK.accent, 'stroke-width': 1.4, 'stroke-linecap': 'round' }, o.g);
         return o;
       });
-      // an envelope standing, as a thin box: its face (to the room), its head and its edge
-      function envelope(par) {
-        var o = { g: mk('g', {}, par) };
-        o.f = mk('path', { 'class': 'lv-fill', fill: INK.paper }, o.g);
-        o.t = mk('path', { 'class': 'lv-fill', fill: INK.top }, o.g);
-        o.r = mk('path', { 'class': 'lv-fill', fill: INK.right }, o.g);
-        o.o = mk('path', { 'class': 'lv-line', fill: 'none', stroke: INK.ink, 'stroke-width': 0.85 * (T.k || 1), 'stroke-linejoin': 'round' }, o.g);
-        o.set = function (x, y, za, zb) {
-          if (zb - za < 0.3) { o.g.style.display = 'none'; return; }
-          o.g.style.display = '';
-          var xa = x - 5.5, xb = x + 5.5, ya = y - 0.25, yb = y + 0.25;
-          o.f.setAttribute('d', poly([T(xa, yb, za), T(xb, yb, za), T(xb, yb, zb), T(xa, yb, zb)]));
-          o.t.setAttribute('d', poly([T(xa, ya, zb), T(xb, ya, zb), T(xb, yb, zb), T(xa, yb, zb)]));
-          o.r.setAttribute('d', poly([T(xb, ya, za), T(xb, yb, za), T(xb, yb, zb), T(xb, ya, zb)]));
-          o.o.setAttribute('d', poly([T(xa, yb, za), T(xa, yb, zb), T(xa, ya, zb), T(xb, ya, zb), T(xb, ya, za)]) + line([T(xb, yb, za), T(xb, yb, zb), T(xa, yb, zb)]));
-        };
-        return o;
-      }
-      // the courier and its berth, drawn after the positions: they stand before them; its parts from the far to the
-      // near: the body and the tote, C, the envelopes, the hood; then A (in the body's middle), B (to its right), D and
-      // the mast (further right)
-      var rb = mk('g', {}, g);
+      // the courier and its berth, drawn after the positions: they stand before them. The supply against the end wall,
+      // its hood over the berth and the hood's lip, with the courier's parts, in the order what hides what
+      var rb = mk('g', { 'class': 'rk' }, g);
       behindWall(svg, rb, T, L.wall);
-      Box(rb, T).set(12, 44, LANE - 8, LANE + DP + 2, F0, F0 + 118);                 // the supply, against the end wall
-      var ch = Chassis(rb, T);
-      var tote = Box(rb, T, { top: INK.recess });
-      var cRail = Box(rb, T, { w: 0.55 }), cSlide = Box(rb, T);
-      var env = [envelope(rb), envelope(rb), envelope(rb)];      // from the tote's head: 0, 1, 2
-      var hood = Box(rb, T), lip = Box(rb, T, { w: 0.55 });      // the supply's hood over the berth, its lip
-      var firm = { w: 1.4, f: 0.85 };
-      var aBracket = Box(rb, T), aUp = Bar(rb, T, firm), aElbow = Box(rb, T), aFore = Bar(rb, T, firm);
-      var aWrist = Box(rb, T), aLock = Strip(rb, T, LIT), jaw = Box(rb, T), jaw2 = Box(rb, T, { w: 0.55 });
-      var bShoulder = Box(rb, T), bUp = Bar(rb, T), bElbow = Box(rb, T), bFore = Bar(rb, T), bGripper = Box(rb, T), bLock = Strip(rb, T, LIT);
-      var dSleeve = Box(rb, T), dRod = Box(rb, T, { w: 0.55 }), dFoot = Box(rb, T);
-      var mast = Box(rb, T);
+      var ren = new RK.Renderer(rb, T, T.k || 1);
+      var fixed = [RK.box(12, LANE - 8, F0, 44, LANE + 48, F0 + 118, { w: 0.85, link: 'supply' }),
+                   RK.box(12, LANE - 4, F0 + 51, 88, LANE + 24, F0 + 57, { w: 0.85, link: 'hood' }),
+                   RK.box(44, LANE + 22.5, F0 + 48, 88, LANE + 24, F0 + 51, { w: 0.55, link: 'lip' })];
+      var YAW = RK.rot('z', -Math.PI / 2);                       // its front to the counters
       // when the record of position p reaches the display of position q: the own display first, then the nearer
       function at(p, q) {
         var n = [0, 1, 2].sort(function (a, b) { return Math.abs(a - p) - Math.abs(b - p) || a - b; }).indexOf(q);
         return S[p] + IN + ANS + STEP * n;
       }
-      function holds(k, t) { return t >= aGrip[k] && t < put[k]; }
       return function (t) {
         t = t % TURN;
-        var x = P.val('x', t), yb = P.val('yb', t);
-        ch.set(x, yb, yb + DP, W2, F0, H, 0);
-        tote.set(x - 15, x + 15, yb + 1, yb + 23, F0 + H, RIM);
-        // C: its rail on the tote's left rim, its slider
-        var cy = yb + P.val('cy', t);
-        cRail.set(x - 15, x - 12, yb + 2, yb + 22, RIM, RIM + 1.5);
-        cSlide.set(x - 16, x - 11, cy - 3, cy + 3, RIM + 1.5, RIM + 5);
-        // A's jaw and B's grip
-        var ay = yb + P.val('ay', t), az = P.val('az', t), by = yb + P.val('by', t), bz = P.val('bz', t);
-        // the envelopes: in the tote, held up by B, carried by A, gone to the slot; filled again in the berth
-        for (var k = 2; k >= 0; k--) {
-          var tf = fill[2 - k], drop = t >= tf ? 1 - out3((t - tf) / 0.25) : 0;
-          if (t < bGrip[k] || t >= tf) env[k].set(x, yb + TOTE[k], Math.max(RIM, F0 + H + 1 + 10 * drop), ET + 10 * drop);
-          else if (t < aGrip[k]) env[k].set(x, by, Math.max(RIM, bz + 3 - 22), bz + 3);
-          else if (t < put[k]) env[k].set(x, ay, Math.max(ay > yb + 23 ? 0 : RIM, az - 21), az + 1);
-          else env[k].set(0, 0, 0, 0);
+        var q = { run: 0 }, k;
+        ['a_sh', 'a_el', 'a_wr', 'b_sh', 'b_el', 'b_wr', 'c', 'd', 'p0', 'p1', 'p2'].forEach(function (n) { q[n] = P.val(n, t); });
+        q.a_j1 = P.val('j', t); q.a_j2 = -q.a_j1;
+        var held = -1;
+        for (k = 0; k < 3; k++) {
+          if (t >= tk[k] && t < put[k]) held = k;
+          q['e' + k] = t < tk[k] ? 11 : t < fill[k] ? 0 : 11 + 3 * (1 - out3((t - fill[k]) / 0.25));
         }
-        hood.set(12, 78, LANE - 4, LANE + 26, F0 + H + 27, F0 + H + 33);
-        lip.set(44, 78, LANE + 24.5, LANE + 26, F0 + H + 24, F0 + H + 27);
-        // A: the bracket from the mast, the upper length, the elbow, the lower, the wrist, the jaw
-        var sa = [yb + SA[0], SA[1]], wa = [ay, az + 6], ea = elbow(sa, wa, LA1, LA2, 1);
-        aBracket.set(x - 3, x + MX, yb + MY, yb + MY + 6, SA[1] - 3.5, SA[1] + 3.5);
-        aUp.set(x, sa, ea, 2.6, 2.6);
-        aElbow.set(x - 3.4, x + 3.4, ea[0] - 3.4, ea[0] + 3.4, ea[1] - 3.4, ea[1] + 3.4);
-        aFore.set(x, ea, wa, 2.1, 2.1);
-        aWrist.set(x - 3, x + 3, ay - 3, ay + 3, az + 2.5, az + 8);
-        var hA = [0, 1, 2].some(function (k) { return holds(k, t); });
-        aLock.y(ay + 3.04, x - 2, x + 2, az + 4.6, az + 6.2);
-        aLock.p.style.opacity = hA ? '1' : '0.25';
-        var op = 1;                                              // the jaw: shut on an envelope's head, open between
-        [0, 1, 2].forEach(function (k) {
-          var c = clamp((t - aGrip[k] + 0.12) / 0.12, 0, 1) * (1 - clamp((t - put[k] + 0.15) / 0.15, 0, 1));
-          op = Math.min(op, 1 - c);
-        });
-        jaw.set(x - 7, x + 7, ay - 1.6 - 1.2 * op, ay - 0.1 - 1.2 * op, az - 1.5, az + 2.5);
-        jaw2.set(x - 7, x + 7, ay + 0.1 + 1.2 * op, ay + 1.6 + 1.2 * op, az - 1.5, az + 2.5);
-        // B: low on the mast, to the right of the middle; its grip at an envelope's right edge
-        var xb = x + BXo, sb = [yb + SB[0], SB[1]], wb = [by, bz + 4], eb = elbow(sb, wb, LB1, LB2, -1);
-        bShoulder.set(xb - 3, x + MX, yb + MY, yb + MY + 6, SB[1] - 3, SB[1] + 3);
-        bUp.set(xb, sb, eb, 1.9, 1.9);
-        bElbow.set(xb - 2.6, xb + 2.6, eb[0] - 2.6, eb[0] + 2.6, eb[1] - 2.6, eb[1] + 2.6);
-        bFore.set(xb, eb, wb, 1.6, 1.6);
-        bGripper.set(x + 4, xb + 2.5, by - 2, by + 2, bz - 1, bz + 4);
-        var hB = [0, 1, 2].some(function (k) { return t >= bGrip[k] && t < aGrip[k] + 0.12; });
-        bLock.y(by + 2.04, xb - 1.6, xb + 1.6, bz + 1.6, bz + 3);
-        bLock.p.style.opacity = hB ? '1' : '0.25';
-        // D: the sleeve on the mast's far face, the rod out of it, its flat foot
-        var dEnd = yb + MY - 10 - (yb + MY - 10 - EDGE - 1.5) * std(P.val('d', t)) * (yb < BAYY + 1 ? 1 : 0);
-        dSleeve.set(x + MX + 1, x + MX + 7, yb + MY - 10, yb + MY, TOP - 6.5, TOP - 1.5);
-        dRod.set(x + MX + 2.6, x + MX + 5.4, dEnd, yb + MY - 10, TOP - 5.4, TOP - 2.6);
-        dFoot.set(x + MX, x + MX + 8, dEnd - 1.5, dEnd, TOP - 10, TOP + 0.5);
-        mast.set(x + MX, x + MX + 8, yb + MY, yb + MY + 6, F0 + H + 1.1, F0 + 140);
+        q.env_a = held >= 0 ? 1 : 0; q.env_b = held >= 0 && t >= tb[held] ? 1 : 0; q.a_lit = held >= 0 ? 1 : 0.15;
+        q.b_lit = (t >= press[0] && t < rel[0]) || (t >= press[1] && t < rel[1]) ? 1 : 0.15;
+        var B = RK.mul(RK.move(P.val('x', t), P.val('yb', t) + 23, F0), YAW);
+        ren.draw(mach.place(q, B).concat(fixed));
         // the positions
         pos.forEach(function (o, q) {
           var d = o.d, y = d[4];
@@ -1429,7 +1360,6 @@
         });
       };
     },
-
     // Certification, a day of 20 s from ten in the morning: the day at about an hour and a fifth a second (ten
     // seconds of it), an hour a second at night (eight), dusk and dawn a second each, the changes of pace eased over a
     // quarter of a second; the clock's one hand goes on with it, always forward; the high window's glass from the
@@ -1469,31 +1399,35 @@
         return SKY[0][1];
       }
       function dark(h) { return h < 5 || h > 21 ? 1 : h < 7 ? 1 - (h - 5) / 2 : h > 19 ? (h - 19) / 2 : 0; }
-      // the floor's unit, 48 by 40 cm and 10 high, its equipment bay at its back (24 by 14, 4.5 above it), and its
-      // dock: a plate on the floor, its contacts on the back wall. Its runs keep to the floor that nothing in the room
-      // stands before: between the bench and the standing desk (the desk's top passes over what is that far from it)
-      // and along the front, short of the desk's near legs.
+      // the floor's unit (FL-1, tools/robokit/robots.js), 48 by 40 cm and 10 high, its equipment bay at its back, and
+      // its dock: a plate on the floor, its contacts on the back wall, which it meets nose first. Its runs keep to the
+      // floor that nothing in the room stands before: between the bench and the standing desk (the desk's top passes
+      // over what is that far from it) and along the front, short of the desk's near legs. With the night it backs out
+      // of its dock (0.5 s) and turns about (0.4 s); along the bench its edge module, folded along its left side (two
+      // lengths of 12 and 10 cm lying flat and a flat shoe 14 cm long), swings out square to its side (0.45 s) so its
+      // shoe runs under the bench's edge, the unit going straight on, its sweep 22 cm wider; it folds them again
+      // (0.45 s) before it turns; out to the front and along it (4.4 s in all), its corners round (20 cm); it turns
+      // about (0.5 s), goes back (2 s) and into its dock (0.7 s) before dawn
       var X0 = L.glass[0] + 18, Y0 = cy + 24, wy = cy - 4, YO = Y0 + 30;
-      var rb = mk('g', {}, g);
+      var rb = mk('g', { 'class': 'rk' }, g);
       behindWall(svg, rb, T, L.wall);
-      Box(rb, T, { top: '#e7ecea', w: 0.55 }).set(X0 - 30, X0 + 30, wy + 0.5, wy + 58, F0, F0 + 0.5);
-      Box(rb, T).set(X0 - 9, X0 + 9, wy, wy + 4, F0 + 0.5, F0 + 15);
-      // its edge module, folded along its left side: two lengths (12 and 10 cm) lying flat and a flat shoe 14 cm long;
-      // out in the room it swings them out square to its side (0.45 s) and the shoe goes along under the bench's edge,
-      // the unit going straight on, its sweep 22 cm wider; it folds them again (0.45 s) before it turns
-      var mHinge = Box(rb, T, { w: 0.55 }), mLo = Bar(rb, T, { w: 0.55 }), mUp = Bar(rb, T, { w: 0.55 });
-      var mShoe = Box(rb, T, { w: 0.55 }), mLock = Strip(rb, T, LIT);
-      var ch = Chassis(rb, T), bay = Box(rb, T, { w: 0.55 });
+      var ren = new RK.Renderer(rb, T, T.k || 1), FL = RK_MACHINES.M.floor, mach = new RK.Machine(FL);
+      var dock = [RK.box(X0 - 30, wy + 0.5, F0, X0 + 30, wy + 58, F0 + 0.5, { w: 0.55, tone: 'top', link: 'plate' }),
+                  RK.box(X0 - 9, wy, F0 + 0.5, X0 + 9, wy + 4, F0 + 15, { w: 0.85, link: 'contacts' })];
       var out = Route([[X0, YO], [X0, 300], [X0 + 108, 300]], 20), home = Route([[X0 + 108, 300], [X0, 300], [X0, YO]], 20);
-      var T0 = 8.5, T1 = T0 + 0.5, T2 = T1 + 4.4, T3 = T2 + 0.2, T4 = T3 + 2.0, T5 = T4 + 0.7;
+      var T0 = 8.5, T1 = T0 + 0.5, T1b = T1 + 0.4, T2 = T1b + 4.4, T3 = T2 + 0.5, T4 = T3 + 2.0, T5 = T4 + 0.7;
       var dOut = drive(out.len, 4.4), dHome = drive(home.len, 2.0);
+      function heading(rt, d) { var a = rt.at(Math.max(0, d - 1)), b = rt.at(Math.min(rt.len, d + 1)); return Math.atan2(b[1] - a[1], b[0] - a[0]); }
+      // where the unit is and which way its front looks at u: docked facing the wall (-y), out along +y, then +x
       function where(u) {
-        if (u < T0 || u >= T5) return [X0, Y0];
-        if (u < T1) return [X0, Y0 + 30 * std((u - T0) / 0.5)];
-        if (u < T2) return out.at(out.len * dOut((u - T1) / 4.4));
-        if (u < T3) return out.at(out.len);
-        if (u < T4) return home.at(home.len * dHome((u - T3) / 2.0));
-        return [X0, YO - 30 * std((u - T4) / 0.7)];
+        var N = -Math.PI / 2, d;
+        if (u < T0 || u >= T5) return [X0, Y0, N];
+        if (u < T1) return [X0, Y0 + 30 * std((u - T0) / 0.5), N];                       // backs out
+        if (u < T1b) return [X0, YO, N + Math.PI * std((u - T1) / 0.4)];                 // turns about
+        if (u < T2) { d = out.len * dOut((u - T1b) / 4.4); var p = out.at(d); return [p[0], p[1], heading(out, d)]; }
+        if (u < T3) { var e = out.at(out.len); return [e[0], e[1], Math.PI * std((u - T2) / 0.5)]; }   // +x, about to -x
+        if (u < T4) { d = home.len * dHome((u - T3) / 2.0); var h = home.at(d); return [h[0], h[1], heading(home, d)]; }
+        return [X0, YO - 30 * std((u - T4) / 0.7), N];                                 // in, nose first
       }
       function sm(v, a, b) { v = clamp((v - a) / (b - a), 0, 1); return v * v * (3 - 2 * v); }
       return function (t) {
@@ -1505,17 +1439,9 @@
         if (dim) dim.style.opacity = dk.toFixed(3);
         var u = t % DAY, p = where(u), x = p[0], y = p[1];
         // the edge module: out along the bench, by where the unit is on its way out
-        var m = u >= T1 && u < T2 && Math.abs(x - X0) < 0.5 ? sm(y, 112, 146) * (1 - sm(y, 236, 270)) : 0;
-        var th = Math.PI / 2 * m, hx = x - 24, hy = y + 4, ex = hx - 12 * Math.sin(th), ey = hy - 12 * Math.cos(th);
-        var sx = ex - 10 * Math.sin(th), sy = ey + 10 * Math.cos(th), zm = F0 + 3.2;
-        mLo.setZ(zm, [hx - 1.2, hy], [ex, ey], 1, 1.4);
-        mUp.setZ(zm + 0.2, [ex, ey], [sx, sy], 1, 1.2);
-        mHinge.set(hx - 2.4, hx, hy - 3, hy + 3, F0 + 1.8, F0 + 6);
-        mShoe.set(sx - 3, sx, sy - 7, sy + 7, F0 + 0.2, F0 + 2.4);
-        mLock.y(sy + 7.04, sx - 2.6, sx - 0.4, F0 + 0.8, F0 + 1.8);
-        mLock.p.style.opacity = m > 0.98 ? '1' : '0.25';
-        ch.set(x, y - 20, y + 20, 24, F0, 10, 0);
-        bay.set(x - 12, x + 12, y - 18, y - 4, F0 + 11.1, F0 + 14.5);
+        var m = u >= T1b && u < T2 && Math.abs(x - X0) < 0.5 ? sm(y, 112, 146) * (1 - sm(y, 236, 270)) : 0;
+        var q = { e_sh: -90 * m, e_el: 180 + 180 * m, e_wr: -180 - 90 * m, lit: m > 0.98 ? 1 : 0.15 };
+        ren.draw(mach.place(q, RK.mul(RK.move(x, y, F0), RK.rot('z', p[2]))).concat(dock));
       };
     },
 
@@ -1796,9 +1722,10 @@
         pre.src = swap(img.currentSrc || img.src);
       }
       function start() { build(); live.push({ stop: function () { if (run) run.stop(); if (svg) svg.remove(); if (dim) dim.remove(); fig.classList.remove('is-live'); bare(false); } }); }
-      function ready() { if (L.canvas) machines(start); else start(); }
+      var robo = L.canvas || L.kind === 'reply' || L.kind === 'certify';    // drawn by robokit (machines.js)
+      function ready() { if (robo) machines(start); else start(); }
       if (img.complete && img.naturalWidth) ready(); else img.addEventListener('load', ready, { once: true });
-      img.addEventListener('load', function () { if (!L.canvas || window.RK_SEAT) build(); });   // a phone's picture and a wider one: each its frame
+      img.addEventListener('load', function () { if (!robo || window.RK_SEAT) build(); });   // a phone's picture and a wider one: each its frame
       if ('ResizeObserver' in window) new ResizeObserver(place).observe(img);
       window.addEventListener('resize', place);
     });

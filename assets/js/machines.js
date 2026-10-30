@@ -449,76 +449,118 @@ var RK_MACHINES = (function () {
   var M = {};
 
   // ------------------------------------------------------------------------------------------------ the courier
-  // RC-4, the reply desk's courier: four arms, none like another. Its body 46 long, 56 wide, 24 high; a tote of
-  // envelopes standing on edge in its front half; its mast at its back right, 140 cm. A, the long arm (44 and 46 cm)
-  // from a bracket high on the mast, a jaw of two plates that opens; B, a short arm low on the mast (22 and 20 cm)
-  // that holds the stack back while A draws one out; C, the stack's pusher, in the tote; D, a strut out of a sleeve
-  // on the mast, a flat foot at its end, that holds the desk's flap.
-  M.courier = {
-    name: 'courier', root: 'body',
-    links: {
+  // RC-4, the reply desk's courier: four arms, none like another. Its body 46 long, 56 wide, 24 high; a tote in its
+  // front half where the envelopes (DL, on their short edge: 11 across, 22 high) stand in a row one behind another, a
+  // pusher behind them; its mast at its back right, 140 cm. A, the long arm (50 and 52 cm) from a bracket high on the
+  // mast, a jaw of two plates that takes the front envelope by its head; B, a short arm low on the mast (22 and 20 cm)
+  // that holds the next one down while A draws the front one up; C, the pusher, that brings the row forward; D, a
+  // strut out of a sleeve high on the mast, its flat foot set against the counter's front edge while A reaches over.
+  // It takes an envelope standing back from the counter, never at it (A's elbow would meet the counter's top), and
+  // comes in with it held high. Its light on the jaw's lock and on B's.
+  M.courier = (function () {
+    var links = {
+      floor: { boxes: [] },
       body: { boxes: gear(46, 56, 24, { nolid: true }).concat([
         B(-8, -25, 24, 4, 50, 0.1, W(FINE, { tone: 'recess' })),                  // the grille across its top
         B(1, -15, 24, 22, 30, 11, W(THIN)),                                       // the tote
         B(0.5, -15.5, 35, 23, 31, 1.5, W(FINE, { tone: 'paper' })),                // its rim
         B(2.5, -13.5, 36.5, 19, 27, 0.1, W(FINE, { tone: 'recess' })),             // its mouth
-        shown(B(6, 4.25, 36.6, 11, 0.5, 10.4, W(THIN, { tone: 'paper' })), 'env_t'),   // the front envelope
         B(-23, -23, 24, 10, 10, 116, W(FIRM)),                                    // the mast
         B(-24, -24, 140, 12, 12, 3, W(THIN)),                                     // its cap
-        B(-13, -21, 30, 1.6, 4, 100, W(FINE, { tone: 'recess' })),                // the cable carrier up its face
+        B(-13, -21, 30, 1.6, 4, 61, W(FINE, { tone: 'recess' })),                 // the cable carrier up its face
         B(-23, -13, 125, 9, 13, 10, W(THIN)),                                     // A's bracket
-        B(-23, -13, 56, 8, 8.4, 8, W(THIN)),                                      // B's shoulder block
-        B(-13, -17, 67, 10, 6, 6, W(THIN)),                                       // D's sleeve
+        B(-23, -13, 56, 8, 10.9, 8, W(THIN)),                                     // B's shoulder block
+        B(-13, -21, 92.65, 5, 6, 6, W(THIN)),                                     // D's sleeve
+        B(-8, -19.4, 94.25, 0, 2.8, 2.8, W(FINE, { grow: [0, 'd', 0.5, 1] })),     // D's rod, run out of the sleeve
         B(23, -27, 13.5, 0.1, 54, 0.1, W(FINE)),                                  // the body's seam, round its front
         B(-23, 28, 13.5, 46, 0.1, 0.1, W(FINE))
       ]) },
-      st: { boxes: [B(4, -9, 36.6, 15, 1, 7.4, W(THIN)),                          // the pusher
-                    B(6, -0.75, 36.6, 11, 0.5, 10.4, W(THIN, { tone: 'paper' })),  // the envelopes behind
-                    B(6, -5.75, 36.6, 11, 0.5, 10.4, W(THIN, { tone: 'paper' }))] },
-      a1: { boxes: [C(0, 0, -5, 10, 9, 10, W(THIN)), bar(44, 5.2, 10, 7.4, FIRM)] },
-      a2: { boxes: [housing(7.4), bar(46, 4.2, 7.4, 6, FIRM)] },
-      aw: { boxes: [housing(6), C(0, 0, -9, 3, 7, 6, W(THIN)), B(-1.6, 3.5, -7.8, 3.2, 0.1, 1.4, { lamp: 'a_lit' }),
-                    shown(B(-5.5, -0.25, -20.9, 11, 0.5, 10.4, W(THIN, { tone: 'paper' })), 'env_a')] },
-      j1: { boxes: [B(-7, -1.5, -12.5, 14, 1.5, 3.5, W(FINE))] },
-      j2: { boxes: [B(-7, 0, -12.5, 14, 1.5, 3.5, W(FINE))] },
+      st: { boxes: [B(10, -1, 36.6, 1, 11, 7.4, W(THIN))] },                      // C, the pusher
+      a1: { boxes: [C(0, 0, -5, 10, 9, 10, W(THIN)), bar(50, 5.2, 10, 7.4, FIRM)] },
+      a2: { boxes: [housing(7.4), bar(52, 4.2, 7.4, 6, FIRM)] },
+      aw: { boxes: [housing(6), C(0, 0, -9, 4, 14, 6, W(THIN)), B(-1.6, 7, -7.8, 3.2, 0.1, 1.4, { lamp: 'a_lit' }),
+                    shown(B(-0.25, -5.5, -21.5, 0.5, 11, 11, W(THIN, { tone: 'paper' })), 'env_a'),
+                    shown(B(-0.25, -5.5, -32.5, 0.5, 11, 11, W(THIN, { tone: 'paper' })), 'env_b')] },
+      j1: { boxes: [B(-1.5, -7, -12.5, 1.5, 14, 3.5, W(FINE))] },
+      j2: { boxes: [B(0, -7, -12.5, 1.5, 14, 3.5, W(FINE))] },
       b1: { boxes: [housing(5.2), bar(22, 3.8, 5.2, 4.6)] },
       b2: { boxes: [housing(4.6), bar(20, 3.2, 4.6, 4.4)] },
-      bw: { boxes: [housing(4.4), B(-2, -3.5, -7.2, 4, 4, 5, W(THIN)), B(-1.4, 0.5, -5.6, 2.8, 0.1, 1.2, { lamp: 'b_lit' })] },
-      dr: { boxes: [B(0, -1.4, -1.4, 26, 2.8, 2.8, W(FINE)), B(26, -4, -5.2, 1.5, 8, 10.5, W(THIN))] }
-    },
-    joints: [
-      { name: 'c', parent: 'body', child: 'st', type: 'pri', axis: 'y', at: [0, 0, 0] },
+      bw: { boxes: [housing(4.4), B(-2, -2, -7.2, 4, 4, 5, W(THIN)), B(-1.4, 2, -5.6, 2.8, 0.1, 1.2, { lamp: 'b_lit' })] },
+      df: { boxes: [B(0, -4, -5.25, 1.5, 8, 10.5, W(THIN))] }                    // D's foot
+    };
+    var joints = [
+      { name: 'run', parent: 'floor', child: 'body', type: 'pri', axis: 'x', at: [0, 0, 0] },
+      { name: 'c', parent: 'body', child: 'st', type: 'pri', axis: 'x', at: [0, 0, 0] },
       { name: 'a_sh', parent: 'body', child: 'a1', type: 'rev', axis: 'y', at: [-18.5, 4.5, 130] },
-      { name: 'a_el', parent: 'a1', child: 'a2', type: 'rev', axis: 'y', at: [44, 0, 0] },
-      { name: 'a_wr', parent: 'a2', child: 'aw', type: 'rev', axis: 'y', at: [46, 0, 0] },
-      { name: 'a_j1', parent: 'aw', child: 'j1', type: 'pri', axis: 'y', at: [0, -0.9, 0] },
-      { name: 'a_j2', parent: 'aw', child: 'j2', type: 'pri', axis: 'y', at: [0, 0.9, 0] },
-      { name: 'b_sh', parent: 'body', child: 'b1', type: 'rev', axis: 'y', at: [-19, -2, 60] },
+      { name: 'a_el', parent: 'a1', child: 'a2', type: 'rev', axis: 'y', at: [50, 0, 0] },
+      { name: 'a_wr', parent: 'a2', child: 'aw', type: 'rev', axis: 'y', at: [52, 0, 0] },
+      { name: 'a_j1', parent: 'aw', child: 'j1', type: 'pri', axis: 'x', at: [-0.9, 0, 0] },
+      { name: 'a_j2', parent: 'aw', child: 'j2', type: 'pri', axis: 'x', at: [0.9, 0, 0] },
+      { name: 'b_sh', parent: 'body', child: 'b1', type: 'rev', axis: 'y', at: [-19, 0.5, 60] },
       { name: 'b_el', parent: 'b1', child: 'b2', type: 'rev', axis: 'y', at: [22, 0, 0] },
       { name: 'b_wr', parent: 'b2', child: 'bw', type: 'rev', axis: 'y', at: [20, 0, 0] },
-      { name: 'd', parent: 'body', child: 'dr', type: 'pri', axis: 'x', at: [-3, -14, 70] }
-    ],
-    props: [B(52, -30, 0, 34, 60, 78), B(60, -3, 78, 18, 15, 0)],                 // the desk, its slot in its top
-    info: { code: 'RC-4', en: 'Courier', mobile: true }
-  };
+      { name: 'd', parent: 'body', child: 'df', type: 'pri', axis: 'x', at: [-7.5, -18, 95.65] }
+    ];
+    // the envelopes in the tote, each on its own slide (where the row has brought it: 0 at the back, 5, 10 at the
+    // front), its height what shows above the tote's mouth (11; more while it is set in from above; 0 when gone)
+    [0, 1, 2].forEach(function (k) {
+      links['n' + k] = { boxes: [B(11, -1, 36.6, 0.5, 11, 0, W(THIN, { tone: 'paper', grow: [2, 'e' + k, 0, 1] }))] };
+      joints.push({ name: 'p' + k, parent: 'body', child: 'n' + k, type: 'pri', axis: 'x', at: [0, 0, 0] });
+    });
+    return { name: 'courier', root: 'floor', links: links, joints: joints,
+             // the reply desk's counter as the house has it: its body 1 cm before the courier's head, the edge of its
+             // top 3 cm behind it (the courier stands in under it), the lodging slot 51 cm in, across its arm
+             props: [B(24, -45.5, 9, 62, 100, 87.4), B(20, -47.5, 96.4, 66, 104, 4), B(72, -15.5, 100.4, 4, 40, 0)],
+             info: { code: 'RC-4', en: 'Courier', mobile: true } };
+  })();
   (function () {
-    var A = arm(44, 46, -18.5, 130, true), Bp = arm(22, 20, -19, 60, true), P = 7.6;
-    var aRest = A(2, 104), take = A(11.5, 57.5), lift = A(11.5, 80), over = A(68, 108), set = A(68, 99);
-    var bRest = Bp(-4, 62), bOver = Bp(11.5, 60), press = Bp(11.5, 54.4);
-    var spec = {
-      c: [[0, 0], [2.2, 0], [3.0, 5], [P, 5]],
-      d: [[0, 0], [2.0, 0], [2.6, 29], [3.6, 29], [4.1, 0], [P, 0]],
-      a_j1: [[0, 0], [0.9, 0], [1.1, -1.4], [1.25, -1.4], [1.3, 0.65], [3.25, 0.65], [3.35, -1.4], [3.9, -1.4], [4.3, 0], [P, 0]],
-      a_j2: [[0, 0], [0.9, 0], [1.1, 1.4], [1.25, 1.4], [1.3, -0.65], [3.25, -0.65], [3.35, 1.4], [3.9, 1.4], [4.3, 0], [P, 0]],
-      a_lit: [[0, 0.15], [1.28, 0.15], [1.3, 1], [3.3, 1], [3.32, 0.15], [P, 0.15]],
-      b_lit: [[0, 0.15], [0.68, 0.15], [0.7, 1], [1.9, 1], [1.92, 0.15], [P, 0.15]],
-      env_t: [[0, 1], [1.29, 1], [1.3, 0], [P, 0]],
-      env_a: [[0, 0], [1.29, 0], [1.3, 1], [3.29, 1], [3.3, 0], [P, 0]]
-    };
-    armKeys(spec, 'a', [[0, aRest], [0.4, aRest], [1.2, take], [1.3, take], [1.9, lift], [2.8, over], [3.2, set], [3.3, set],
-                        [3.8, over], [4.8, aRest], [P, aRest]]);
-    armKeys(spec, 'b', [[0, bRest], [0.1, bRest], [0.5, bOver], [0.7, press], [1.9, press], [2.1, bOver], [2.5, bRest], [P, bRest]]);
-    M.courier.work = tracks(spec, P); M.courier.period = P; M.courier.rest = M.courier.work(0);
+    var A = arm(50, 52, -18.5, 130, true), Bp = arm(22, 20, -19, 60, true);
+    // A's wrist: at rest over the tote; at the front envelope's head; lifted clear of the counter; over the slot; the
+    // envelope's foot 12 mm in the slot. B's: at rest; over the next envelope; holding it down
+    var Q = { REST: A(21.25, 100), TAKE: A(21.25, 58.1), LIFT: A(21.25, 140), OVER: A(74, 140), SET: A(74, 131.7),
+              BREST: Bp(-4, 62), BOVER: Bp(14.8, 60), PRESS: Bp(14.8, 54.9), OPEN: 1.0, SHUT: 0.65, BRACE: 26, LANE: -37 };
+    M.courier.poses = Q; M.courier.armA = A; M.courier.armB = Bp;
+    // its loop on its plate: three envelopes one after another (9.5 s each), the row brought forward after each and
+    // one set in at its back, so the third ends where the first began. A goes down to the front envelope and opens;
+    // B comes over the next and holds it down; A takes the front one and lifts it clear (its lower half shown once it
+    // is out of the tote); B lets go; C brings the row forward while the courier comes in under the counter's edge;
+    // D's foot to the edge; A over the slot, the envelope's foot into it, the jaw opens; A back, D off, out again
+    var T = 9.5, P = 3 * T, spec = {};
+    // when, on its way up from the tote (1.45 to 2.3 s, eased as every key is), the envelope's foot is out of it
+    function wz(p) { var a = p[0] * Math.PI / 180, b = (p[0] + p[1]) * Math.PI / 180; return 130 - 50 * Math.sin(a) - 52 * Math.sin(b); }
+    M.courier.wristZ = wz;                                      // A's wrist's height at a pose (the house's scene times by it)
+    function ease(u) { return u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2; }
+    var ENVB = 2.3;
+    for (var i = 0; i <= 200; i++) {
+      var e = ease(i / 200), pz = wz([0, 1].map(function (j) { return Q.TAKE[j] + (Q.LIFT[j] - Q.TAKE[j]) * e; }));
+      if (pz - 32.5 >= 36.7) { ENVB = Math.round((1.45 + 0.85 * i / 200) * 100) / 100 + 0.01; break; }
+    }
+    function key(ch, t, v) { (spec[ch] = spec[ch] || []).push([t, v]); }
+    function arms(n, t, pose) { key(n + '_sh', t, pose[0]); key(n + '_el', t, pose[1]); key(n + '_wr', t, pose[2]); }
+    for (var k = 0; k < 3; k++) {
+      var o = k * T, f = k, s = (k + 1) % 3, r = (k + 2) % 3;
+      [[0, Q.LANE], [2.4, Q.LANE], [3.8, 0], [7.0, 0], [8.2, Q.LANE]].forEach(function (x) { key('run', o + x[0], x[1]); });
+      [[0, Q.REST], [0.3, Q.REST], [1.0, Q.TAKE], [1.45, Q.TAKE], [2.3, Q.LIFT], [4.45, Q.LIFT], [5.15, Q.OVER], [5.45, Q.SET],
+       [5.85, Q.SET], [6.15, Q.OVER], [6.75, Q.LIFT], [7.6, Q.LIFT], [8.3, Q.REST]].forEach(function (x) { arms('a', o + x[0], x[1]); });
+      [[0, 0], [0.5, 0], [0.7, -Q.OPEN], [1.3, -Q.OPEN], [1.45, Q.SHUT], [5.7, Q.SHUT], [5.85, -Q.OPEN], [6.15, -Q.OPEN], [6.6, 0]]
+        .forEach(function (x) { key('a_j1', o + x[0], x[1]); key('a_j2', o + x[0], -x[1]); });
+      [[0, 0.15], [1.43, 0.15], [1.45, 1], [5.83, 1], [5.85, 0.15]].forEach(function (x) { key('a_lit', o + x[0], x[1]); });
+      [[0, 0], [1.44, 0], [1.45, 1], [5.84, 1], [5.85, 0]].forEach(function (x) { key('env_a', o + x[0], x[1]); });
+      [[0, 0], [ENVB - 0.01, 0], [ENVB, 1], [5.84, 1], [5.85, 0]].forEach(function (x) { key('env_b', o + x[0], x[1]); });
+      [[0, Q.BREST], [0.9, Q.BREST], [1.2, Q.BOVER], [1.35, Q.PRESS], [2.2, Q.PRESS], [2.45, Q.BOVER], [2.85, Q.BREST]]
+        .forEach(function (x) { arms('b', o + x[0], x[1]); });
+      [[0, 0.15], [1.33, 0.15], [1.35, 1], [2.2, 1], [2.22, 0.15]].forEach(function (x) { key('b_lit', o + x[0], x[1]); });
+      [[0, 0], [4.05, 0], [4.45, Q.BRACE], [6.6, Q.BRACE], [7.0, 0]].forEach(function (x) { key('d', o + x[0], x[1]); });
+      [[0, 0], [2.85, 0], [3.45, 5], [8.3, 5], [8.7, 0]].forEach(function (x) { key('c', o + x[0], x[1]); });
+      [[0, 10], [8.29, 10], [8.3, 0]].forEach(function (x) { key('p' + f, o + x[0], x[1]); });
+      [[0, 5], [2.85, 5], [3.45, 10]].forEach(function (x) { key('p' + s, o + x[0], x[1]); });
+      [[0, 0], [2.85, 0], [3.45, 5]].forEach(function (x) { key('p' + r, o + x[0], x[1]); });
+      [[0, 11], [1.44, 11], [1.45, 0], [8.69, 0], [8.7, 21], [9.1, 11]].forEach(function (x) { key('e' + f, o + x[0], x[1]); });
+      key('e' + s, o, 11); key('e' + r, o, 11);
+    }
+    for (var ch in spec) { var l = spec[ch]; l.sort(function (a, b) { return a[0] - b[0]; }); l.push([P, l[l.length - 1][1]]); }
+    M.courier.work = tracks(spec, P); M.courier.period = P;
+    M.courier.rest = M.courier.work(0); M.courier.rest.run = 0;                // at rest: in the bay, A over the tote
   })();
 
   // ------------------------------------------------------------------------------------------------ the steward
