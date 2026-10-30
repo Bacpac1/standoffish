@@ -101,6 +101,14 @@ a { color: inherit; text-decoration: none; }
 .work .wk__h { font-size: clamp(40px, 4.6vw, 72px); }
 .work .wk__side { margin-top: 18px; padding-bottom: 0; }
 .work .wk__pic .draw { width: auto; max-width: 100%; max-height: 560px; margin-inline: auto; }
+/* the drawings' loops (round 24e, house.js 11): the parts that move, drawn over the picture from its model; the
+   night over Certification, in the drawing's own shape */
+.wk__pic.is-live { position: relative; }
+.draw__live { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+.draw__live .lv-line { vector-effect: non-scaling-stroke; }
+.draw__dim { position: absolute; left: 0; top: 0; pointer-events: none; opacity: 0; background: #cfd6e2;
+             mix-blend-mode: multiply; -webkit-mask-size: 100% 100%; mask-size: 100% 100%;
+             -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }
 /* on a work's own page the drawing stands in a band 440 px high, so its particulars begin within the first view */
 .page .wk__pic .draw { width: auto; max-width: 100%; max-height: 440px; margin-inline: auto; }
 @supports (animation-timeline: view()) {
@@ -568,7 +576,14 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
 .dmap__svg { display: block; width: 100%; height: auto; overflow: visible; }
 .dmap__land { fill: none; stroke: #c3cccd; stroke-width: 4.2; stroke-linecap: round; }
 /* a desk under the pointer grows a little and shows its ring; a click opens it in Find a desk */
-.dmap .dm__mk { transform-box: fill-box; transform-origin: center; transition: transform .14s ease-out; }
+.dmap .dm__mk { transform-box: fill-box; transform-origin: center; transition: transform .14s ease-out, opacity .6s ease; }
+/* the map's day (round 24e, house.js 12): the land under the night darker, deepest furthest from the sun; a desk shut
+   after its sunset; the ring of its sunrise */
+.dmap__land--dusk { stroke: #adb7bd; }
+.dmap__land--night { stroke: #94a0aa; }
+.dmap__land--dusk, .dmap__night { transition: opacity .8s ease; }
+.dmap .dm.is-shut .dm__mk { opacity: .34; }
+.dm__dawn { fill: none; stroke: var(--link); stroke-width: 1.4; opacity: 0; pointer-events: none; }
 .dmap .dm:hover .dm__mk, .dmap .dm:focus-visible .dm__mk { transform: scale(1.35); }
 .dmap__key { display: flex; flex-wrap: wrap; gap: 6px 22px; margin-top: 14px; font: 400 13px/1.4 var(--mono); color: var(--soft); }
 .dmap__key .k::before { content: ""; display: inline-block; width: 9px; height: 9px; margin-right: 8px; vertical-align: -1px; }
@@ -637,10 +652,10 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
 .atlas.is-live [data-view="earth"].is-drag svg { cursor: grabbing; }
 /* the markers */
 .dm { cursor: pointer; outline: none; transition: opacity .2s ease-out; }
-.dm--agent circle:not(.dm__halo):not(.dm__hit) { fill: var(--link); }
-.dm--reply circle:not(.dm__halo):not(.dm__hit) { fill: var(--ground); stroke: var(--link); stroke-width: 2.6; }
+.dm--agent circle:not(.dm__halo):not(.dm__hit):not(.dm__dawn) { fill: var(--link); }
+.dm--reply circle:not(.dm__halo):not(.dm__hit):not(.dm__dawn) { fill: var(--ground); stroke: var(--link); stroke-width: 2.6; }
 .dm--seat rect { fill: var(--ink); }
-.dm--desk circle:not(.dm__halo):not(.dm__hit) { fill: var(--ink); }
+.dm--desk circle:not(.dm__halo):not(.dm__hit):not(.dm__dawn) { fill: var(--ink); }
 .dm__hit { fill: transparent; }
 .dm__halo { fill: none; stroke: var(--link); stroke-width: 1.6; opacity: 0; transform-box: fill-box; transform-origin: center;
   transition: opacity .14s ease-out; }

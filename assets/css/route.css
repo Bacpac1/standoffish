@@ -43,13 +43,6 @@ dl, dd { margin: 0; }
 
 /* the drawings made in code (round 24c): inline, the page's width; on a phone their finest lines left out */
 .rt__draw { display: block; width: 100%; height: auto; }
-/* the 2090s pages' event, under its drawing on the right: Pause while it runs, Resume, Replay once it is over */
-.rt__ctlrow { margin: 12px 0 0; display: flex; justify-content: flex-end; }
-.rt__ctl { min-width: 44px; min-height: 44px; padding: 0 16px; border: 1px solid var(--line); border-radius: 999px;
-           background: transparent; color: var(--fg); font: 500 13px/18px var(--mono); letter-spacing: .04em; cursor: pointer;
-           transition: border-color .12s ease, background-color .12s ease; }
-.rt__ctl:hover { border-color: currentColor; }
-.rt__ctl:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
 .rt__draw .is-gone { display: none; }
 
 /* fields, as every route's surface lists them */

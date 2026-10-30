@@ -10,7 +10,10 @@
    6. The year's light. On /visit/, the reader's today and now on the year of light at the seat; any day read out.
    7. The statement. One year for every card of the annual statement, chosen above or under the pointer.
    8. The clock. On /service-standards/, the clock runs once across its six weeks as the page reaches it.
-   9. The mark at a size. On /mark/, the class mark at any size on four grounds, with its clear space and contrast. */
+   9. The mark at a size. On /mark/, the class mark at any size on four grounds, with its clear space and contrast.
+   10. The home's map. Each desk is a link to its entry in Find a desk; under the pointer or the focus, its name.
+   11. The drawings' loops. Replies, Certification and Records, each the place's own work going round (round 24e).
+   12. The map's day. The home's map keeps a day of the reader's date: the night side, the desks shut and open. */
 (function () {
   'use strict';
   var root = document.documentElement;
@@ -867,6 +870,369 @@
       };
       tick();
     }
+  })();
+
+  /* ------------------------------------------------------------------------------------------- 11. the drawings' loops */
+  // The house's three drawings each have their loop (round 24e): the place's own work goes round while its rule holds.
+  // Replies: a reply is lodged at each position in turn (its slot's bezel answers) and is written on every position's
+  // display at once, a reply lodged at one being lodged at all; at the window the three displays carry what is held,
+  // and stand empty again. Certification: a day goes round the room in sixteen seconds, its one-handed clock with it;
+  // the high window's glass goes from day to dusk, night and dawn, and the room with it. Records: the marked row's
+  // drawers are drawn out a little and closed, one after another from the left, each sending kept as received. The
+  // parts that move are drawn over the picture from the model (tools/drawings24c_house.py writes them, with the frame
+  // of each of its two pictures); out of view, or with the page hidden, a loop waits. Without the script, and under
+  // reduced motion, the drawing stands still as written.
+  var NS = 'http://www.w3.org/2000/svg';
+  function mk(tag, attrs, parent) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
+  function inout(x) { x = clamp(x, 0, 1); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; }
+  function out3(x) { x = clamp(x, 0, 1); return 1 - Math.pow(1 - x, 3); }
+  function f1(v) { return v.toFixed(1); }
+  function poly(pts) { return 'M' + pts.map(function (p) { return f1(p[0]) + ' ' + f1(p[1]); }).join('L') + 'Z'; }
+  function line(pts) { return 'M' + pts.map(function (p) { return f1(p[0]) + ' ' + f1(p[1]); }).join('L'); }
+  function hex(c) { return [1, 3, 5].map(function (i) { return parseInt(c.slice(i, i + 2), 16); }); }
+  function mix(a, b, k) { a = hex(a); b = hex(b); return 'rgb(' + a.map(function (v, i) { return Math.round(v + (b[i] - v) * k); }).join(' ') + ')'; }
+  function hull(pts) {
+    pts = pts.slice().sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; });
+    function turn(o, a, b) { return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]); }
+    var lo = [], hi = [];
+    pts.forEach(function (p) { while (lo.length > 1 && turn(lo[lo.length - 2], lo[lo.length - 1], p) <= 0) lo.pop(); lo.push(p); });
+    pts.slice().reverse().forEach(function (p) { while (hi.length > 1 && turn(hi[hi.length - 2], hi[hi.length - 1], p) <= 0) hi.pop(); hi.push(p); });
+    return lo.slice(0, -1).concat(hi.slice(0, -1));
+  }
+  // the house's inks (tools/isodraw.py, HOUSE)
+  var INK = { top: '#f8faf9', left: '#e9eeed', right: '#dce3e2', recess: '#cdd6d5', paper: '#ffffff', accent: '#315f9a',
+              ink: '#263747', detail: '#73818a' };
+
+  // one loop's clock: it runs while its picture is at least a third in view and the page is shown
+  function runner(watch, frame) {
+    var seen = false, hidden = document.hidden, running = false, t = 0, last = 0, raf = 0;
+    function step(ts) {
+      if (!running) return;
+      if (last) t += Math.min(0.1, (ts - last) / 1000);
+      last = ts;
+      frame(t);
+      raf = requestAnimationFrame(step);
+    }
+    function sync() {
+      var go = seen && !hidden;
+      if (go && !running) { running = true; last = 0; raf = requestAnimationFrame(step); }
+      else if (!go && running) { running = false; cancelAnimationFrame(raf); }
+    }
+    var io = null;
+    if ('IntersectionObserver' in window) {
+      io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.intersectionRatio >= 0.3) seen = true;
+          else if (e.intersectionRatio < 0.1) seen = false;
+        });
+        sync();
+      }, { threshold: [0, 0.1, 0.3] });
+      io.observe(watch);
+    } else { seen = true; sync(); }
+    function vis() { hidden = document.hidden; sync(); }
+    document.addEventListener('visibilitychange', vis);
+    frame(0);
+    return { now: function () { return t; },
+             stop: function () { running = false; cancelAnimationFrame(raf); if (io) io.disconnect(); document.removeEventListener('visibilitychange', vis); } };
+  }
+
+  var SCENES = {
+    // Replies, a turn of 12 s: lodged at the first position (0.8 s), the third (3.0 s), the second (5.9 s); each is
+    // written on the position's own display, then on its neighbours' (0.14 s a position); the window at 8.2 s: a bar
+    // runs under the lines on every display (1 s), the lines go up and out (0.5 s), the displays go dark (0.5 s)
+    reply: function (L, T, g) {
+      var AT = [0.8, 5.9, 3.0], RIP = 0.14, TYPE = 0.45, WIN = 8.2, BAR = 1.0, GO = 0.5, OFF = 0.5;
+      var order = [0, 2, 1];                                     // the positions in the order they lodge
+      var pos = L.pos.map(function (p) {
+        var d = p.disp, y = d[4], b = p.bezel;
+        var o = { g: mk('g', {}, g) };
+        var sl = p.slot;
+        o.flash = mk('path', { 'class': 'lv-fill', fill: '#7d9fce', 'fill-rule': 'evenodd',
+                               d: poly([T(b[0], b[1], b[4]), T(b[2], b[1], b[4]), T(b[2], b[3], b[4]), T(b[0], b[3], b[4])]) +
+                                  poly([T(sl[0], sl[1], sl[4]), T(sl[2], sl[1], sl[4]), T(sl[2], sl[3], sl[4]), T(sl[0], sl[3], sl[4])]) }, o.g);
+        o.scr = mk('path', { 'class': 'lv-fill', fill: '#f4f8fb', d: poly([T(d[0], y, d[2]), T(d[1], y, d[2]), T(d[1], y, d[3]), T(d[0], y, d[3])]) }, o.g);
+        o.edge = mk('path', { 'class': 'lv-line', fill: 'none', stroke: INK.detail, 'stroke-width': 0.55, d: poly([T(d[0], y, d[2]), T(d[1], y, d[2]), T(d[1], y, d[3]), T(d[0], y, d[3])]) }, o.g);
+        o.lines = [0.74, 0.52, 0.64].map(function () { return mk('path', { 'class': 'lv-line', fill: 'none', stroke: INK.accent, 'stroke-width': 0.85, 'stroke-linecap': 'round' }, o.g); });
+        o.bar = mk('path', { 'class': 'lv-line', fill: 'none', stroke: INK.accent, 'stroke-width': 1.4, 'stroke-linecap': 'round' }, o.g);
+        o.d = d;
+        return o;
+      });
+      var W = [0.74, 0.52, 0.64];
+      return function (t) {
+        t = t % 12;
+        pos.forEach(function (o, q) {
+          var d = o.d, y = d[4], x0 = d[0] + 5, w = d[1] - d[0] - 10;
+          // the bezel answers when its own position lodges
+          var a = t - AT[q], fl = a >= 0 && a < 0.7 ? Math.sin(Math.PI * clamp(a / 0.6, 0, 1)) : 0;
+          o.flash.style.opacity = (0.75 * fl).toFixed(3);
+          // the display: on from the first reply written on it until the window has carried them
+          var first = Math.min.apply(null, AT.map(function (at, p) { return at + RIP * Math.abs(p - q); })) - 0.25;
+          var on = t < first ? 0 : t < first + 0.3 ? (t - first) / 0.3 : t < WIN + BAR + GO ? 1 : 1 - (t - WIN - BAR - GO) / OFF;
+          on = clamp(on, 0, 1);
+          o.scr.style.opacity = on.toFixed(3); o.edge.style.opacity = on.toFixed(3);
+          // the lines, one for each reply lodged, in the order they were lodged
+          var gone = clamp((t - WIN - BAR) / GO, 0, 1), lift = 6 * inout(gone);
+          order.forEach(function (p, k) {
+            var st = AT[p] + RIP * Math.abs(p - q), u = clamp((t - st) / TYPE, 0, 1), el = o.lines[k];
+            var z = d[3] - 6 - 7 * k + lift;
+            if (u <= 0 || z > d[3] - 2) { el.style.opacity = '0'; return; }
+            el.setAttribute('d', line([T(x0, y, z), T(x0 + w * W[k] * out3(u), y, z)]));
+            el.style.opacity = (on * (1 - gone)).toFixed(3);
+          });
+          var bu = clamp((t - WIN) / BAR, 0, 1);
+          if (bu > 0 && gone < 1) {
+            o.bar.setAttribute('d', line([T(x0, y, d[2] + 5), T(x0 + w * inout(bu), y, d[2] + 5)]));
+            o.bar.style.opacity = (on * (1 - gone)).toFixed(3);
+          } else o.bar.style.opacity = '0';
+        });
+      };
+    },
+
+    // Certification, a day of 16 s from ten in the morning, slower by day and quicker by night: the clock's one hand
+    // goes round twice; the glass of the high window keeps the day's grey until dusk (19:00 to 20:30), then night (to
+    // 05:30), then dawn (to 07:00); the room dims a little with the night
+    certify: function (L, T, g, dim) {
+      var c = L.clock, cx = c[0], cy = c[1], cz = c[2], r = c[3], hand = c[4], gl = L.glass;
+      var face = [];
+      for (var i = 0; i < 48; i++) { var a = 2 * Math.PI * i / 48; face.push(T(cx + 0.87 * r * Math.cos(a), cy, cz + 0.87 * r * Math.sin(a))); }
+      var glass = mk('path', { 'class': 'lv-fill', d: poly([T(gl[0], gl[4], gl[2]), T(gl[1], gl[4], gl[2]), T(gl[1], gl[4], gl[3]), T(gl[0], gl[4], gl[3])]) }, g);
+      var frame = L.lines.map(function (ln) { return mk('path', { 'class': 'lv-line', fill: 'none', stroke: INK.detail, 'stroke-width': 0.55, d: line(ln.map(function (p) { return T(p[0], p[1], p[2]); })) }, g); });
+      mk('path', { 'class': 'lv-fill', fill: INK.paper, d: poly(face) }, g);
+      var hd = mk('path', { 'class': 'lv-line', fill: 'none', stroke: INK.ink, 'stroke-width': 1.4, 'stroke-linecap': 'round' }, g);
+      var DAY = 16;
+      // the glass through the day: [hour, colour]
+      var SKY = [[0, '#3f4d63'], [5.5, '#3f4d63'], [6.25, '#c9c3bd'], [7, INK.recess], [19, INK.recess], [19.75, '#cfc4b8'],
+                 [20.5, '#3f4d63'], [24, '#3f4d63']];
+      function sky(h) {
+        for (var i = 1; i < SKY.length; i++) if (h <= SKY[i][0]) { var a = SKY[i - 1], b = SKY[i]; return [a, b, (h - a[0]) / (b[0] - a[0])]; }
+        return [SKY[0], SKY[0], 0];
+      }
+      function dark(h) { return h < 5.5 || h > 20.5 ? 1 : h < 7 ? 1 - (h - 5.5) / 1.5 : h > 19 ? (h - 19) / 1.5 : 0; }
+      return function (t) {
+        var u = (t % DAY) / DAY, h = (10 + 24 * (u - 0.5 * Math.sin(2 * Math.PI * u) / (2 * Math.PI))) % 24;
+        var s = sky(h), k = inout(s[2]);
+        glass.setAttribute('fill', mix(s[0][1], s[1][1], k));
+        var dk = inout(dark(h));
+        frame.forEach(function (e) { e.setAttribute('stroke', mix(INK.detail, '#9aa6b4', dk)); });
+        var a = (90 - 30 * h) * Math.PI / 180;
+        hd.setAttribute('d', line([T(cx, cy, cz), T(cx + hand * r * Math.cos(a), cy, cz + hand * r * Math.sin(a))]));
+        if (dim) dim.style.opacity = (0.8 * dk).toFixed(3);
+      };
+    },
+
+    // Records, a turn of 12 s: the marked row's eight drawers, from the left, as the sendings come in (unevenly, eight
+    // in 10 s): each drawn out 24 cm (0.6 s), held (0.5 s) and closed (0.6 s), the sheets in its tray seen while it is
+    // out
+    records: function (L, T, g, dim, svg) {
+      var yf = L.yf, BAY = L.bay, MOD = L.mod, w = L.wall, OUT = 24, MOVE = 0.6, HOLD = 0.5;
+      var AT = [0.4, 1.7, 3.3, 4.2, 6.0, 7.3, 8.1, 9.7];          // the sendings as they come in, unevenly
+      // the right end wall stands before the far end of the racks: what is behind it stays hidden
+      var cp = mk('clipPath', { id: 'lv-rec-' + Math.random().toString(36).slice(2, 8) }, svg);
+      var hp = [];
+      for (var i = 0; i < 8; i++) hp.push(T(i & 1 ? w[3] : w[0], i & 2 ? w[4] : w[1], i & 4 ? w[5] : w[2]));
+      var vb = svg.viewBox.baseVal;
+      mk('path', { 'clip-rule': 'evenodd', d: 'M-10 -10H' + f1(vb.width + 10) + 'V' + f1(vb.height + 10) + 'H-10Z' + poly(hull(hp)) }, cp);
+      g.setAttribute('clip-path', 'url(#' + cp.id + ')');
+      var ds = L.drawers.map(function (dw) {
+        var o = { x0: dw[0], z0: dw[1], g: mk('g', {}, g) };
+        o.right = mk('path', { 'class': 'lv-fill', fill: INK.right }, o.g);
+        o.tray = mk('path', { 'class': 'lv-fill', fill: INK.paper }, o.g);
+        o.top = mk('path', { 'class': 'lv-fill', fill: INK.top }, o.g);
+        o.front = mk('path', { 'class': 'lv-fill', fill: INK.left }, o.g);
+        o.seal = mk('path', { 'class': 'lv-fill', fill: INK.accent }, o.g);
+        o.pull = mk('path', { 'class': 'lv-line', fill: INK.left, stroke: INK.ink, 'stroke-width': 0.55, 'stroke-linejoin': 'round' }, o.g);
+        o.sheets = mk('path', { 'class': 'lv-line', fill: 'none', stroke: INK.detail, 'stroke-width': 0.55 }, o.g);
+        o.folds = mk('path', { 'class': 'lv-line', fill: 'none', stroke: INK.ink, 'stroke-width': 0.55, 'stroke-linejoin': 'round' }, o.g);
+        o.sil = mk('path', { 'class': 'lv-line', fill: 'none', stroke: INK.ink, 'stroke-width': 0.85, 'stroke-linejoin': 'round' }, o.g);
+        return o;
+      });
+      return function (t) {
+        t = t % 12;
+        ds.forEach(function (o, i) {
+          var a = t - AT[i], d;
+          if (a <= 0 || a >= 2 * MOVE + HOLD) d = 0;
+          else d = OUT * (a < MOVE ? inout(a / MOVE) : a < MOVE + HOLD ? 1 : 1 - inout((a - MOVE - HOLD) / MOVE));
+          if (d < 0.3) { o.g.style.display = 'none'; return; }
+          o.g.style.display = '';
+          var xa = o.x0 + 0.8, xb = o.x0 + BAY - 0.8, za = o.z0 + 0.6, zb = o.z0 + MOD - 0.6, yb = yf + 2.2 + d, yp = yf + d;
+          var y1 = yf + 1.0, y3 = yf + 3.5, side = yb > y3;
+          o.right.setAttribute('d', side ? poly([T(xb, y3, za), T(xb, yb, za), T(xb, yb, zb), T(xb, y3, zb)]) : '');
+          o.tray.setAttribute('d', yp > y1 ? poly([T(xa, y1, zb), T(xb, y1, zb), T(xb, yp, zb), T(xa, yp, zb)]) : '');
+          o.top.setAttribute('d', poly([T(xa, Math.max(y1, yp), zb), T(xb, Math.max(y1, yp), zb), T(xb, yb, zb), T(xa, yb, zb)]));
+          o.front.setAttribute('d', poly([T(xa, yb, za), T(xb, yb, za), T(xb, yb, zb), T(xa, yb, zb)]));
+          o.seal.setAttribute('d', poly([T(xa, yb + 0.05, zb - 3.4), T(xb, yb + 0.05, zb - 3.4), T(xb, yb + 0.05, zb), T(xa, yb + 0.05, zb)]));
+          var xm = o.x0 + BAY / 2, zm = o.z0 + MOD / 2 - 0.8;
+          o.pull.setAttribute('d', poly([T(xm - 6, yb + 1.2, zm - 0.6), T(xm + 6, yb + 1.2, zm - 0.6), T(xm + 6, yb + 1.2, zm + 0.6), T(xm - 6, yb + 1.2, zm + 0.6)]));
+          // the sheets standing in the tray, their heads seen from above
+          var sh = '';
+          for (var k = 1; k <= 3; k++) { var ys = yp - 5.5 * k; if (ys > y1 + 0.5) sh += line([T(xa + 2.5, ys, zb), T(xb - 2.5, ys, zb)]); }
+          o.sheets.setAttribute('d', sh);
+          // the folds: the front's head and its side; the panel's back, on the top and on the side; the tray's rim
+          o.folds.setAttribute('d', line([T(xa, yb, zb), T(xb, yb, zb)]) +
+            (side ? line([T(xb, yb, zb), T(xb, yb, za)]) + line([T(xb, y3, zb), T(xb, yb, zb)]) : '') +
+            (yp > y1 ? line([T(xa, yp, zb), T(xb, yp, zb)]) + line([T(xa + 1.2, y1, zb), T(xa + 1.2, yp, zb)]) : '') +
+            (yp > y3 ? line([T(xb, yp, zb), T(xb, yp, za)]) : ''));
+          // the outline of what is seen of it
+          o.sil.setAttribute('d', side
+            ? poly([T(xa, y1, zb), T(xb, y1, zb), T(xb, y3, zb), T(xb, y3, za), T(xb, yb, za), T(xa, yb, za), T(xa, yb, zb)])
+            : poly([T(xa, y1, zb), T(xb, y1, zb), T(xb, yb, zb), T(xb, yb, za), T(xa, yb, za), T(xa, yb, zb)]));
+        });
+      };
+    }
+  };
+
+  (function () {
+    var pics = slice(document.querySelectorAll('picture[data-live]'));
+    if (!pics.length || mq.matches) return;
+    var C = Math.cos(Math.PI / 6), live = [];
+    pics.forEach(function (pic) {
+      var img = pic.querySelector('img'), fig = pic.parentNode, L;
+      try { L = JSON.parse(pic.getAttribute('data-live')); } catch (e) { return; }
+      if (!img || !SCENES[L.kind]) return;
+      var svg = null, dim = null, run = null, small = null, base = 0;
+      function place() {
+        if (!svg) return;
+        var r = img.getBoundingClientRect(), f = fig.getBoundingClientRect();
+        [svg, dim].forEach(function (e) {
+          if (!e) return;
+          e.style.left = (r.left - f.left) + 'px'; e.style.top = (r.top - f.top) + 'px';
+          e.style.width = r.width + 'px'; e.style.height = r.height + 'px';
+        });
+      }
+      function build() {
+        var src = img.currentSrc || img.src, s = /-s\.svg/.test(src);
+        if (svg && s === small) { place(); return; }
+        if (run) { base += run.now(); run.stop(); }
+        var t0 = base;
+        if (svg) svg.remove();
+        if (dim) dim.remove();
+        small = s;
+        var F = L.frames[s ? 's' : 'l'];
+        var T = function (x, y, z) { return [((x - y) * C - F[0]) * F[2] + F[3], ((x + y) / 2 - z - F[1]) * F[2] + F[3]]; };
+        svg = mk('svg', { 'class': 'draw__live', viewBox: '0 0 ' + F[4] + ' ' + F[5], 'aria-hidden': 'true', focusable: 'false' });
+        var g = mk('g', {}, svg);
+        if (L.kind === 'certify') {             // the night over the whole drawing: its own shape, a little darker
+          dim = document.createElement('div');
+          dim.className = 'draw__dim';
+          dim.style.webkitMaskImage = dim.style.maskImage = 'url("' + src + '")';
+        } else dim = null;
+        fig.classList.add('is-live');
+        fig.appendChild(svg);
+        if (dim) fig.appendChild(dim);
+        place();
+        var frame = SCENES[L.kind](L, T, g, dim, svg);
+        run = runner(img, function (t) { frame(t + t0); });
+      }
+      function start() { build(); live.push({ stop: function () { if (run) run.stop(); if (svg) svg.remove(); if (dim) dim.remove(); fig.classList.remove('is-live'); } }); }
+      if (img.complete && img.naturalWidth) start(); else img.addEventListener('load', start, { once: true });
+      img.addEventListener('load', build);                       // a phone's picture and a wider one: each its frame
+      if ('ResizeObserver' in window) new ResizeObserver(place).observe(img);
+      window.addEventListener('resize', place);
+    });
+    var off = function () { if (mq.matches) live.forEach(function (l) { l.stop(); }); };
+    if (mq.addEventListener) mq.addEventListener('change', off); else if (mq.addListener) mq.addListener(off);
+  })();
+
+  /* ------------------------------------------------------------------------------------------- 12. the map's day */
+  // The home's map of the desks keeps a day of the reader's own date (round 24e), a day in 24 s from the hour it is
+  // now: the night side goes west over Earth, the land in it darker, deepest where the sun is furthest under; the
+  // desks shut at their sunset and open at their sunrise, each opening a ring; the seat stands as it is. Out of view,
+  // or with the page hidden, the day waits. Without the script, and under reduced motion, the map is still: every desk
+  // open, no night.
+  (function () {
+    var fig = document.querySelector('[data-dmap]');
+    if (!fig || mq.matches) return;
+    var svg = fig.querySelector('.dmap__svg'), land = svg && svg.querySelector('.dmap__land');
+    if (!land) return;
+    var rad = Math.PI / 180, DAY = 24;
+    // Equal Earth, as the site draws the map (src/register.py): the viewBox 1000 wide, latitudes 84 N to 56 S
+    var A1 = 1.340264, A2 = -0.081106, A3 = 0.000893, A4 = 0.003796, M = Math.sqrt(3) / 2;
+    var XMAX = 2 * Math.sqrt(3) * Math.PI / (3 * A1), S = 1000 / (2 * XMAX);
+    function ee(lon, lat) {
+      var th = Math.asin(M * Math.sin(lat * rad)), t2 = th * th, t6 = t2 * t2 * t2;
+      return [2 * Math.sqrt(3) * lon * rad * Math.cos(th) / (3 * (9 * A4 * t6 * t2 + 7 * A3 * t6 + 3 * A2 * t2 + A1)),
+              th * (A1 + A2 * t2 + t6 * (A3 + A4 * t2))];
+    }
+    var YTOP = ee(0, 84)[1], H = svg.viewBox.baseVal.height;
+    function at(lon, lat) { var p = ee(lon, lat); return [S * (p[0] + XMAX), S * (YTOP - p[1])]; }
+    // the sun on the reader's date: its declination, and where it stands overhead at the reader's present moment
+    var now = new Date(), n = now.getTime() / 864e5 + 2440587.5 - 2451545.0;
+    var Lm = (280.46 + 0.9856474 * n) % 360, gm = ((357.528 + 0.9856003 * n) % 360) * rad;
+    var lam = (Lm + 1.915 * Math.sin(gm) + 0.02 * Math.sin(2 * gm)) * rad, eps = (23.439 - 4e-7 * n) * rad;
+    var dec = Math.asin(Math.sin(eps) * Math.sin(lam)) / rad;
+    if (Math.abs(dec) < 0.5) dec = dec < 0 ? -0.5 : 0.5;
+    var ra = Math.atan2(Math.cos(eps) * Math.sin(lam), Math.cos(lam)) / rad;
+    var gmst = (280.46061837 + 360.98564736629 * n) % 360;
+    var sub0 = ((ra - gmst) % 360 + 540) % 360 - 180;           // the longitude under the sun now
+    // the night: the land under it drawn again, darker, in two depths
+    var td = Math.tan(dec * rad);
+    function night(sub) {                                        // the side of Earth where the sun is under the horizon
+      var pts = [];
+      for (var lon = -180; lon <= 180; lon += 3) pts.push(at(lon, Math.atan(-Math.cos((lon - sub) * rad) / td) / rad));
+      var yE = dec < 0 ? -30 : H + 30;
+      pts.push([1030, pts[pts.length - 1][1]], [1030, yE], [-30, yE], [-30, pts[0][1]]);
+      return 'M' + pts.map(function (p) { return p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join('L') + 'Z';
+    }
+    var NS = 'http://www.w3.org/2000/svg', id = 'dmn' + Math.random().toString(36).slice(2, 7);
+    function el(tag, attrs, parent, before) {
+      var e = document.createElementNS(NS, tag);
+      for (var k in attrs) e.setAttribute(k, attrs[k]);
+      if (before) parent.insertBefore(e, before); else if (parent) parent.appendChild(e);
+      return e;
+    }
+    var defs = el('defs', {}, svg, svg.firstChild);
+    var clips = ['a', 'b', 'c'].map(function (k) { return el('path', {}, el('clipPath', { id: id + k }, defs)); });
+    var after = land.nextSibling;
+    var dusk = land.cloneNode(false); dusk.setAttribute('class', 'dmap__land dmap__land--dusk');
+    dusk.setAttribute('clip-path', 'url(#' + id + 'a)');
+    svg.insertBefore(dusk, after);
+    var deep = el('g', { 'clip-path': 'url(#' + id + 'b)', 'class': 'dmap__night' }, svg, after);
+    var dk = land.cloneNode(false); dk.setAttribute('class', 'dmap__land dmap__land--night');
+    dk.setAttribute('clip-path', 'url(#' + id + 'c)');
+    deep.appendChild(dk);
+    // the desks (the seat aside): each its place, and a ring for its sunrise
+    var desks = Array.prototype.slice.call(svg.querySelectorAll('a.dm[data-ll]')).filter(function (a) {
+      return !a.classList.contains('dm--seat');
+    }).map(function (a) {
+      var ll = a.getAttribute('data-ll').split(' ').map(Number), g = a.querySelector('.dm__at');
+      return { a: a, lat: ll[0] * rad, lon: ll[1], open: true, dawn: -9,
+               ring: el('circle', { 'class': 'dm__dawn', r: 7 }, g, g.firstChild) };
+    });
+    var sinD = Math.sin(dec * rad), cosD = Math.cos(dec * rad), RISE = Math.sin(-0.833 * rad);
+    function frame(t) {
+      var sub = sub0 - 360 * t / DAY, fade = Math.min(1, t / 0.8).toFixed(3);
+      clips[0].setAttribute('d', night(sub));
+      clips[1].setAttribute('d', night(sub + 12));
+      clips[2].setAttribute('d', night(sub - 12));
+      dusk.style.opacity = fade; deep.style.opacity = fade;
+      desks.forEach(function (d) {
+        var e = Math.sin(d.lat) * sinD + Math.cos(d.lat) * cosD * Math.cos((d.lon - sub) * rad), open = e > RISE;
+        if (open !== d.open) {
+          d.open = open; d.a.classList.toggle('is-shut', !open);
+          if (open && t > 0) d.dawn = t;
+        }
+        var p = (t - d.dawn) / 1.4;
+        if (p >= 0 && p < 1) {
+          var q = 1 - Math.pow(1 - p, 3);
+          d.ring.setAttribute('r', (7 + 13 * q).toFixed(2));
+          d.ring.style.opacity = (0.75 * (1 - p)).toFixed(3);
+        } else d.ring.style.opacity = '0';
+      });
+    }
+    var run = runner(svg, frame);
+    fig.classList.add('is-day');
+    var off = function () {
+      if (!mq.matches) return;
+      run.stop(); dusk.remove(); deep.remove(); defs.remove(); fig.classList.remove('is-day');
+      desks.forEach(function (d) { d.ring.remove(); d.a.classList.remove('is-shut'); });
+    };
+    if (mq.addEventListener) mq.addEventListener('change', off); else if (mq.addListener) mq.addListener(off);
   })();
 
 })();

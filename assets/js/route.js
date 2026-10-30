@@ -95,9 +95,9 @@
   // The page is whole at once; its text is the final record. The drawing lives: the system's own work goes round and
   // round, and the rule the page states holds every time: Hail's cards come in from Earth and are held at CDX3, the
   // way on to the vessel empty; Thrice's witnesses come in threes and stop short of a terminal; a week passes over
-  // Lintel's empty plot, every day --:--; Fallow's collectors work their furrows and turn at the line. A control under
-  // the drawing pauses it and plays it; out of view, or with the page hidden, it waits. Under reduced motion, and
-  // without the script, the drawing stands still as written.
+  // Lintel's empty plot, every day --:--; Fallow's collectors work their furrows and turn at the line. Out of view,
+  // or with the page hidden, it waits. Under reduced motion, and without the script, the drawing stands still as
+  // written.
   var NS = 'http://www.w3.org/2000/svg';
   function mk(tag, attrs, parent) {
     var e = document.createElementNS(NS, tag);
@@ -342,11 +342,7 @@
   };
 
   function runner(scene, loop) {
-    var row = document.createElement('p'), btn = document.createElement('button');
-    row.className = 'rt__ctlrow'; btn.type = 'button'; btn.className = 'rt__ctl';
-    row.appendChild(btn); scene.appendChild(row);
-    var user = false, seen = false, hidden = document.hidden, running = false, t = 0, last = 0, raf = 0;
-    function label() { btn.textContent = user ? 'Play' : 'Pause'; }
+    var seen = false, hidden = document.hidden, running = false, t = 0, last = 0, raf = 0;
     function step(ts) {
       if (!running) return;
       if (last) t += Math.min(0.1, (ts - last) / 1000);
@@ -355,15 +351,12 @@
       raf = requestAnimationFrame(step);
     }
     function sync() {
-      var go = !user && seen && !hidden;
+      var go = seen && !hidden;
       if (go && !running) { running = true; last = 0; raf = requestAnimationFrame(step); }
       else if (!go && running) { running = false; cancelAnimationFrame(raf); }
-      label();
     }
-    btn.addEventListener('click', function () { user = !user; sync(); });
     loop.start();
     loop.frame(0);
-    label();
     if ('IntersectionObserver' in window) {
       new IntersectionObserver(function (es) {
         es.forEach(function (e) {
@@ -374,7 +367,7 @@
       }, { threshold: [0, 0.1, 0.3] }).observe(scene.querySelector('svg') || scene);
     } else { seen = true; sync(); }
     document.addEventListener('visibilitychange', function () { hidden = document.hidden; sync(); });
-    return { stop: function () { running = false; cancelAnimationFrame(raf); loop.stop(); row.remove(); } };
+    return { stop: function () { running = false; seen = false; cancelAnimationFrame(raf); loop.stop(); } };
   }
 
   // Lintel: how early the reader's terminal is, from its own date
