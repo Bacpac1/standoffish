@@ -30,14 +30,15 @@
   }
 
   var R = {
-    thrice: { end: 2.2, init: function () { set($('[data-eta]'), '20:00'); },
+    thrice: { end: 2.2, init: function () { set($('[data-eta]'), '20:00'); walk(0); },
       tick: function (t) {
+        walk(t);
         var el = $('[data-eta]');
         if (t >= 1.7) { set(el, '––:––'); return; }
         var s = 1200 - Math.round(clamp((t - 0.35) / 1.25, 0, 1) * 29);
         set(el, pad(Math.floor(s / 60)) + ':' + pad(s % 60));
       },
-      final: function () { set($('[data-eta]'), '––:––'); } },
+      final: function () { set($('[data-eta]'), '––:––'); walk(1e9); } },
 
     lintel: { end: 1.6, init: function () { set($('[data-today]'), iso); }, final: function () {
       set($('[data-today]'), iso);
@@ -106,6 +107,26 @@
         if (!$('.tg__morse b')) morse();
       } }
   };
+
+  // Thrice: the three walk in along the painted line (y = k x + b in the drawing's units, from x0) to their places
+  var W = null;
+  function walk(t) {
+    if (W === null) {
+      var svg = $('.th__over'), ws = $$('.th__w');
+      if (!svg || !ws.length) { W = []; return; }
+      var L = svg.getAttribute('data-line').split(' ').map(Number);
+      W = ws.map(function (g) {
+        var m = /translate\(([-\d.]+) /.exec(g.getAttribute('transform'));
+        return { g: g, x1: +m[1], k: L[0], b: L[1], x0: L[2] };
+      });
+    }
+    W.forEach(function (w, i) {
+      var p = ease((t - 0.35 - i * 0.12) / 1.1);
+      var x = w.x0 + (w.x1 - w.x0) * p;
+      w.g.setAttribute('transform', 'translate(' + x.toFixed(0) + ' ' + (w.k * x + w.b - 300).toFixed(0) + ')');
+      w.g.style.opacity = t < 0.3 + i * 0.12 ? '0' : '1';
+    });
+  }
 
   // the telegraphic address in Morse on the tape: a dot, a dash three dots long, letters three apart, words seven
   var CODE = { A: '.-', B: '-...', C: '-.-.', D: '-..', E: '.', F: '..-.', G: '--.', H: '....', I: '..', J: '.---', K: '-.-',

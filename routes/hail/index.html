@@ -14,8 +14,8 @@
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preload" href="/assets/fonts/archivo.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/css/fonts.css?v=a0c6811e">
-<link rel="stylesheet" href="/assets/css/route.css?v=a0c6811e">
+<link rel="stylesheet" href="/assets/css/fonts.css?v=dc4ef6e6">
+<link rel="stylesheet" href="/assets/css/route.css?v=dc4ef6e6">
 </head>
 <body>
 <main class="rt__main" id="main">
@@ -33,12 +33,17 @@
 <p class="hl__body" aria-hidden="true"><i></i></p>
 <p class="hl__send" data-at="0.85"><span>Send</span></p>
 </div>
-<div class="hl__route" aria-hidden="true">
-<div class="hl__node"><i></i><span>EARTH</span><small>your terminal</small></div>
-<div class="hl__seg"><b class="hl__pulse" data-at="1.0"></b></div>
-<div class="hl__node hl__node--relay" data-at="1.7"><i></i><span>CDX3</span><small>held</small></div>
-<div class="hl__seg hl__seg--far"></div>
-<div class="hl__node hl__node--ship"><i></i><span>FCH(T)</span><small><b data-lt>328.7</b>&#8201;s ahead</small></div>
+<div class="hl__scene" aria-hidden="true">
+<img class="hl__draw" src="/assets/media/routes/hail-relay.svg" width="1672" height="941" alt="" decoding="async">
+<svg class="hl__over" viewBox="0 0 16720 9410">
+<path class="hl__far" d="M11300 6150C12800 7000 14700 8000 16640 8760"/>
+<path class="hl__trail" data-at="0.95" pathLength="1" d="M180 8860C3600 9200 7200 8200 10580 5720"/>
+<path class="hl__packet" data-at="0.95" pathLength="1" d="M180 8860C3600 9200 7200 8200 10580 5720"/>
+<g class="hl__held" data-at="1.75"><circle class="hl__ring" cx="10620" cy="5560" r="900"/><circle class="hl__dot" cx="10620" cy="5560" r="190"/></g>
+</svg>
+<p class="hl__lab hl__lab--earth"><span>EARTH</span><small>your terminal</small></p>
+<p class="hl__lab hl__lab--relay" data-at="1.75"><span>CDX3</span><small>held</small></p>
+<p class="hl__lab hl__lab--ship"><span>FCH(T)</span><small><b data-lt>328.7</b>&#8201;s ahead</small></p>
 </div>
 </div></div>
 <div class="rt__text">
@@ -47,6 +52,6 @@
 <p class="rt__fine">Replies to a sender in transit are lodged at a <a href="/reply/">reply desk</a> and carried on the next window. OWP §5(1), (3).</p></div>
 <p class="rt__back"><a href="/contact/">Contact the Register</a></p>
 </main>
-<script src="/assets/js/route.js?v=a0c6811e" defer></script>
+<script src="/assets/js/route.js?v=dc4ef6e6" defer></script>
 </body>
 </html>

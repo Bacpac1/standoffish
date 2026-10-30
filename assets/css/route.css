@@ -72,24 +72,35 @@ dl, dd { margin: 0; }
 .hl__send span { padding: 9px 20px; border-radius: 999px; background: var(--acc); color: #1d0c03; font: 600 14px/1 var(--sans);
                  transition: background-color .15s, color .15s; }
 .js .hl__send:not(.on) span { background: transparent; color: var(--acc); box-shadow: inset 0 0 0 1.5px var(--acc); }
-.hl__route { display: grid; grid-template-columns: auto minmax(36px, 3fr) auto minmax(48px, 5fr) auto; align-items: start; }
-.hl__node { display: grid; justify-items: center; gap: 0; text-align: center; min-width: 5.5em; }
-.hl__node small { margin-top: 6px; }
-.hl__node i { width: 12px; height: 12px; margin-block: 22px; border-radius: 50%; background: var(--fg); }
-.hl__node span { font: 500 12.5px/1 var(--mono); letter-spacing: .06em; }
-.hl__node small { font: 400 12.5px/1.3 var(--sans); color: var(--dim); }
-.hl__node--relay i { width: 3px; height: 56px; margin-block: 0; border-radius: 2px; background: var(--acc);
-                     box-shadow: 0 0 0 5px rgb(255 122 69 / .16); transition: background-color .2s, box-shadow .2s; }
-.js .hl__node--relay:not(.on) i { background: var(--fg); box-shadow: none; }
-.js .hl__node--relay:not(.on) small { opacity: 0; }
-.hl__node--ship i { background: var(--acc); }
-.hl__seg { position: relative; height: 56px; }
-.hl__seg::before { content: ""; position: absolute; left: 0; right: 0; top: 27.5px; border-top: 1px solid rgb(233 238 248 / .38); }
-.hl__seg--far::before { border-top-style: dashed; }
-.hl__pulse { position: absolute; top: 23px; left: calc(100% - 6px); width: 11px; height: 11px; margin-left: -5.5px;
-             border-radius: 50%; background: var(--acc); transition: left .65s cubic-bezier(.35, .6, .45, 1), opacity .15s; }
-.js .hl__pulse:not(.on) { left: 0; opacity: 0; }
-
+/* the relay, drawn; the card's way to it drawn over it in the drawing's own units */
+.hl__scene { position: relative; min-width: 0; padding-bottom: 46px; }
+.hl__draw { display: block; width: 100%; height: auto; }
+.hl__over { position: absolute; inset: 0 0 46px; width: 100%; height: calc(100% - 46px); overflow: visible; }
+.hl__over path { fill: none; vector-effect: non-scaling-stroke; }
+.hl__far { stroke: rgb(233 238 248 / .4); stroke-width: 1.5px; stroke-dasharray: 3 7; }
+.hl__trail { stroke: rgb(255 122 69 / .55); stroke-width: 1.5px; stroke-dasharray: 1; stroke-dashoffset: 0; }
+.hl__packet { stroke: var(--acc); stroke-width: 4px; stroke-linecap: round; stroke-dasharray: .035 1.2; stroke-dashoffset: -.98; opacity: 0; }
+.hl__ring { fill: none; stroke: var(--acc); stroke-width: 2px; vector-effect: non-scaling-stroke; opacity: .55; }
+.hl__dot { fill: var(--acc); }
+.hl__held { transform-box: fill-box; transform-origin: center; }
+.hl__lab { position: absolute; margin: 0; display: grid; gap: 4px; }
+.hl__lab span { font: 500 12.5px/1 var(--mono); letter-spacing: .06em; }
+.hl__lab small { font: 400 12.5px/1.3 var(--sans); color: var(--dim); }
+.hl__lab--earth { left: 0; bottom: 0; }
+.hl__lab--relay { left: 60%; top: 74%; }
+.hl__lab--relay span { color: var(--acc); }
+.hl__lab--ship { right: 0; bottom: 0; text-align: right; justify-items: end; }
+@media (prefers-reduced-motion: no-preference) {
+  .js .hl__trail:not(.on) { stroke-dashoffset: 1; }
+  .js .hl__trail.on { transition: stroke-dashoffset .8s cubic-bezier(.45, .05, .3, 1); }
+  .js .hl__packet.on { animation: hl-packet .8s cubic-bezier(.45, .05, .3, 1) forwards; }
+  @keyframes hl-packet { 0% { stroke-dashoffset: .035; opacity: 1; } 92% { opacity: 1; } 100% { stroke-dashoffset: -.97; opacity: 0; } }
+  .js .hl__held:not(.on), .js .hl__lab--relay:not(.on) { opacity: 0; }
+  .hl__ring { transform-box: fill-box; transform-origin: center; }
+  .js .hl__held.on .hl__ring { animation: hl-ring 1.4s cubic-bezier(.2, .7, .2, 1) 1 both; }
+  @keyframes hl-ring { from { transform: scale(.22); opacity: .95; } to { transform: scale(1); opacity: .55; } }
+  .js .hl__lab--relay.on { transition: opacity .35s ease .1s; }
+}
 /* ======================================================================== Thrice · 2077 (CONSTANT): three at the door */
 .rt--thrice { --bg: #f4f3ef; --fg: #0c0c0d; --dim: #56575c; --line: rgb(12 12 13 / .14); --say-at: 2.0s; }
 .rt--thrice .rt__say { font-weight: 720; font-stretch: 78%; letter-spacing: -.02em; line-height: 1; }
@@ -104,22 +115,13 @@ dl, dd { margin: 0; }
 .th__f dd { font: 560 15px/1.4 var(--sans); }
 .th__f dd span { display: block; font: 400 13px/1.4 var(--mono); color: var(--dim); }
 .th__etarow dd b { font: 720 30px/1 var(--sans); font-stretch: 78%; font-variant-numeric: tabular-nums; }
-.th__map { display: grid; grid-template-columns: auto minmax(80px, 1fr) auto; align-items: end; column-gap: 14px; }
-.th__desk, .th__term { display: grid; justify-items: center; gap: 8px; }
-.th__desk span, .th__term span { font: 400 12px/1.3 var(--mono); color: var(--dim); white-space: nowrap; }
-.th__desk i { width: 44px; height: 38px; background: var(--fg); clip-path: polygon(0 34%, 50% 0, 100% 34%, 100% 100%, 0 100%); }
-.th__term i { position: relative; width: 58px; height: 40px; border: 2px solid var(--fg); border-radius: 3px; margin-bottom: 8px; }
-.th__term i::after { content: ""; position: absolute; left: 50%; bottom: -10px; width: 22px; height: 8px; translate: -50% 0; border-top: 2px solid var(--fg); }
-.th__path { position: relative; height: 40px; margin-bottom: 26px; }
-.th__path::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; border-top: 1.5px dashed rgb(12 12 13 / .45); }
-.th__w { position: absolute; top: 50%; left: 74%; width: 12px; height: 12px; background: var(--fg); translate: -50% -50%; rotate: 45deg;
-         transition: left 1.15s cubic-bezier(.45, .05, .3, 1); }
-.th__w:nth-child(1) { margin-top: -11px; }
-.th__w:nth-child(2) { margin-left: -11px; margin-top: 7px; }
-.th__w:nth-child(3) { margin-left: 11px; margin-top: 7px; }
-.js .th__path:not(.on) .th__w { left: 4%; }
-.th__stop { position: absolute; left: 83%; top: 50%; width: 2.5px; height: 30px; translate: 0 -50%; background: var(--fg); transition: opacity .2s; }
-.js .th__stop:not(.on) { opacity: 0; }
+/* the door and its terminal, drawn; the three walk in over the drawing, in its units */
+.th__scene { position: relative; min-width: 0; padding-bottom: 30px; }
+.th__draw { display: block; width: 100%; height: auto; }
+.th__over { position: absolute; inset: 0 0 30px; width: 100%; height: calc(100% - 30px); overflow: visible; }
+.th__w path { fill: var(--fg); }
+.th__lab { position: absolute; margin: 0; font: 400 12.5px/1.3 var(--mono); color: var(--dim); white-space: nowrap; }
+.th__lab--from { left: 6%; bottom: 0; }
 
 /* ======================================================================== Lintel · 2081: the hours of places */
 .rt--lintel { --bg: #efebe1; --fg: #1b1a17; --dim: #5d5a52; --line: rgb(27 26 23 / .16); --say-at: 2.0s; }
@@ -138,29 +140,30 @@ dl, dd { margin: 0; }
 .li__when span { color: var(--dim); }
 .li__when b { font-weight: 500; text-align: right; }
 .li__gap { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--line); font: 400 19px/1.3 var(--serif); }
-.li__lot { width: 100%; height: auto; display: block; max-height: 46svh; }
-.li__lot path { fill: none; stroke: var(--fg); }
-.li__ground { stroke-opacity: .5; stroke-width: 1.2; }
-.li__door path { stroke-width: 1.5; stroke-dasharray: 8 6; }
-.li__door .li__beam { stroke-dasharray: none; stroke-width: 1; stroke-opacity: .5; }
-.li__door { transform-box: fill-box; transform-origin: 50% 100%; transition: transform 1s cubic-bezier(.3, .6, .3, 1); }
-.js .li__door:not(.on) { transform: scaleY(0); }
-.li__stakes path { stroke-width: 1.4; }
-.li__stakes { transition: opacity .3s; }
-.js .li__stakes:not(.on) { opacity: 0; }
+.li__scene { position: relative; min-width: 0; }
+.li__draw { display: block; width: 100%; height: auto; max-height: 52svh; }
+.li__draw .d-acc { transform-box: fill-box; transform-origin: 50% 100%; }
+@media (prefers-reduced-motion: no-preference) {
+  .js .li__scene:not(.on) .li__draw { clip-path: inset(0 100% 0 0); }
+  .js .li__scene.on .li__draw { transition: clip-path 1.1s cubic-bezier(.45, .05, .3, 1); }
+  .js .li__set:not(.on) .d-acc { opacity: 0; transform: translateY(-60%); }
+  .js .li__set.on .d-acc { transition: transform .55s cubic-bezier(.3, 1.3, .5, 1), opacity .25s ease; }
+}
 
 /* ======================================================================== Fallow · 2072: the directory of quiet ground */
 .rt--fallow { --bg: #e5e9df; --fg: #233027; --dim: #4f5c53; --line: rgb(35 48 39 / .16); --say-at: 2.2s; }
 .rt--fallow .rt__say { font-weight: 440; font-stretch: 94%; }
 .fa { display: grid; grid-template-columns: minmax(0, 8fr) minmax(0, 4fr); gap: clamp(22px, 4vw, 56px); align-items: center; }
 .fa__field { position: relative; }
-.fa__field svg { display: block; width: 100%; height: auto; aspect-ratio: 1000 / 360; }
-.fa__furrows path { fill: none; stroke: var(--fg); stroke-opacity: .6; stroke-width: 1.5; stroke-dasharray: 1; stroke-dashoffset: 0;
-                    transition: stroke-dashoffset 1.05s cubic-bezier(.4, .1, .3, 1); }
-.js .fa__furrows path:not(.on) { stroke-dashoffset: 1; }
-.fa__line { fill: none; stroke: var(--fg); stroke-width: 3; stroke-dasharray: 1; stroke-dashoffset: 0; transition: stroke-dashoffset .45s ease; }
-.js .fa__line:not(.on) { stroke-dashoffset: 1; }
-.fa__sign { position: absolute; left: 61.5%; top: 4%; margin: 0; padding: 7px 10px; background: var(--fg); color: var(--bg);
+.fa__draw { display: block; width: 100%; height: auto; }
+.fa__draw .d-acc { transform-box: fill-box; transform-origin: 50% 100%; }
+@media (prefers-reduced-motion: no-preference) {
+  .js .fa__field:not(.on) .fa__draw { clip-path: inset(0 100% 0 0); }
+  .js .fa__field.on .fa__draw { transition: clip-path 1.2s cubic-bezier(.4, .1, .3, 1); }
+  .js .fa__set:not(.on) .d-acc { opacity: 0; transform: scale(.2); }
+  .js .fa__set.on .d-acc { transition: transform .45s cubic-bezier(.3, 1.4, .5, 1), opacity .2s ease; }
+}
+.fa__sign { position: absolute; left: 54%; top: 16%; margin: 0; padding: 7px 10px; background: var(--fg); color: var(--bg);
             font: 600 11.5px/1.25 var(--mono); letter-spacing: .06em; transition: opacity .3s, translate .3s; }
 .fa__sign small { display: block; font-weight: 400; letter-spacing: 0; }
 .js .fa__sign:not(.on) { opacity: 0; translate: 0 6px; }
@@ -350,10 +353,7 @@ dl, dd { margin: 0; }
 /* ======================================================================== narrow screens */
 @media (max-width: 760px) {
   .hl, .th, .li, .fa, .us, .tp { grid-template-columns: minmax(0, 1fr); }
-  .hl__route { grid-template-columns: auto minmax(18px, 2fr) auto minmax(18px, 3fr) auto; }
-  .hl__node { min-width: 4.2em; }
-  .th__map { margin-top: 6px; }
-  .li__lot { max-height: 30svh; }
+  .li__draw { max-height: 34svh; }
   .tp__dialbox { width: min(78%, 280px); }
   .tg__grid { grid-template-columns: 1fr 1fr; }
   .tg__grid p:nth-child(2) { border-right: 0; }
