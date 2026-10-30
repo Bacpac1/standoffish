@@ -973,15 +973,15 @@
 
   // The house's machines (round 25): purpose-built and as common as the furniture, each drawn over the picture from
   // boxes in the house's tones, the near faces' meeting folded and the outline round what is seen. A machine's light,
-  // a short strip in the accent, is the nearest thing to an eye it has (the industry code bars the infant schema).
-  var LIT = '#5b8dd3';
+  // a short strip in the accent on its body's near face (a fifth of the face, steady), is the nearest thing to an eye
+  // it has (the industry code bars the infant schema); a dark skirt at its foot, its wheels seen under its side.
+  var LIT = '#5b8dd3', SKIRT = '#8e9ba4', WHEEL = '#4f5d68';
   function Box(par, T, tone) {
     tone = tone || {};
-    var o = { g: mk('g', {}, par) };
+    var o = { g: mk('g', {}, par) }, k = T.k || 1;              // a phone's picture: its machines' lines lighter
     o.top = mk('path', { 'class': 'lv-fill', fill: tone.top || INK.top }, o.g);
     o.fy = mk('path', { 'class': 'lv-fill', fill: tone.y || INK.left }, o.g);
     o.fx = mk('path', { 'class': 'lv-fill', fill: tone.x || INK.right }, o.g);
-    var k = T.k || 1;                                          // a phone's picture: its machines' lines lighter
     o.fold = mk('path', { 'class': 'lv-line', fill: 'none', stroke: INK.ink, 'stroke-width': 0.55 * k, 'stroke-linejoin': 'round' }, o.g);
     o.sil = mk('path', { 'class': 'lv-line', fill: 'none', stroke: INK.ink, 'stroke-width': (tone.w || 0.85) * k, 'stroke-linejoin': 'round' }, o.g);
     o.set = function (x0, x1, y0, y1, z0, z1) {
@@ -1005,29 +1005,84 @@
     o.x = function (c, y0, y1, z0, z1) { o.p.setAttribute('d', poly([T(c, y0, z0), T(c, y1, z0), T(c, y1, z1), T(c, y0, z1)])); return o; };
     return o;
   }
-  // a machine's moves, written in their order: each channel held, then eased (cubic-bezier(.4, 0, .2, 1)) to its next
-  // value; go() moves channels together and advances the plan's clock, also() moves others alongside it
+  // a run along the floor (Astra, round 25): away in 0.25 s, at an even pace, down in 0.35 s to a crawl for its last
+  // 9 cm, and still; as a function of the part of the run's time gone, the part of its length done
+  function drive(L, D) {
+    L = Math.abs(L);
+    if (L < 1) return std;
+    var ta = 0.25, td = 0.35, ts = 0.15, vc = 30, c = Math.min(9, L * 0.25);
+    var tc = Math.max(0, (c - vc * ts / 2) / vc), need = ta + td + tc + ts + 0.05;
+    if (D < need) { var q = D / need; ta *= q; td *= q; ts *= q; tc *= q; }    // a short run: the same shape, quicker
+    c = vc * (tc + ts / 2);
+    var Tc = Math.max(0, D - ta - td - tc - ts);
+    var V = (L - c - vc * td / 2) / (ta / 2 + Tc + td / 2);
+    function at(s) {
+      if (s <= 0) return 0;
+      if (s < ta) return V * s * s / (2 * ta);
+      var p = V * ta / 2; s -= ta;
+      if (s < Tc) return p + V * s;
+      p += V * Tc; s -= Tc;
+      if (s < td) return p + V * s + (vc - V) * s * s / (2 * td);
+      p += (V + vc) / 2 * td; s -= td;
+      if (s < tc) return p + vc * s;
+      p += vc * tc; s -= tc;
+      if (s < ts) return p + vc * s - vc * s * s / (2 * ts);
+      return L;
+    }
+    return function (u) { return clamp(at(u * D) / L, 0, 1); };
+  }
+  // a machine's moves, written in their order: each channel held, then eased to its next value (the standard curve,
+  // or a run's); go() moves channels together and advances the plan's clock, also() moves others alongside it
   function Plan(init) {
     var K = {}, now = 0;
     for (var k in init) K[k] = [[0, init[k]]];
-    function key(k, v, t0, t1) { var ks = K[k], l = ks[ks.length - 1]; if (t0 > l[0]) ks.push([t0, l[1]]); ks.push([t1, v]); }
+    function key(k, v, t0, t1, ease) { var ks = K[k], l = ks[ks.length - 1]; if (t0 > l[0]) ks.push([t0, l[1]]); ks.push([t1, v, ease]); }
     return {
       at: function () { return now; },
       wait: function (d) { now += d; return now; },
-      go: function (m, d) { for (var k in m) key(k, m[k], now, now + d); now += d; return now; },
+      go: function (m, d, ease) { for (var k in m) key(k, m[k], now, now + d, ease); now += d; return now; },
+      run: function (k, v, d) {                                    // a run along the floor, to v on channel k
+        var ks = K[k], from = ks[ks.length - 1][1];
+        key(k, v, now, now + d, drive(v - from, d)); now += d; return now;
+      },
       also: function (m, t0, d) { for (var k in m) key(k, m[k], t0, t0 + d); return t0 + d; },
       val: function (k, t) {
         var ks = K[k];
         if (t <= ks[0][0]) return ks[0][1];
         for (var i = 1; i < ks.length; i++) if (t <= ks[i][0]) {
           var a = ks[i - 1], b = ks[i];
-          return b[0] > a[0] ? a[1] + (b[1] - a[1]) * std((t - a[0]) / (b[0] - a[0])) : b[1];
+          return b[0] > a[0] ? a[1] + (b[1] - a[1]) * (b[2] || std)((t - a[0]) / (b[0] - a[0])) : b[1];
         }
         return ks[ks.length - 1][1];
       }
     };
   }
-  function ride(d) { return 0.45 + Math.abs(d) / 180; }     // a run along the floor: its time for its length (cm)
+  // a route over the floor through its points, each corner a quarter circle of radius r; [x, y] at a length along it
+  function Route(pts, r) {
+    var s = [pts[0]];
+    for (var i = 1; i < pts.length; i++) {
+      var a = pts[i - 1], b = pts[i], c = pts[i + 1];
+      if (!c) { s.push(b); break; }
+      var l1 = Math.hypot(b[0] - a[0], b[1] - a[1]), l2 = Math.hypot(c[0] - b[0], c[1] - b[1]);
+      var d1 = [(b[0] - a[0]) / l1, (b[1] - a[1]) / l1], d2 = [(c[0] - b[0]) / l2, (c[1] - b[1]) / l2];
+      var p1 = [b[0] - d1[0] * r, b[1] - d1[1] * r], cx = p1[0] + d2[0] * r, cy = p1[1] + d2[1] * r;
+      s.push(p1);
+      for (var k = 1; k <= 12; k++) {
+        var th = k / 12 * Math.PI / 2;
+        s.push([cx - d2[0] * r * Math.cos(th) + d1[0] * r * Math.sin(th), cy - d2[1] * r * Math.cos(th) + d1[1] * r * Math.sin(th)]);
+      }
+    }
+    var acc = [0];
+    for (var j = 1; j < s.length; j++) acc.push(acc[j - 1] + Math.hypot(s[j][0] - s[j - 1][0], s[j][1] - s[j - 1][1]));
+    return { len: acc[acc.length - 1], at: function (d) {
+      d = clamp(d, 0, acc[acc.length - 1]);
+      for (var j = 1; j < s.length; j++) if (d <= acc[j]) {
+        var f = (d - acc[j - 1]) / ((acc[j] - acc[j - 1]) || 1);
+        return [s[j - 1][0] + (s[j][0] - s[j - 1][0]) * f, s[j - 1][1] + (s[j][1] - s[j - 1][1]) * f];
+      }
+      return s[s.length - 1];
+    } };
+  }
   // the right end wall stands before what is near it in the room: what is behind it stays hidden
   function behindWall(svg, g, T, w) {
     var cp = mk('clipPath', { id: 'lv-' + Math.random().toString(36).slice(2, 8) }, svg), hp = [], vb = svg.viewBox.baseVal;
@@ -1035,78 +1090,90 @@
     mk('path', { 'clip-rule': 'evenodd', d: 'M-10 -10H' + f1(vb.width + 10) + 'V' + f1(vb.height + 10) + 'H-10Z' + poly(hull(hp)) }, cp);
     g.setAttribute('clip-path', 'url(#' + cp.id + ')');
   }
-  // a machine's running gear, the same in each: a plinth set in under its body (its wheels), the body, a band of
-  // bumper round its foot, its light on its near face, a lid let into its top
+  // a machine's running gear, the same in each: a plinth set in under its body, 1.6 cm off the floor, its wheels
+  // seen under its side (their lower third); the body; a dark skirt round its foot, 3 cm; its light on its near face;
+  // a lid let into its top
   function Chassis(par, T) {
-    var o = { plinth: Box(par, T, { top: INK.recess, y: INK.recess, x: INK.recess, w: 0.55 }), body: Box(par, T),
-              bump: Strip(par, T, INK.recess), bumpx: Strip(par, T, INK.recess), lamp: Strip(par, T, LIT),
+    var o = { plinth: Box(par, T, { top: INK.recess, y: INK.recess, x: INK.recess, w: 0.55 }),
+              w1: Strip(par, T, WHEEL), w2: Strip(par, T, WHEEL), body: Box(par, T),
+              skirt: Strip(par, T, SKIRT), skirtx: Strip(par, T, SKIRT), lamp: Strip(par, T, LIT),
               lid: Box(par, T, { top: INK.paper, w: 0.55 }) };
     // x: its middle; y0, y1: its far and near faces; w: its half width; z0: the floor; h: its height; lit: its
-    // light's strength; lw: its light's length, as a part of the width
-    o.set = function (x, y0, y1, w, z0, h, lit, lw) {
-      lw = lw || 0.36;
+    // light's strength
+    o.set = function (x, y0, y1, w, z0, h, lit) {
       o.plinth.set(x - w + 3, x + w - 3, y0 + 3, y1 - 3, z0, z0 + 1.6);
+      var wl = Math.min(10, (y1 - y0) * 0.24), xw = x + w - 2.95;
+      o.w1.x(xw, y0 + 5, y0 + 5 + wl, z0, z0 + 1.6);
+      o.w2.x(xw, y1 - 5 - wl, y1 - 5, z0, z0 + 1.6);
       o.body.set(x - w, x + w, y0, y1, z0 + 1.6, z0 + h);
-      var bh = z0 + 2.2 + Math.min(3.2, 0.2 * h);
-      o.bump.y(y1 + 0.02, x - w + 0.3, x + w - 0.3, z0 + 2.2, bh);
-      o.bumpx.x(x + w + 0.02, y0 + 0.3, y1 - 0.3, z0 + 2.2, bh);
-      o.lamp.y(y1 + 0.04, x - lw * w, x + lw * w, z0 + h - 5.4, z0 + h - 4.2);
+      o.skirt.y(y1 + 0.02, x - w + 0.3, x + w - 0.3, z0 + 1.9, z0 + 4.6);
+      o.skirtx.x(x + w + 0.02, y0 + 0.3, y1 - 0.3, z0 + 1.9, z0 + 4.6);
+      o.lamp.y(y1 + 0.04, x - 0.22 * w, x + 0.22 * w, z0 + h - 4.8, z0 + h - 3.6);
       o.lamp.p.style.opacity = lit.toFixed(3);
       o.lid.set(x - w + 3, x + w - 3, y0 + 3, y1 - 3, z0 + h, z0 + h + 1.1);
     };
     return o;
   }
+  // a machine's light: steady at rest, steady at work, each change 0.18 s
+  function lamp(t, on, off) { return 0.4 + 0.6 * (clamp((t - on) / 0.18, 0, 1) - clamp((t - off) / 0.18, 0, 1)); }
 
   var SCENES = {
-    // Replies, a turn of 17.2 s, in the house's own causes. The courier comes up to each position in turn, from the
-    // left: it runs into the bay, reaches over the counter with the envelope it holds, sets the envelope's foot in the
-    // slot and lets go; the slot draws it in, 20 cm in 0.48 s, straight down, and the bezel answers (0.18 s); the
-    // record is set on the three displays, the position's own first and its neighbours after, 0.12 s apart, each line
-    // whole. Between positions the courier takes the next envelope from its tote. At the window (1.6 s after the third)
-    // the bar runs once (0.8 s) and what was held is carried (0.24 s); the displays go back to rest, a little lit, their
-    // line at their foot. The courier goes out by the door with its tote empty and comes back with it full.
+    // Replies, a turn of about 22 s, in the house's own causes. The courier (a mobile stand: its body 50 by 46 cm and
+    // 22 high, a tote of envelopes across its front half, its mast at its back, an arm in two lengths that runs out of
+    // a housing on a collar) keeps its berth at the left end wall, under the supply's hood, where its tote is filled.
+    // It backs out, takes an envelope from its tote, and comes up to each position in turn, from the left: it runs
+    // into the bay and stands (0.2 s), reaches over the counter (0.65 s), sets the envelope's foot in the slot (12 mm,
+    // held 0.25 s), lets go (0.15 s); 0.18 s on the slot draws it in, 21 cm in 0.45 s, straight down, and the bezel
+    // answers (0.18 s); the record is set on the three displays, the position's own first and its neighbours after,
+    // 0.12 s apart, each line whole. The courier draws its arm back, takes the next envelope from its tote standing,
+    // and backs out of the bay. At the window (1.6 s after the third) the bar runs once (0.8 s) and what was held is
+    // carried (0.24 s); the displays go back to rest, a little lit, their line at their foot. The courier goes back
+    // to its berth, its tote is filled again (1.4 s), and the turn begins again.
     reply: function (L, T, g, dim, svg) {
-      var EXP = 20, IN = 0.48, ANS = 0.18, STEP = 0.12, BAR = 0.8, CLR = 0.24, F0 = L.floor;
+      var IN = 0.45, ANS = 0.18, STEP = 0.12, BAR = 0.8, CLR = 0.24, F0 = L.floor;
       var order = [0, 1, 2];                                     // the positions in the order they lodge
       var TOP = L.pos[0].slot[4];                                // the counters' top, at the slot
       var XS = L.pos.map(function (p) { return (p.slot[0] + p.slot[2]) / 2; });
       var YS = (L.pos[0].slot[1] + L.pos[0].slot[3]) / 2;
-      // the courier: its body 42 by 40 cm and 21 high; the tote at its head (toward the counters), its mast behind;
-      // the arm on a collar on the mast, reaching toward the counters, its jaw holding an envelope (DL, 22 by 11 cm,
-      // on its short edge) by its head. LANE and BAY: the body's head out in the room and in a bay at the counter.
-      var LANE = 112, BAYY = 79, OUTX = L.wall[0] - 23, RIM = F0 + 32;
-      var TOTE = [13, 9, 5];                                     // where each envelope stands in the tote, from its head
-      var ZPICK = F0 + 43, ZLIFT = TOP + 23.6, ZPUT = TOP + 19;  // the jaw: at an envelope in the tote; carrying; at the slot
-      var EPUT = BAYY + 18 - YS;                                 // the arm's reach over the counter, to the slot
-      var P = Plan({ x: XS[0], yb: LANE, za: ZLIFT, e: 18 - TOTE[0] });
-      var put = [], picked = [], S = [], out = 0, back = 0;
-      P.wait(0.3);
+      var EXP = 20.8;                                            // what stands above the slot, its foot 12 mm in
+      var W2 = 25, DP = 46, H = 22, RIM = F0 + H + 12;           // the body's half width and depth, its height; the tote's rim
+      var LANE = 112, BAYY = 75;                                 // the body's head: out in the room; in a bay at the counter
+      var TOTE = [5, 10, 15];                                    // where each envelope stands in the tote, from its head
+      var ZPICK = F0 + H + 22, ZLIFT = TOP + 24, ZPUT = TOP + EXP - 1;   // the jaw: at an envelope in the tote; carrying; at the slot
+      var JAW0 = 16;                                             // the jaw, the arm drawn in: from the head (the tote's middle)
+      function ext(p) { return JAW0 - TOTE[p]; }                 // the arm drawn out over envelope p in the tote
+      var EPUT = BAYY + JAW0 - YS;                               // over the counter, to the slot
+      // the berth: the supply against the left end wall, its hood over the tote of a courier standing in it
+      var BX = 12 + 32 + 2 + W2;                                 // the courier's middle in its berth
+      var P = Plan({ x: BX, yb: LANE, za: ZLIFT, e: 0 });
+      var put = [], picked = [], S = [];
+      function pick(p) {                                          // standing: over envelope p, down, take it, up
+        P.go({ e: ext(p) }, 0.25);
+        P.go({ za: ZPICK }, 0.3);
+        picked[p] = P.wait(0.12);
+        P.go({ za: ZLIFT }, 0.4);
+      }
+      P.wait(0.4);
+      P.run('x', XS[0], 0.8);                                    // out of the berth (it backs out) to the first position
+      pick(0);
       XS.forEach(function (x, p) {
-        if (p) {                                                 // the run to the next position, taking its envelope
-          var t0 = P.at();
-          P.also({ e: 18 - TOTE[p] }, t0 + 0.05, 0.3);
-          P.also({ za: ZPICK }, t0 + 0.4, 0.35);
-          picked[p] = t0 + 0.8;
-          P.also({ za: ZLIFT }, t0 + 0.85, 0.45);
-          P.go({ x: x }, ride(x - XS[p - 1]));
-        }
-        P.go({ yb: BAYY }, 0.5);
-        P.go({ e: EPUT }, 0.7);
-        put[p] = P.go({ za: ZPUT }, 0.28);
-        S[p] = P.wait(0.12);                                     // the jaw opens; the slot takes it
-        P.go({ za: ZLIFT, e: 6 }, 0.55);
-        P.go({ yb: LANE }, 0.5);
+        if (p) P.run('x', x, 1.4);
+        P.run('yb', BAYY, 0.6);
+        P.wait(0.2);                                             // stood still before the arm moves
+        P.go({ e: EPUT }, 0.65);
+        P.go({ za: ZPUT }, 0.3);
+        P.wait(0.25);                                            // its foot in the slot
+        put[p] = P.wait(0.15);                                   // the jaw opens
+        S[p] = P.wait(0.18);                                     // the slot draws it in from here
+        P.wait(0.1);
+        P.go({ za: ZLIFT, e: 0 }, 0.55);
+        if (p < 2) pick(p + 1);
+        P.run('yb', LANE, 0.6);
       });
-      P.go({ x: OUTX }, ride(OUTX - XS[2]));
-      out = P.at();
-      back = P.wait(0.6);                                        // out of sight by the door: the tote filled again
-      var t1 = P.at();
-      P.also({ e: 18 - TOTE[0] }, t1 + 1.6, 0.3);
-      P.also({ za: ZPICK }, t1 + 1.95, 0.35);
-      picked[0] = t1 + 2.35;
-      P.also({ za: ZLIFT }, t1 + 2.4, 0.45);
-      P.go({ x: XS[0] }, ride(OUTX - XS[0]));
-      var TURN = P.at(), WIN = S[2] + 1.6;
+      P.run('x', BX, 2.6);                                       // back to the berth
+      var berth = P.at();
+      var TURN = P.wait(1.4), WIN = S[2] + 1.6;                  // filled under the hood
+      var fill = [berth + 0.3, berth + 0.6, berth + 0.9];        // the envelopes set in the tote: the far one first
 
       var pos = L.pos.map(function (p, q) {
         var d = p.disp, y = d[4], b = p.bezel, sl = p.slot;
@@ -1148,14 +1215,16 @@
         };
         return o;
       }
-      // the courier, drawn after the positions: it stands before them
+      // the courier and its berth, drawn after the positions: they stand before them
       var rb = mk('g', {}, g);
       behindWall(svg, rb, T, L.wall);
+      Box(rb, T).set(12, 44, LANE - 8, LANE + DP + 2, F0, F0 + 118);                 // the supply, against the end wall
       var ch = Chassis(rb, T);
       var tote = Box(rb, T, { top: INK.recess });
-      var inTote = [envelope(rb), envelope(rb), envelope(rb)];   // from the far end of the tote: 2, 1, 0
-      var arm2 = Box(rb, T, { w: 0.55 }), arm1 = Box(rb, T, { w: 0.55 }), held = envelope(rb), jaw = Box(rb, T);
-      var mast = Box(rb, T), cap = Box(rb, T), collar = Box(rb, T);
+      var inTote = [envelope(rb), envelope(rb), envelope(rb)];   // from the tote's head: 0, 1, 2
+      var hood = Box(rb, T), lip = Box(rb, T, { w: 0.55 });      // the supply's hood over the berth, its lip
+      var arm2 = Box(rb, T, { w: 0.55 }), arm1 = Box(rb, T, { w: 0.55 }), held = envelope(rb), jaw = Box(rb, T), jaw2 = Box(rb, T, { w: 0.55 });
+      var house = Box(rb, T), mast = Box(rb, T), collar = Box(rb, T);
       // when the record of position p reaches the display of position q: the own display first, then the nearer
       function at(p, q) {
         var n = [0, 1, 2].sort(function (a, b) { return Math.abs(a - p) - Math.abs(b - p) || a - b; }).indexOf(q);
@@ -1164,26 +1233,30 @@
       return function (t) {
         t = t % TURN;
         // the courier
-        var x = P.val('x', t), yb = P.val('yb', t), za = P.val('za', t), e = P.val('e', t), yg = yb + 18 - e;
-        var busy = t < out ? 0.45 + 0.55 * clamp((t - 0.3) / 0.3, 0, 1) : 0.45;
-        ch.set(x, yb, yb + 40, 21, F0, 21, busy);
-        tote.set(x - 9, x + 9, yb + 2, yb + 16, F0 + 21, RIM);
-        // what is in the tote: after the door, three; each taken in its turn
-        var n = [t < picked[1] || t >= back, t < picked[2] || t >= back, t >= back && t < picked[0]];  // 1, 2, 0
-        [[2, 5], [1, 9], [0, 13]].forEach(function (k, i) {
-          var here = k[0] === 0 ? n[2] : n[k[0] - 1];
-          if (here) inTote[i].set(x, yb + k[1], RIM, F0 + 44); else inTote[i].set(0, 0, 0, 0);
-        });
-        // the arm: two lengths, the inner drawn out of the outer
-        var root = yb + 18, mid = Math.max(yg + 1.5, root - 36);
-        arm2.set(x - 2, x + 2, yg + 1.5, mid, za + 2.2, za + 5.3);
-        arm1.set(x - 3, x + 3, mid, root, za + 1.5, za + 6);
-        var holding = (t < put[0]) || (t >= picked[1] && t < put[1]) || (t >= picked[2] && t < put[2]) || (t >= picked[0]);
-        if (holding) held.set(x, yg, e < 18 ? Math.max(za - 21, RIM) : za - 21, za - 2.5); else held.set(0, 0, 0, 0);
-        jaw.set(x - 7, x + 7, yg - 1.6, yg + 1.6, za - 2.5, za + 1.5);
-        mast.set(x - 3.5, x + 3.5, yb + 20, yb + 26, F0 + 22.1, F0 + 140);
-        cap.set(x - 4.5, x + 4.5, yb + 19, yb + 27, F0 + 140, F0 + 142.5);
-        collar.set(x - 5.5, x + 5.5, yb + 18, yb + 28, za + 0.5, za + 7.5);
+        var x = P.val('x', t), yb = P.val('yb', t), za = P.val('za', t), e = P.val('e', t), yg = yb + JAW0 - e;
+        ch.set(x, yb, yb + DP, W2, F0, H, lamp(t, 1.0, berth));
+        tote.set(x - 15, x + 15, yb + 1, yb + 23, F0 + H, RIM);
+        // what is in the tote: filled in the berth, the envelopes standing; each taken in its turn
+        for (var k = 2; k >= 0; k--) {
+          var tf = fill[2 - k], here = t < picked[k] || t >= tf, drop = t >= tf ? 1 - out3((t - tf) / 0.25) : 0;
+          if (here) inTote[k].set(x, yb + TOTE[k], Math.max(RIM, F0 + H + 1 + 10 * drop), F0 + H + 23 + 10 * drop); else inTote[k].set(0, 0, 0, 0);
+        }
+        // the arm: a housing on the collar, two lengths drawn out of it toward the counter; the jaw at its end
+        var root = yb + JAW0 + 4, mid = Math.max(yg + 1.6, root - 36);
+        arm2.set(x - 2.2, x + 2.2, yg + 1.6, mid, za + 2.4, za + 5.4);
+        arm1.set(x - 3.2, x + 3.2, mid, root, za + 1.8, za + 6.2);
+        var holding = (t >= picked[0] && t < put[0]) || (t >= picked[1] && t < put[1]) || (t >= picked[2] && t < put[2]);
+        if (holding) held.set(x, yg, e < JAW0 ? Math.max(za - 21, RIM) : za - 21, za - 2.5); else held.set(0, 0, 0, 0);
+        // the jaw: its two cheeks; open, they part
+        var op = 0;
+        [0, 1, 2].forEach(function (p) { op = Math.max(op, t >= put[p] - 0.15 ? clamp((t - put[p] + 0.15) / 0.15, 0, 1) * (1 - clamp((t - S[p] - 0.6) / 0.2, 0, 1)) : 0); });
+        jaw.set(x - 7, x + 7, yg - 1.6 - 1.2 * op, yg - 0.1 - 1.2 * op, za - 2.5, za + 1.5);
+        jaw2.set(x - 7, x + 7, yg + 0.1 + 1.2 * op, yg + 1.6 + 1.2 * op, za - 2.5, za + 1.5);
+        house.set(x - 5, x + 5, root, yb + 34, za + 1, za + 7);
+        mast.set(x - 4, x + 4, yb + 34, yb + 40, F0 + H + 1.1, F0 + 140);
+        collar.set(x - 6, x + 6, yb + 32.5, yb + 41.5, za, za + 9);
+        hood.set(12, 78, LANE - 4, LANE + 26, F0 + H + 27, F0 + H + 33);
+        lip.set(44, 78, LANE + 24.5, LANE + 26, F0 + H + 24, F0 + H + 27);
         // the positions
         pos.forEach(function (o, q) {
           var d = o.d, y = d[4];
@@ -1219,12 +1292,13 @@
       };
     },
 
-    // Certification, a day of 20 s from ten in the morning: twelve seconds of daylight, two of dusk, four of night (at
-    // twice the pace, eased in and out over a quarter of a second) and two of dawn; the clock's one hand goes on with
-    // it, always forward; the high window's glass from the day's #DDE5E5 to dusk and night; the room's faces a little
-    // darker at night, at most six in a hundred, the lines as they are. The floor's unit keeps its dock at the back
-    // wall, under the high window, by day; at dusk it goes over the floor between the bench and the standing desk, out
-    // to the front and along it, and is back before dawn.
+    // Certification, a day of 20 s from ten in the morning: the day at about an hour and a fifth a second (ten
+    // seconds of it), an hour a second at night (eight), dusk and dawn a second each, the changes of pace eased over a
+    // quarter of a second; the clock's one hand goes on with it, always forward; the high window's glass from the
+    // day's #DDE5E5 to dusk and night; the room's faces a little darker at night, at most six in a hundred, the lines
+    // as they are. The floor's unit keeps its dock at the back wall, under the high window, by day; with the night it
+    // comes out (0.5 s), goes over the floor between the bench and the standing desk, out to the front and along it,
+    // its corners round (20 cm), and back (6.2 s), backs into its dock (0.8 s) and stands (0.5 s) before dawn.
     certify: function (L, T, g, dim, svg) {
       var c = L.clock, cx = c[0], cy = c[1], cz = c[2], r = c[3], hand = c[4], gl = L.glass, F0 = L.floor;
       var face = [];
@@ -1234,16 +1308,19 @@
       mk('path', { 'class': 'lv-fill', fill: INK.paper, d: poly(face) }, g);
       var hd = mk('path', { 'class': 'lv-line', fill: 'none', stroke: INK.ink, 'stroke-width': 1.4, 'stroke-linecap': 'round' }, g);
       var DAY = 20, N = 2000, HR = [];
-      // the hour at each moment of the turn: an hour a second, two at night (21:00 to 05:00, the 11th to the 15th
-      // second), the changes of pace eased over a quarter of a second
+      // the hour at each moment of the turn: the day's pace (10:00 to 19:00, 07:00 to 10:00), dusk's and dawn's
+      // (19:00 to 21:00, 05:00 to 07:00) and the night's (21:00 to 05:00), each change eased over a quarter second,
+      // the whole made to come round in exactly twenty-four hours
       (function () {
         function sm(x) { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); }
-        var h = 10, dt = DAY / N;
-        for (var k = 0; k <= N; k++) {
-          HR.push(h);
-          var tt = (k + 0.5) * dt;
-          h += dt * (1 + sm((tt - 10.875) / 0.25) - sm((tt - 14.875) / 0.25));
+        var edges = [[7.5, 2], [8.5, 1], [16.5, 2], [17.5, 1.2]], dt = DAY / N, rate = [], sum = 0;
+        for (var k = 0; k < N; k++) {
+          var tt = (k + 0.5) * dt, v = 1.2, prev = 1.2;
+          edges.forEach(function (e) { v += (e[1] - prev) * sm((tt - e[0] + 0.125) / 0.25); prev = e[1]; });
+          rate.push(v); sum += v * dt;
         }
+        var h = 10;
+        for (var j = 0; j <= N; j++) { HR.push(h); if (j < N) h += rate[j] * dt * 24 / sum; }
       })();
       function hourAt(t) { var x = (t % DAY) / DAY * N, k = Math.floor(x); return (HR[k] + (HR[Math.min(N, k + 1)] - HR[k]) * (x - k)) % 24; }
       var SKY = [[0, '#68788e'], [5, '#68788e'], [6, '#a7b3c2'], [7, L.day || '#dde5e5'], [19, L.day || '#dde5e5'], [20, '#a7b3c2'],
@@ -1253,19 +1330,27 @@
         return SKY[0][1];
       }
       function dark(h) { return h < 5 || h > 21 ? 1 : h < 7 ? 1 - (h - 5) / 2 : h > 19 ? (h - 19) / 2 : 0; }
-      // the floor's unit, 48 by 40 cm and 10 high, and its dock: a plate on the floor, its contacts on the back wall.
-      // Its runs keep to the floor that nothing in the room stands before: between the bench and the standing desk
-      // (the desk's top passes over what is that far from it) and along the front, short of the desk's near legs.
-      var X0 = L.glass[0] + 30, Y0 = cy + 24, wy = cy - 4;
+      // the floor's unit, 48 by 40 cm and 10 high, its equipment bay at its back (24 by 14, 4.5 above it), and its
+      // dock: a plate on the floor, its contacts on the back wall. Its runs keep to the floor that nothing in the room
+      // stands before: between the bench and the standing desk (the desk's top passes over what is that far from it)
+      // and along the front, short of the desk's near legs.
+      var X0 = L.glass[0] + 18, Y0 = cy + 24, wy = cy - 4, YO = Y0 + 30;
       var rb = mk('g', {}, g);
       behindWall(svg, rb, T, L.wall);
       Box(rb, T, { top: '#e7ecea', w: 0.55 }).set(X0 - 30, X0 + 30, wy + 0.5, wy + 58, F0, F0 + 0.5);
       Box(rb, T).set(X0 - 9, X0 + 9, wy, wy + 4, F0 + 0.5, F0 + 15);
-      var ch = Chassis(rb, T), pod = Box(rb, T, { w: 0.55 }), podLamp = Strip(rb, T, LIT);
-      var P = Plan({ x: X0, y: Y0 });
-      P.wait(10.2);
-      P.go({ y: 298 }, 1.45); P.go({ x: X0 + 108 }, 0.8); P.wait(0.1); P.go({ x: X0 }, 0.8); P.go({ y: Y0 }, 1.45);
-      var home = P.at();
+      var ch = Chassis(rb, T), bay = Box(rb, T, { w: 0.55 });
+      var out = Route([[X0, YO], [X0, 300], [X0 + 108, 300]], 20), home = Route([[X0 + 108, 300], [X0, 300], [X0, YO]], 20);
+      var T0 = 8.5, T1 = T0 + 0.5, T2 = T1 + 2.95, T3 = T2 + 0.3, T4 = T3 + 2.95, T5 = T4 + 0.8, T6 = T5 + 0.5;
+      var dOut = drive(out.len, 2.95), dHome = drive(home.len, 2.95);
+      function where(u) {
+        if (u < T0 || u >= T5) return [X0, Y0];
+        if (u < T1) return [X0, Y0 + 30 * std((u - T0) / 0.5)];
+        if (u < T2) return out.at(out.len * dOut((u - T1) / 2.95));
+        if (u < T3) return out.at(out.len);
+        if (u < T4) return home.at(home.len * dHome((u - T3) / 2.95));
+        return [X0, YO - 30 * std((u - T4) / 0.8)];
+      }
       return function (t) {
         var h = hourAt(t), dk = inout(dark(h));
         glass.setAttribute('fill', sky(h));
@@ -1273,23 +1358,20 @@
         var a = (90 - 30 * h) * Math.PI / 180;
         hd.setAttribute('d', line([T(cx, cy, cz), T(cx + hand * r * Math.cos(a), cy, cz + hand * r * Math.sin(a))]));
         if (dim) dim.style.opacity = dk.toFixed(3);
-        var u = t % DAY, x = P.val('x', u), y = P.val('y', u);
-        var lit = u < 9.9 || u > home + 0.4 ? 0.35 : u < 10.2 ? 0.35 + 0.65 * (u - 9.9) / 0.3 : u < home ? 1 : 1 - 0.65 * (u - home) / 0.4;
-        ch.set(x, y - 20, y + 20, 24, F0, 10, lit, 0.62);
-        // its sensing pod at the back of its lid, touch and distance only: no lens
-        pod.set(x - 8, x + 8, y - 15, y - 6, F0 + 11.1, F0 + 14.6);
-        podLamp.y(y - 5.96, x - 5, x + 5, F0 + 12.4, F0 + 13.3);
-        podLamp.p.style.opacity = lit.toFixed(3);
+        var u = t % DAY, p = where(u), x = p[0], y = p[1];
+        ch.set(x, y - 20, y + 20, 24, F0, 10, lamp(u, T0, T5));
+        bay.set(x - 12, x + 12, y - 18, y - 4, F0 + 11.1, F0 + 14.5);
       };
     },
 
-    // Records, a turn of about 33 s: the store's runner goes along the racks from the left, to each drawer of the
-    // marked row in turn: its carriage, raised to the row on its mast, reaches the drawer's pull (0.3 s; the drawer's
-    // sealed edge lights as it is called), draws it out on its slides 11 cm (0.55 s), holds it while a card is moved
-    // (1.05 s) and runs it back (0.6 s), cubic-bezier(.4, 0, .2, 1), and lets it go; the slide seen under the drawer's
-    // side while it is out. At the first drawer of each rack a card is lifted out onto the carriage; at the second it is
-    // set in: a record carried from one drawer to the next. After the eighth the runner goes back to its place at the
-    // left of the racks, its carriage let down.
+    // Records, a turn of about 37 s: the store's runner (a narrow lift: its body 56 by 50 cm and 28 high, a guide
+    // 12 cm wide at its back, the carriage set in the guide on a shoe, a tray on the carriage with a stop at its back)
+    // goes along the racks from the left, to each drawer of the marked row in turn, the two of a rack together: its
+    // carriage reaches the drawer's pull (0.3 s; the drawer's sealed edge lights as it is called) and draws it out on
+    // its slides 11 cm (0.55 s); at the rack's first drawer a card is lifted out (4 cm clear of the drawer) onto the
+    // tray (0.45 s) and held (0.4 s); at the second it is set in (0.45 s) and let stand (0.3 s); the drawer is run back
+    // (0.55 s) and let go. The card rides on the tray between them. After the eighth the runner goes back to its place
+    // at the left of the racks, its carriage let down to 55 cm, and stands.
     records: function (L, T, g, dim, svg) {
       var yf = L.yf, BAY = L.bay, MOD = L.mod, OUT = 11, F0 = L.floor;
       behindWall(svg, g, T, L.wall);
@@ -1310,43 +1392,42 @@
         o.sil = mk('path', { 'class': 'lv-line', fill: 'none', stroke: INK.ink, 'stroke-width': 0.85, 'stroke-linejoin': 'round' }, o.g);
         return o;
       });
-      // the runner: its body 56 by 50 cm and 28 high, before the racks; its mast at its back, the carriage on the mast,
-      // its face to the drawers, on a slide out of a collar
       var CIN = yf + 3.5, COUT = CIN + OUT + 0.8;                // the carriage's face: at a drawer's pull; clear of it
       var XD = L.drawers.map(function (dw) { return dw[0] + BAY / 2; });
-      var DOCK = XD[0] - 39, ZW = L.drawers[0][1] + 1, ZR = ZW - 48;
-      var P = Plan({ x: DOCK, cz: ZR, cf: COUT }), held = [], cs = [], MOVE = 0.85;
+      var DOCK = XD[0] - 39, ZW = L.drawers[0][1] + 1, ZR = F0 + 55;
+      var P = Plan({ x: DOCK, cz: ZR, cf: COUT }), held = [], lift = [], MOVE = 0.45;
       P.wait(0.5);
-      P.go({ cz: ZW }, 0.6);
+      P.go({ cz: ZW }, 0.7);
       XD.forEach(function (x, i) {
-        P.go({ x: x }, ride(x - (i ? XD[i - 1] : DOCK)));
+        if (i) P.run('x', x, i % 2 ? 1.1 : 1.2); else P.run('x', x, 0.9);
         var tc = P.go({ cf: CIN }, 0.3);
-        cs.push(P.go({ cf: CIN + OUT }, 0.55) + 0.1);            // the card moves while the drawer is held out
-        P.wait(MOVE + 0.2);
-        var tr = P.go({ cf: CIN }, 0.6);
+        lift.push(P.go({ cf: CIN + OUT }, 0.55));                // the card moves while the drawer is held out
+        P.wait(MOVE + (i % 2 ? 0.3 : 0.4));
+        var tr = P.go({ cf: CIN }, 0.55);
         P.go({ cf: COUT }, 0.25);
         held.push([tc, tr]);
       });
-      P.go({ x: DOCK, cz: ZR }, ride(XD[7] - DOCK));
-      var TURN = P.wait(0.6);
+      P.go({ cz: ZR }, 0.7);
+      P.run('x', DOCK, 4.2);
+      var rest = P.at(), TURN = P.wait(3.0);
       var rb = mk('g', {}, g);
-      var ch = Chassis(rb, T), car = Box(rb, T), slide = Box(rb, T, { w: 0.55 }), card = Box(rb, T, { y: INK.paper, w: 0.55 }),
-          lip = Box(rb, T, { w: 0.55 }), mast = Box(rb, T), cap = Box(rb, T), collar = Box(rb, T);
-      var CH = 9, CW = 22;                                       // the card: 44 by 9 cm, standing
-      // where the card is in its move from a drawer to the carriage (u from 0 to MOVE; back again for a drawer it is
-      // set in): up out of the drawer, over its front, down into the carriage's lip
+      var ch = Chassis(rb, T), slide = Box(rb, T, { w: 0.55 }), car = Box(rb, T), tray = Box(rb, T, { top: INK.paper, w: 0.55 }),
+          card = Box(rb, T, { y: INK.paper, w: 0.55 }), stop = Box(rb, T, { w: 0.55 }), guide = Box(rb, T),
+          slot = Strip(rb, T, INK.recess), shoe = Box(rb, T), cap = Box(rb, T, { w: 0.55 });
+      var CH = 9, CW = 13;                                       // the card: 26 by 9 cm, standing
+      // where the card is as it goes from a drawer to the tray (u from 0 to MOVE; the other way for a drawer it is
+      // set in): up 4 cm clear of the drawer, over its front, down onto the tray against its stop
       function cardMove(u, yIn, zIn, zTop, yOn, zOn) {
-        var z = u < 0.35 ? zIn + (zTop - zIn) * std(u / 0.35) : u < 0.65 ? zTop : zTop + (zOn - zTop) * std((u - 0.65) / 0.2);
-        return [yIn + (yOn - yIn) * std((u - 0.35) / 0.3), z];
+        var z = u < 0.18 ? zIn + (zTop - zIn) * std(u / 0.18) : u < 0.33 ? zTop : zTop + (zOn - zTop) * std((u - 0.33) / 0.12);
+        return [yIn + (yOn - yIn) * std((u - 0.18) / 0.15), z];
       }
       return function (t) {
         t = t % TURN;
-        var x = P.val('x', t), cz = P.val('cz', t), cf = P.val('cf', t), busy = 0;
+        var x = P.val('x', t), cz = P.val('cz', t), cf = P.val('cf', t), on = 1e9, off = -1;
         ds.forEach(function (o, i) {
           var h = held[i], d = t >= h[0] && t <= h[1] ? clamp(cf - CIN, 0, OUT) : 0;
           // its sealed edge lights as the runner reaches it, and goes out after it is let go
           o.sig.style.opacity = (t < h[0] - 0.3 ? 0 : t < h[0] ? out3((t - h[0] + 0.3) / 0.3) : t < h[1] ? 1 : 1 - clamp((t - h[1]) / 0.5, 0, 1)).toFixed(3);
-          if (t >= h[0] - 0.3 && t <= h[1] + 0.25) busy = 1;
           if (d < 0.3) { o.g.style.display = 'none'; return; }
           o.g.style.display = '';
           var xa = o.x0 + 0.8, xb = o.x0 + BAY - 0.8, za = o.z0 + 0.6, zb = o.z0 + MOD - 0.6, yb = yf + 2.2 + d, yp = yf + d;
@@ -1359,8 +1440,8 @@
           o.seal.setAttribute('d', poly([T(xa, yb + 0.05, zb - 3.4), T(xb, yb + 0.05, zb - 3.4), T(xb, yb + 0.05, zb), T(xa, yb + 0.05, zb)]));
           var xm = o.x0 + BAY / 2, zm = o.z0 + MOD / 2 - 0.8;
           o.pull.setAttribute('d', poly([T(xm - 6, yb + 1.2, zm - 0.6), T(xm + 6, yb + 1.2, zm - 0.6), T(xm + 6, yb + 1.2, zm + 0.6), T(xm - 6, yb + 1.2, zm + 0.6)]));
-          // the sheets standing in the tray, their heads seen from above
-          var sh = '', inCard = i % 2 ? t > cs[i] + MOVE : t < cs[i];
+          // the cards standing in the tray, their heads seen from above (the one to be lifted, or set in, the nearest)
+          var sh = '', inCard = i % 2 ? t > lift[i] + MOVE : t < lift[i];
           for (var k = inCard ? 0.5 : 1; k <= 3; k += k < 1 ? 0.5 : 1) { var ys = yp - 5.5 * k; if (ys > y1 + 0.5) sh += line([T(xa + 2.5, ys, zb), T(xb - 2.5, ys, zb)]); }
           o.sheets.setAttribute('d', sh);
           // the folds: the front's head and its side; the panel's back, on the top and on the side; the tray's rim
@@ -1373,28 +1454,31 @@
             ? poly([T(xa, y1, zb), T(xb, y1, zb), T(xb, y3, zb), T(xb, y3, za), T(xb, yb, za), T(xa, yb, za), T(xa, yb, zb)])
             : poly([T(xa, y1, zb), T(xb, y1, zb), T(xb, yb, zb), T(xb, yb, za), T(xa, yb, za), T(xa, yb, zb)]));
         });
-        // the runner
+        // the runner: its light up from the first drawer reached to the last let go
         var yb0 = yf + 20;
-        ch.set(x, yb0, yb0 + 50, 28, F0, 28, busy ? 1 : 0.45);
+        ch.set(x, yb0, yb0 + 50, 28, F0, 28, lamp(t, held[0][0] - 0.3, held[7][1] + 0.25));
+        var ys = yb0 + 4;                                        // the guide's face to the racks
+        slide.set(x - 2.5, x + 2.5, cf + 4.5, ys, cz + 3.5, cz + 6.5);
         car.set(x - 24, x + 24, cf, cf + 4.5, cz, cz + 10);
-        slide.set(x - 2.5, x + 2.5, cf + 4.5, yb0 + 2, cz + 3.5, cz + 6.5);
-        // the card: from the first drawer of a rack onto the carriage, from the carriage into the second
+        tray.set(x - 14, x + 14, cf + 0.5, cf + 9, cz + 10, cz + 11.2);
+        // the card: lifted from the rack's first drawer onto the tray, carried, set into the second
         var shown = false;
         for (var j = 0; j < 4; j++) {
-          var a = cs[2 * j], b = cs[2 * j + 1];
+          var a = lift[2 * j], b = lift[2 * j + 1];
           if (t < a || t >= b + MOVE) continue;
           var dw = L.drawers[t < b ? 2 * j : 2 * j + 1], zb = dw[1] + MOD - 0.6, zIn = dw[1] + 1.4;
-          var yIn = yf + OUT - 2.75, yOn = cf + 2.2, zOn = cz + 10.2, zTop = zb + 0.8, c;
+          var yIn = yf + OUT - 2.75, yOn = cf + 6.6, zOn = cz + 11.2, zTop = zb + 4, c;
           c = t < a + MOVE ? cardMove(t - a, yIn, zIn, zTop, yOn, zOn) : t < b ? [yOn, zOn] : cardMove(MOVE - (t - b), yIn, zIn, zTop, yOn, zOn);
           var over = c[0] < yf + OUT + 2.2;                      // over the drawer: what is below its top is in it
           card.set(x - CW, x + CW, c[0] - 0.25, c[0] + 0.25, over ? Math.max(c[1], zb) : c[1], c[1] + CH);
           shown = true;
         }
         if (!shown) card.hide();
-        lip.set(x - 23, x + 23, cf + 2.9, cf + 4.5, cz + 10, cz + 11.6);
-        mast.set(x - 4, x + 4, yb0 + 2, yb0 + 10, F0 + 29.1, F0 + 154);
-        cap.set(x - 5, x + 5, yb0 + 1, yb0 + 11, F0 + 154, F0 + 157);
-        collar.set(x - 6, x + 6, yb0 + 0.5, yb0 + 11.5, cz + 1, cz + 9.5);
+        stop.set(x - 14, x + 14, cf + 7.4, cf + 9, cz + 11.2, cz + 12.7);
+        guide.set(x - 6, x + 6, ys, yb0 + 10, F0 + 29.1, F0 + 156);
+        slot.y(yb0 + 10.02, x - 2, x + 2, F0 + 32, F0 + 153);
+        shoe.set(x - 8, x + 8, ys - 1, yb0 + 11, cz - 1, cz + 12);
+        cap.set(x - 6.5, x + 6.5, ys - 0.5, yb0 + 10.5, F0 + 156, F0 + 158);
       };
     }
   };
