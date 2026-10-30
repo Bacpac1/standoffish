@@ -1251,13 +1251,15 @@
       if (Math.abs(sp) > 1) return null;
       return [3 * x * (9 * A4 * t6 * t2 + 7 * A3 * t6 + 3 * A2 * t2 + A1) / (2 * Math.sqrt(3) * Math.cos(th)) / rad, Math.asin(sp)];
     }
-    var dots = [], re = /M(-?[\d.]+) (-?[\d.]+)h0/g, m, ld = land.getAttribute('d');
+    var BANDS = 12, W = svg.viewBox.baseVal.width, dots = [], re = /M(-?[\d.]+) (-?[\d.]+)h0/g, m, ld = land.getAttribute('d');
     while ((m = re.exec(ld))) {
       var ll = unat(+m[1], +m[2]);
-      if (ll) dots.push({ s: 'M' + m[1] + ' ' + m[2] + 'h0', lon: ll[0], sp: Math.sin(ll[1]), cp: Math.cos(ll[1]), k: 0 });
+      if (ll) dots.push({ s: 'M' + m[1] + ' ' + m[2] + 'h0', lon: ll[0], sp: Math.sin(ll[1]), cp: Math.cos(ll[1]), k: 0,
+                          b: Math.max(0, Math.min(BANDS - 1, Math.floor(+m[1] / W * BANDS))) });
     }
     // the night: the land's dots under it drawn again, darker, in two depths (the sun under the horizon; more than six
-    // degrees under it), redrawn as the dots change, ten times a second at most
+    // degrees under it), in twelve upright bands of the map, a band redrawn only as its dots change, ten times a
+    // second at most
     var NS = 'http://www.w3.org/2000/svg';
     function el(tag, attrs, parent, before) {
       var e = document.createElementNS(NS, tag);
@@ -1265,35 +1267,37 @@
       if (before) parent.insertBefore(e, before); else if (parent) parent.appendChild(e);
       return e;
     }
-    var after = land.nextSibling;
-    var dusk = el('path', { 'class': 'dmap__land dmap__land--dusk', d: '' }, svg, after);
-    var deep = el('path', { 'class': 'dmap__land dmap__land--night', d: '' }, svg, after);
+    var after = land.nextSibling, night = el('g', { 'class': 'dmap__night' }, svg, after), bands = [];
+    for (var bi = 0; bi < BANDS; bi++) bands.push({ dusk: el('path', { 'class': 'dmap__land dmap__land--dusk', d: '' }, night),
+                                                    deep: el('path', { 'class': 'dmap__land dmap__land--night', d: '' }, night), dots: [], dirty: true });
+    dots.forEach(function (d) { bands[d.b].dots.push(d); });
     // the desks keep their marks as they are: a desk's hours are its own (the relay's link windows at a reply desk),
     // and the map draws only the sun
     var sinD = Math.sin(dec * rad), cosD = Math.cos(dec * rad), RISE = Math.sin(-0.833 * rad), DEEP = Math.sin(-6 * rad);
     var drawn = -1;
     function frame(t) {
-      var sub = sub0 - 360 * t / DAY, fade = Math.min(1, t / 0.8).toFixed(3);
+      var sub = sub0 - 360 * t / DAY, fade = Math.max(0.01, Math.min(1, t / 0.8)).toFixed(3);   // drawn from the first, all but unseen
       if (drawn < 0 || t - drawn >= 0.1) {
         drawn = t;
-        var changed = false;
         dots.forEach(function (d) {
           var e = d.sp * sinD + d.cp * cosD * Math.cos((d.lon - sub) * rad), k = e < DEEP ? 2 : e < RISE ? 1 : 0;
-          if (k !== d.k) { d.k = k; changed = true; }
+          if (k !== d.k) { d.k = k; bands[d.b].dirty = true; }
         });
-        if (changed || t === 0) {
+        bands.forEach(function (bd) {
+          if (!bd.dirty) return;
+          bd.dirty = false;
           var a = '', b = '';
-          dots.forEach(function (d) { if (d.k === 1) a += d.s; else if (d.k === 2) b += d.s; });
-          dusk.setAttribute('d', a); deep.setAttribute('d', b);
-        }
+          bd.dots.forEach(function (d) { if (d.k === 1) a += d.s; else if (d.k === 2) b += d.s; });
+          bd.dusk.setAttribute('d', a); bd.deep.setAttribute('d', b);
+        });
       }
-      dusk.style.opacity = fade; deep.style.opacity = fade;
+      night.style.opacity = fade;
     }
     var run = runner(svg, frame);
     fig.classList.add('is-day');
     var off = function () {
       if (!mq.matches) return;
-      run.stop(); dusk.remove(); deep.remove(); fig.classList.remove('is-day');
+      run.stop(); night.remove(); fig.classList.remove('is-day');
     };
     if (mq.addEventListener) mq.addEventListener('change', off); else if (mq.addListener) mq.addListener(off);
   })();
