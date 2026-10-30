@@ -1673,176 +1673,53 @@
         uLock.p.style.opacity = ua > 0.98 ? '1' : '0.25';
       };
     },
-
-    // The seat at Longyearbyen, a turn of 44 s: most of the house stands still, one thing moves at a time, two at
-    // most. A blank custody case rises into the write seat (0.6 s), and the write station's three arms close on it
-    // from three sides, one after another: the positioning arm's pad to its left face (0.4 s), where it holds; the
-    // write arm's block down on its top from the back (0.5 s); the seal arm's shoe to the edge of its seam at the
-    // front (0.3 s), which it sets (0.3 s) and holds. The case is written (2.4 s, the block's light on); the write arm
-    // goes back (0.4 s), then the seal arm (0.3 s), and the press beam comes down along the seam once (0.55 s, held
-    // 0.25 s) and goes up; the pad lets go, the stop drops and the case runs on the rollers to the lift (2.2 s); at
-    // each hand-off the next machine stands ready, the case crosses and settles, and only then does the last one move:
-    // the lift takes it down through the floor to the store (3 s), it runs on to the crane's table (0.7 s), and the
-    // crane carries it along its aisle and up to its lane (4 s), stands (0.45 s) and runs it into the lane (0.8 s),
-    // where its face takes its place among the others; the crane goes back to the lift and the lift goes up. Then a
-    // case of copies for the desks runs along its deck to the window seat and waits, still; at the window a short
-    // contact comb comes down on its end (0.6 s), its light comes on once it is down and holds (2.8 s), it goes up
-    // (0.6 s) and the case goes back to its place on the deck. Without the script, and under reduced motion, the
-    // drawing stands as written: the cases in the store, the copies waiting, the machines and the arms at rest.
-    seat: function (L, T, g, dim, svg) {
-      T.k = 1;
-      var M = L[T.small ? 's' : 'l'], F0 = M.floor, CW = M.case[0] / 2, CD = M.case[1] / 2, CH = M.case[2];
-      var PL = M.plat, LX = (PL[0] + PL[3]) / 2, ZTOP = PL[5], ZFOOT = M.crane[1];
-      var XT = M.lanes[M.target[0]], ZT = F0 + M.lv0 + M.target[1] * M.level, MOUTH = M.rack[2];
-      var SX = M.seat[0], SY = M.seat[1], SZ = M.seat[2], RX = M.held[2], WX = M.win[0], DZ = M.deck[2];
-      // the store's group, hidden where the hall's floor stands before it, under the hall's group
-      var gs = mk('g', {}, g), gh = mk('g', {}, g);
-      var cp = mk('clipPath', { id: 'lv-' + Math.random().toString(36).slice(2, 8) }, svg), hp = [], vb = svg.viewBox.baseVal;
-      for (var i = 0; i < 8; i++) hp.push(T(i & 1 ? M.x1 : 0, i & 2 ? M.ys : 0, i & 4 ? M.slab[1] : M.slab[0]));
-      mk('path', { 'clip-rule': 'evenodd', d: 'M-10 -10H' + f1(vb.width + 10) + 'V' + f1(vb.height + 10) + 'H-10Z' + poly(hull(hp)) }, cp);
-      gs.setAttribute('clip-path', 'url(#' + cp.id + ')');
-      var thin = { w: 0.85, f: 0.55 }, firm = { w: 1.4, f: 0.85 };
-      // a custody case: its body and the seam along its face
-      function Case(par) {
-        var o = { b: Box(par, T, thin), seam: mk('path', { 'class': 'lv-line', fill: 'none', stroke: INK.detail, 'stroke-width': 0.55 }, par) };
-        o.set = function (x, y, z0, y0min, z0min) {     // its middle, its foot; what is seen of it starts at y0min, z0min
-          var ya = Math.max(y - CD, y0min == null ? -1e9 : y0min), za = Math.max(z0 + 0.2, z0min == null ? -1e9 : z0min), zb = z0 + CH;
-          o.b.set(x - CW, x + CW, ya, y + CD, za, zb);
-          o.seam.setAttribute('d', zb - za > CH * 0.6 && y + CD - ya > 1 ? line([T(x - CW + 3, y + CD, z0 + CH / 2), T(x + CW - 3, y + CD, z0 + CH / 2)]) : '');
-        };
-        o.hide = function () { o.b.hide(); o.seam.setAttribute('d', ''); };
-        return o;
-      }
-      // the store: the lift's platform and a case on it (behind the crane), the crane, a case on its table
-      var platS = Box(gs, T, thin), caseL = Case(gs);
-      var truck = Box(gs, T, firm), table = Box(gs, T, thin);
-      var rollers = mk('path', { 'class': 'lv-line', fill: 'none', stroke: INK.detail, 'stroke-width': 0.55 }, gs);
-      var caseK = Case(gs), shoe = Box(gs, T, thin), mast = Box(gs, T, firm);
-      // the hall: the lift's platform; the positioning arm (behind the case, on its left); the case, at the seat and on
-      // the rollers; the write arm over it from the back, its coupling block and the block's light; the press beam; the
-      // seal arm before it; the stop; the case of copies, the contacts, the window seat's light
-      var AR = M.arms, aw = AR.w, ap = AR.p, as_ = AR.s;
-      var platH = Box(gh, T, thin);
-      var pUp = Bar(gh, T), pEl = Box(gh, T, thin), pLo = Bar(gh, T), pPad = Box(gh, T, thin);
-      var caseH = Case(gh);
-      var wUp = Bar(gh, T, firm), wEl = Box(gh, T, thin), wLo = Bar(gh, T, firm), wBlock = Box(gh, T, thin), wLock = Strip(gh, T, LIT);
-      var beam = Box(gh, T, thin);
-      var sUp = Bar(gh, T), sEl = Box(gh, T, thin), sLo = Bar(gh, T), sShoe = Box(gh, T, thin);
-      var stop = Box(gh, T, thin), copy = Case(gh), teeth = [];
-      if (M.teeth) for (var q = 0; q < 3; q++) teeth.push(Box(gh, T, thin));
-      var bar = Box(gh, T, thin), TL = M.teeth ? M.teeth[5] : 0;
-      var wl = mk('path', { 'class': 'lv-fill', fill: LIT, d: poly([T(M.lamp[0], M.lamp[2] + 0.02, M.lamp[3]), T(M.lamp[1], M.lamp[2] + 0.02, M.lamp[3]),
-                                                              T(M.lamp[1], M.lamp[2] + 0.02, M.lamp[4]), T(M.lamp[0], M.lamp[2] + 0.02, M.lamp[4])]) }, gh);
-      // the turn
-      var P = Plan({ cz: SZ - CH - 0.5, cx: SX, pa: 0, wa: 0, sa: 0, bz: M.beam[2], st: M.stop[5], pz: ZTOP, kx: LX, kz: ZFOOT,
-                     ky: SY, rx: RX, wz: M.bar[2] });
-      P.go({ cz: SZ }, 0.6);                                     // a blank case rises into the seat
-      P.go({ pa: 1 }, 0.4);                                      // the positioning arm's pad to its left face, and holds
-      P.go({ wa: 1 }, 0.5);                                      // the write arm's block down on its top
-      var w0 = P.at();
-      P.go({ sa: 1 }, 0.3);                                      // the seal arm's shoe to its seam's edge, sets it, holds
-      P.go({ sa: 1.15 }, 0.15);
-      P.go({ sa: 1 }, 0.15);
-      var w1 = w0 + 2.4;
-      P.wait(w1 - P.at());                                       // it writes, 2.4 s, the block's light on
-      P.go({ wa: 0 }, 0.4);                                      // the write arm off
-      P.go({ sa: 0 }, 0.3);                                      // the seal arm off
-      P.go({ bz: SZ + CH + 0.4 }, 0.55);                         // the press beam, along its seam: the one seal
-      P.wait(0.25);
-      P.go({ bz: M.beam[2] }, 0.55);
-      P.go({ pa: 0 }, 0.3);                                      // the pad off
-      P.go({ st: SZ + 0.5 }, 0.2);                               // the stop drops
-      var r0 = P.at();
-      P.run('cx', LX, 2.2);                                      // along the rollers, on to the lift
-      P.wait(0.35);                                              // it settles
-      var l0 = P.go({ st: M.stop[5] }, 0.3);                     // the stop rises again behind it
-      var l1 = P.run('pz', ZFOOT, 3.0);                          // down through the floor to the store
-      P.wait(0.25);
-      var k0 = P.at();
-      P.go({ ky: 92 }, 0.7);                                     // on to the crane's table
-      P.wait(0.35);
-      var t0 = P.at();
-      P.also({ kz: ZT }, t0, 4.0);
-      P.run('kx', XT, 4.0);                                      // along the aisle and up to its lane
-      P.wait(0.45);
-      var i0 = P.at(), i1 = P.go({ ky: MOUTH - CD }, 0.8);       // into the lane
-      P.wait(0.35);
-      var b0 = P.at();
-      P.also({ kz: ZFOOT }, b0, 4.0);
-      P.also({ pz: ZTOP }, b0, 3.0);
-      P.run('kx', LX, 4.0);                                      // the crane back to the lift; the lift back up
-      P.wait(2.4);
-      P.run('rx', WX, 2.4);                                      // a case of copies to the window seat
-      P.wait(4.0);                                               // it waits, still
-      var o0 = P.at();
-      P.go({ wz: DZ + CH + 0.4 + TL }, 0.6);                     // at the window the contact comb comes down on its end
-      var o1 = P.wait(2.8);
-      P.go({ wz: M.bar[2] }, 0.6);
-      P.wait(0.35);
-      P.run('rx', RX, 2.4);                                      // back to its place on the deck
-      var TURN = 44;
-      return function (t) {
-        t = t % TURN;
-        var cz = P.val('cz', t), cx = P.val('cx', t), pz = P.val('pz', t), kx = P.val('kx', t), kz = P.val('kz', t), ky = P.val('ky', t);
-        // the lift's platform: over the floor in the hall, under it in the store
-        var pa = pz - 6;
-        if (pz > M.slab[1]) { platH.set(PL[0], PL[3], PL[1], PL[4], Math.max(pa, M.slab[1]), pz); platS.hide(); }
-        else { platS.set(PL[0], PL[3], PL[1], PL[4], pa, pz); platH.hide(); }
-        // the case: in the seat (rising out of the cabinet), on the rollers, on the lift, on the crane, into its lane
-        caseH.hide(); caseL.hide(); caseK.hide();
-        if (t < r0) caseH.set(SX, SY, cz, null, SZ);
-        else if (t < l0) caseH.set(cx, SY, SZ);
-        else if (t < k0) {
-          var foot = pz;
-          if (foot + CH > M.slab[1]) caseH.set(LX, SY, foot, null, M.slab[1]); else caseL.set(LX, SY, foot);
-        }
-        else if (t < i1) caseK.set(kx, ky, t < t0 ? kz : kz, t >= i0 ? MOUTH : null);
-        // the crane
-        truck.set(kx - 46, kx + 46, 112, 168, F0 + 3, F0 + 28);
-        mast.set(kx - 8, kx + 8, 136, 154, F0 + 28, -64);
-        shoe.set(kx - 12, kx + 12, 112, 138, kz - 14, kz + 4);
-        table.set(kx - 32, kx + 32, 70, 112, kz - 9, kz);
-        var rl = '';
-        for (var y = 74; y < 112; y += 6) rl += line([T(kx - 30, y, kz), T(kx + 30, y, kz)]);
-        rollers.setAttribute('d', rl);
-        // the head, its light while it writes; the press beam; the stop
-        // the write station's arms: each between its rest and its work (the tool's point eased between the two; the
-        // elbow found from its two lengths, on the same side always), square at rest as the picture draws them
-        function tool(A, u) { return [A.park[0] + (A.work[0] - A.park[0]) * u, A.park[1] + (A.work[1] - A.park[1]) * u]; }
-        var up = P.val('pa', t), pp = tool(ap, up), pe = elbow(ap.s, pp, ap.l[0], ap.l[1], 1);
-        pUp.setY(ap.y, ap.s, pe, 2, 2);
-        pEl.set(pe[0] - 2.5, pe[0] + 2.5, ap.y - 2.5, ap.y + 2.5, pe[1] - 2.5, pe[1] + 2.5);
-        pLo.setY(ap.y, pe, pp, 1.8, 1.8);
-        pPad.set(pp[0], pp[0] + 3, ap.y - 6, ap.y + 6, pp[1] - 8, pp[1]);
-        var uw = P.val('wa', t), wp = tool(aw, uw), we = elbow(aw.s, wp, aw.l[0], aw.l[1], 1);
-        wUp.set(aw.x, aw.s, we, 2.4, 2.4);
-        wEl.set(aw.x - 3, aw.x + 3, we[0] - 3, we[0] + 3, we[1] - 3, we[1] + 3);
-        wLo.set(aw.x, we, wp, 2, 2);
-        wBlock.set(aw.x - 4, aw.x + 4, wp[0] - 4, wp[0] + 4, wp[1] - 5, wp[1]);
-        var lit = clamp((t - w0) / 0.18, 0, 1) - clamp((t - w1) / 0.18, 0, 1);
-        wLock.y(wp[0] + 4.04, aw.x - 2, aw.x + 2, wp[1] - 3, wp[1] - 1.6);
-        wLock.p.style.opacity = (0.25 + 0.75 * lit).toFixed(3);
-        var us = P.val('sa', t), sp = us <= 1 ? tool(as_, us) : [as_.work[0], as_.work[1] - (us - 1) / 0.15 * 1.2];
-        var se = elbow(as_.s, sp, as_.l[0], as_.l[1], -1);
-        sUp.set(as_.x, as_.s, se, 1.8, 1.8);
-        sEl.set(as_.x - 2.5, as_.x + 2.5, se[0] - 2.5, se[0] + 2.5, se[1] - 2.5, se[1] + 2.5);
-        sLo.set(as_.x, se, sp, 1.5, 1.5);
-        sShoe.set(as_.x - 4, as_.x + 4, sp[0] - 3, sp[0], sp[1] - 4, sp[1]);
-        var bz = P.val('bz', t);
-        beam.set(M.beam[0], M.beam[3], M.beam[1], M.beam[4], bz, bz + 6);
-        stop.set(M.stop[0], M.stop[3], M.stop[1], M.stop[4], M.stop[2], P.val('st', t));
-        // the case of copies, the contact comb, the light at the window: on once the comb is down, off as it lifts
-        copy.set(P.val('rx', t), 42, DZ);
-        var wz = P.val('wz', t);
-        for (var q = 0; q < teeth.length; q++) {
-          var tx0 = M.teeth[0] + M.teeth[1] * q;
-          teeth[q].set(tx0, tx0 + M.teeth[2], M.teeth[3], M.teeth[4], wz - TL, wz);
-        }
-        bar.set(M.bar[0], M.bar[3], M.bar[1], M.bar[4], wz, wz + 6);
-        wl.style.opacity = (clamp((t - o0 - 0.7) / 0.18, 0, 1) - clamp((t - o1 + 0.18) / 0.18, 0, 1)).toFixed(3);
-      };
-    }
   };
+
+  // The seat (round 29) is drawn by the house's machines themselves (robokit: /assets/js/machines.js, fetched only
+  // where a picture asks for it), on a canvas over the bare picture: the store's part under the hall's floor, kept off
+  // where the floor stands before it, the hall's over all. It begins at the picture's own still moment, so the
+  // picture and its first frame are the same.
+  var kit = null;
+  function machines(done) {
+    if (window.RK_SEAT) { done(); return; }
+    if (!kit) {
+      kit = [];
+      var cs = document.currentScript || document.querySelector('script[src*="/assets/js/house.js"]');
+      var e = document.createElement('script');
+      e.src = '/assets/js/machines.js' + (cs && cs.src.indexOf('?') > 0 ? cs.src.slice(cs.src.indexOf('?')) : '');
+      e.onload = function () { kit.forEach(function (f) { f(); }); kit = null; };
+      document.head.appendChild(e);
+    }
+    if (kit) kit.push(done);
+  }
+  function canvasScene(M, F, cv, img, k0) {
+    var C = Math.cos(Math.PI / 6), ctx = cv.getContext('2d'), seat = new RK_SEAT.Seat(M), d = 1, kd = 1;
+    var P = function (x, y, z) { return [((x - y) * C - F[0]) * F[2] + F[3], ((x + y) / 2 - z - F[1]) * F[2] + F[3]]; };
+    var hp = [];
+    for (var i = 0; i < 8; i++) hp.push(P(i & 1 ? M.x1 : 0, i & 2 ? M.ys : 0, i & 4 ? M.slab[1] : M.slab[0]));
+    hp = hull(hp);
+    var last = 0;
+    return function (t) {
+      var now = window.performance ? performance.now() : Date.now();
+      if (last && now - last < 30) return;                // thirty pictures a second are enough for its pace
+      last = now;
+      var r = img.getBoundingClientRect();
+      d = Math.min(2, window.devicePixelRatio || 1); kd = r.width / F[4];
+      var w = Math.round(r.width * d), h = Math.round(r.height * d);
+      if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+      ctx.setTransform(kd * d, 0, 0, kd * d, 0, 0);
+      ctx.clearRect(-2, -2, F[4] + 4, F[5] + 4);
+      var f = seat.frame(t), lw = k0 / kd;
+      ctx.save();
+      ctx.beginPath(); ctx.rect(-10, -10, F[4] + 20, F[5] + 20);
+      ctx.moveTo(hp[0][0], hp[0][1]);
+      for (var j = 1; j < hp.length; j++) ctx.lineTo(hp[j][0], hp[j][1]);
+      ctx.closePath(); ctx.clip('evenodd');
+      new RK.Painter(ctx, P, lw).draw(f.store);
+      ctx.restore();
+      new RK.Painter(ctx, P, lw).draw(f.hall);
+    };
+  }
 
   (function () {
     var pics = slice(document.querySelectorAll('picture[data-live]'));
@@ -1851,7 +1728,7 @@
     pics.forEach(function (pic) {
       var img = pic.querySelector('img'), fig = pic.parentNode, L;
       try { L = JSON.parse(pic.getAttribute('data-live')); } catch (e) { return; }
-      if (!img || !SCENES[L.kind]) return;
+      if (!img || !(L.canvas || SCENES[L.kind])) return;
       var svg = null, dim = null, run = null, small = null, base = 0;
       function place() {
         if (!svg) return;
@@ -1871,6 +1748,18 @@
         if (dim) dim.remove();
         small = s;
         var F = L.frames[s ? 's' : 'l'];
+        if (L.canvas) {                                   // the seat: the machines on a canvas, from the still moment
+          svg = document.createElement('canvas');
+          svg.className = 'draw__live'; svg.setAttribute('aria-hidden', 'true');
+          dim = null;
+          fig.classList.add('is-live');
+          fig.appendChild(svg);
+          place();
+          var draw = canvasScene(L[s ? 's' : 'l'], F, svg, img, s ? 0.7 : 1), still = L[s ? 's' : 'l'].still;
+          run = runner(img, function (t) { draw(still + t + t0); });
+          if (L.bare) bare(true);
+          return;
+        }
         var T = function (x, y, z) { return [((x - y) * C - F[0]) * F[2] + F[3], ((x + y) / 2 - z - F[1]) * F[2] + F[3]]; };
         T.k = s ? 0.7 : 1; T.small = s;
         svg = mk('svg', { 'class': 'draw__live', viewBox: '0 0 ' + F[4] + ' ' + F[5], 'aria-hidden': 'true', focusable: 'false' });
@@ -1905,8 +1794,9 @@
         pre.src = swap(img.currentSrc || img.src);
       }
       function start() { build(); live.push({ stop: function () { if (run) run.stop(); if (svg) svg.remove(); if (dim) dim.remove(); fig.classList.remove('is-live'); bare(false); } }); }
-      if (img.complete && img.naturalWidth) start(); else img.addEventListener('load', start, { once: true });
-      img.addEventListener('load', build);                       // a phone's picture and a wider one: each its frame
+      function ready() { if (L.canvas) machines(start); else start(); }
+      if (img.complete && img.naturalWidth) ready(); else img.addEventListener('load', ready, { once: true });
+      img.addEventListener('load', function () { if (!L.canvas || window.RK_SEAT) build(); });   // a phone's picture and a wider one: each its frame
       if ('ResizeObserver' in window) new ResizeObserver(place).observe(img);
       window.addEventListener('resize', place);
     });
