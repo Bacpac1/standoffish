@@ -10,6 +10,7 @@
   --mono: "Plex Mono", "Sym Mono", ui-monospace, monospace;
   --gut: max(16px, env(safe-area-inset-left, 0px), clamp(16px, 4.2vw, 64px));
   --max: 1440px;
+  --trk: -.024em;                 /* the display titles' tracking (opened a little on a phone) */
   color-scheme: light;
 }
 
@@ -85,10 +86,11 @@ a { color: inherit; text-decoration: none; }
             margin-bottom: clamp(22px, 2.6vw, 40px); }
 .wk__n { grid-column: 1 / -1; margin: 0 0 14px; font: 400 13px/1 var(--mono); color: var(--faint); letter-spacing: .04em; }
 .wk__h { grid-column: 1 / span 7; margin: 0; font: 600 clamp(42px, 5.6vw, 86px)/.98 var(--sans); font-stretch: 96%;
-         letter-spacing: -.024em; text-wrap: balance; }
+         letter-spacing: var(--trk); text-wrap: balance; }
 .wk__h a:hover { color: #000; }
 .wk__side { grid-column: 8 / -1; padding-bottom: .5em; }
-.wk__line { margin: 0 0 10px; max-width: 30ch; font-size: clamp(18px, 1.5vw, 21px); line-height: 1.38; color: var(--soft); }
+.wk__line { margin: 0 0 10px; max-width: 30ch; font-size: clamp(18px, 1.5vw, 21px); line-height: 1.38; color: var(--soft);
+            text-wrap: pretty; }
 .wk__pic { margin: 0; }
 /* a drawing (round 24): a vector picture on the page's own ground, whole, no frame; its stamp in its own corner */
 .wk__pic picture { display: block; }
@@ -96,6 +98,7 @@ a { color: inherit; text-decoration: none; }
 /* the drawings made in code (24c) are near square: each work's words beside its drawing, the sides taking turns */
 .work .wk { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); column-gap: clamp(24px, 4vw, 64px);
             align-items: center; }
+.work .wk:nth-child(even) { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); }   /* each drawing in the wider column */
 .work .wk:nth-child(even) .wk__head { order: 2; }
 .work .wk__head { display: block; margin: 0; }
 .work .wk__h { font-size: clamp(40px, 4.6vw, 72px); }
@@ -111,10 +114,16 @@ a { color: inherit; text-decoration: none; }
              -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }
 /* on a work's own page the drawing stands in a band 440 px high, so its particulars begin within the first view */
 .page .wk__pic .draw { width: auto; max-width: 100%; max-height: 440px; margin-inline: auto; }
+@media (min-width: 901px) {
+  /* the drawing stands in the particulars' column, on its left edge */
+  .page .wrap > .wk__pic { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 24px; }
+  .page .wrap > .wk__pic > picture { grid-column: 4 / -1; }
+  .page .wrap > .wk__pic .draw { margin-inline: 0; }
+}
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
     .wk__h { animation: settle linear both; animation-timeline: view(); animation-range: entry 10% cover 42%; }
-    @keyframes settle { from { font-stretch: 118%; letter-spacing: .01em; } to { font-stretch: 96%; letter-spacing: -.024em; } }
+    @keyframes settle { from { font-stretch: 118%; letter-spacing: .01em; } to { font-stretch: 96%; letter-spacing: var(--trk); } }
   }
 }
 
@@ -163,10 +172,12 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
 
 /* ------------------------------------------------------------------------------------------- the Register */
 .reg { background: var(--ink); color: #eff1f0; padding-block: clamp(84px, 10vw, 150px); }
-.reg__in { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 24px; row-gap: 18px; align-items: end; }
-.reg__h { grid-column: 1 / span 7; margin: 0; font: 600 clamp(42px, 5.6vw, 86px)/.98 var(--sans); font-stretch: 96%; letter-spacing: -.024em; }
-.reg__side { grid-column: 8 / -1; padding-bottom: .5em; }
-.reg__line { margin: 0 0 10px; font-size: clamp(18px, 1.5vw, 21px); line-height: 1.38; color: #b0b9bc; max-width: 30ch; }
+.reg__in { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 24px; row-gap: 18px; align-items: end;
+           align-items: last baseline; }
+.reg__h { grid-column: 1 / span 7; margin: 0; font: 600 clamp(42px, 5vw, 76px)/.98 var(--sans); font-stretch: 96%; letter-spacing: var(--trk); }
+.reg__side { grid-column: 8 / -1; }
+.reg__line { margin: 0 0 10px; font-size: clamp(18px, 1.5vw, 21px); line-height: 1.38; color: #b0b9bc; max-width: 30ch;
+             text-wrap: pretty; }
 .reg .more { color: #a9c8ff; }
 .reg__now { grid-column: 1 / -1; margin: 18px 0 0; font: 400 13.5px/1.5 var(--mono); color: #858f94; min-height: 1.5em; }
 
@@ -212,10 +223,11 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
 /* ------------------------------------------------------------------------------------------- a work's page */
 .page { padding-block: clamp(48px, 7vw, 104px) 0; }
 .page__head { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 24px; align-items: end;
-              margin-bottom: clamp(26px, 3vw, 44px); }
+              align-items: last baseline; margin-bottom: clamp(26px, 3vw, 44px); }
 .page__h { grid-column: 1 / span 7; margin: 0; font: 600 clamp(44px, 5.3vw, 76px)/1.03 var(--sans); font-stretch: 94%;
-           letter-spacing: -.026em; }
-.page__line { grid-column: 8 / -1; margin: 0 0 .6em; font-size: clamp(19px, 1.6vw, 23px); line-height: 1.36; color: var(--soft); max-width: 28ch; }
+           letter-spacing: var(--trk); }
+.page__line { grid-column: 8 / -1; margin: 0; font-size: clamp(19px, 1.6vw, 23px); line-height: 1.36; color: var(--soft); max-width: 28ch;
+              text-wrap: pretty; }
 .parts { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 24px;
          margin-top: clamp(48px, 6vw, 88px); }
 .parts dl { grid-column: 4 / -1; margin: 0; border-top: 1px solid var(--hair); }
@@ -441,6 +453,7 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
 /* ------------------------------------------------------------------------------------------- narrower */
 @media (max-width: 900px) {
   .work .wk { grid-template-columns: minmax(0, 1fr); row-gap: 24px; }
+  .work .wk:nth-child(even) { grid-template-columns: minmax(0, 1fr); }
   .work .wk:nth-child(even) .wk__head { order: 0; }
   .wk__h, .reg__h, .page__h { grid-column: 1 / -1; }
   .wk__side, .reg__side, .page__line { grid-column: 1 / -1; padding-bottom: 0; margin-top: 16px; }
@@ -452,8 +465,11 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
   .parts .parts__k, .parts dl { grid-column: 1 / -1; }
   .gf__map { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
+@media (max-width: 700px) { :root { --trk: -.012em; } .motto__l { letter-spacing: -.02em; } }
 @media (max-width: 560px) {
   .gf__map { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .gf__legal { gap: 8px 18px; }
+  .gf__legal a + a { margin-left: 0; padding-left: 0; border-left: 0; }
   .gh { padding-block: 10px 4px; }
   /* the sections in one row that the thumb moves along, not two lines of links */
   .gh__nav { flex-wrap: nowrap; gap: 2px 20px; width: 100%; overflow-x: auto; scrollbar-width: none; font-size: 13.5px;
@@ -552,7 +568,7 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
 .hero__fig--rest { letter-spacing: .14em; font-weight: 500; }
 
 /* ------------------------------------------------------------------------------------------- the Register's line */
-.motto { padding-block: clamp(64px, 8vw, 120px) clamp(24px, 3vw, 48px); }
+.motto { padding-block: clamp(72px, 10vw, 144px) 0; }
 .motto__l { margin: 0; max-width: 18ch; font: 640 clamp(44px, 6.2vw, 96px)/.96 var(--sans); font-stretch: 94%;
             letter-spacing: -.032em; text-wrap: balance; color: var(--ink); }
 .motto__l span:last-child { color: var(--link); }
@@ -810,12 +826,14 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
 .desk__no { color: #2b2d31; }
 .desk__note { margin: 4px 0 0; font: 400 13.5px/1.5 var(--mono); color: var(--faint); }
 /* the home's band: the desks on the map, the regions, and the platforms beside them */
-.dband { padding-block: clamp(110px, 13vw, 200px) clamp(72px, 8vw, 120px); }
-.dband__head { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 24px; align-items: end; }
-.dband__h { grid-column: 1 / span 7; margin: 0; font: 600 clamp(42px, 5.6vw, 86px)/.98 var(--sans); font-stretch: 96%; letter-spacing: -.024em; }
+.dband { padding-block: clamp(88px, 11vw, 160px) clamp(72px, 8vw, 120px); }
+.dband__head { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 24px; align-items: end;
+               align-items: last baseline; }
+.dband__h { grid-column: 1 / span 7; margin: 0; font: 600 clamp(42px, 5vw, 76px)/.98 var(--sans); font-stretch: 96%; letter-spacing: var(--trk); }
 .dband__h a:hover { color: #000; }
-.dband__side { grid-column: 8 / -1; padding-bottom: .5em; }
-.dband__line { margin: 0 0 10px; max-width: 34ch; font-size: clamp(18px, 1.5vw, 21px); line-height: 1.38; color: var(--soft); }
+.dband__side { grid-column: 8 / -1; }
+.dband__line { margin: 0 0 10px; max-width: 34ch; font-size: clamp(18px, 1.5vw, 21px); line-height: 1.38; color: var(--soft);
+               text-wrap: pretty; }
 .dband__n { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 22px 0 0; padding: 0; list-style: none; }
 .dband__plat { margin-top: clamp(48px, 5vw, 72px); }
 .dband__plat .rgrid, .ct-plat .rgrid { margin-top: 14px; }
