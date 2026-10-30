@@ -30,30 +30,28 @@
   }
 
   var R = {
-    thrice: { end: 2.2, init: function () { set($('[data-eta]'), '20:00'); walk(0); },
+    // the 2090s: the page is whole at once; one thing moves, from a quarter second, and is still within a second and a
+    // quarter (round 24b)
+    hail: { end: 1.45, init: function () { hail(0); }, tick: function (t) { hail(t); }, final: function () { hail(1e9); } },
+
+    thrice: { end: 1.2, init: function () { set($('[data-eta]'), '20:00'); walk(0); },
       tick: function (t) {
         walk(t);
         var el = $('[data-eta]');
-        if (t >= 1.7) { set(el, '––:––'); return; }
-        var s = 1200 - Math.round(clamp((t - 0.35) / 1.25, 0, 1) * 29);
+        if (t >= 1.07) { set(el, '––:––'); return; }
+        var s = 1200 - Math.round(clamp((t - 0.25) / 0.82, 0, 1) * 29);
         set(el, pad(Math.floor(s / 60)) + ':' + pad(s % 60));
       },
       final: function () { set($('[data-eta]'), '––:––'); walk(1e9); } },
 
-    lintel: { end: 1.6, init: function () { set($('[data-today]'), iso); }, final: function () {
-      set($('[data-today]'), iso);
-      var target = new Date(2066, 10, 1), el = $('[data-gap]'), box = $('.li__gap');
-      if (!el || !box) return;
-      if (now >= target) { set(el, 'On time.'); box.hidden = false; return; }
-      var y = target.getFullYear() - now.getFullYear(), d = new Date(now.getTime());
-      d.setFullYear(now.getFullYear() + y);
-      if (d > target) { y -= 1; d.setFullYear(now.getFullYear() + y); }
-      var days = Math.round((target - d) / 864e5);
-      set(el, y + (y === 1 ? ' year' : ' years') + ', ' + days + (days === 1 ? ' day' : ' days') + ' early.');
-      box.hidden = false;
-    } },
+    lintel: { end: 0.8, init: function () { set($('[data-today]'), iso); gap(); }, final: function () { set($('[data-today]'), iso); gap(); } },
 
-    understudy: { end: 2.6, init: function () { set($('[data-us-eta]'), '00:19:00'); set($('[data-us-date]'), '30 June 2073'); },
+    fallow: { end: 1.1, init: function () { fallow(0); }, tick: function (t) { fallow(t); }, final: function () { fallow(1e9); } },
+
+    understudy: { end: 2.6, init: function () {
+        set($('[data-us-eta]'), '00:19:00'); set($('[data-us-date]'), '30 June 2073');
+        var st = $('.us__stand'); if (st) st.classList.remove('on', 'gone');
+      },
       tick: function (t) {
         var s = Math.round((1 - clamp((t - 0.3) / 1.2, 0, 1)) * 19 * 60);
         set($('[data-us-eta]'), '00:' + pad(Math.floor(s / 60)) + ':' + pad(s % 60));
@@ -88,8 +86,11 @@
       final: function () { var w = $('.tp__wheel'); if (w) w.style.transform = 'rotate(0deg)'; $$('.tp__pulses i').forEach(function (p) { p.classList.add('on'); }); } },
 
     telegraph: { end: 4.2, init: function () {
-        $$('.tg__strip').forEach(function (s) { s.setAttribute('data-full', s.textContent); s.textContent = ''; });
-        morse();
+        $$('.tg__strip').forEach(function (s) {
+          if (!s.hasAttribute('data-full')) s.setAttribute('data-full', s.textContent);
+          s.textContent = '';
+        });
+        if (!$('.tg__morse b')) morse();
       },
       tick: function (t) {
         $$('.tg__strip').forEach(function (s) {
@@ -108,7 +109,46 @@
       } }
   };
 
-  // Thrice: the three walk in along the painted line (y = k x + b in the drawing's units, from x0) to their places
+  // a cubic way "M x y C x y x y x y" as points at even lengths along it (for a thing that keeps its pace)
+  function curve(d, n) {
+    var v = d.match(/-?[\d.]+/g).map(Number), P = [], acc = [0];
+    for (var i = 0; i <= n; i++) {
+      var u = i / n, a = (1 - u) * (1 - u) * (1 - u), b = 3 * u * (1 - u) * (1 - u), c = 3 * u * u * (1 - u), e = u * u * u;
+      P.push([a * v[0] + b * v[2] + c * v[4] + e * v[6], a * v[1] + b * v[3] + c * v[5] + e * v[7]]);
+      if (i) acc.push(acc[i - 1] + Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]));
+    }
+    return function (f) {                                   // the point at the fraction f of the way's length
+      var L = acc[n] * clamp(f, 0, 1), i = 1;
+      while (i < n && acc[i] < L) i++;
+      var w = (L - acc[i - 1]) / ((acc[i] - acc[i - 1]) || 1);
+      return [P[i - 1][0] + (P[i][0] - P[i - 1][0]) * w, P[i - 1][1] + (P[i][1] - P[i - 1][1]) * w];
+    };
+  }
+
+  // Hail: the card leaves the reader's terminal at a quarter second, is at the relay 0.7 s later, settles in its bay
+  // (0.12 s), and the bay answers once (0.24 s); the way it came stays drawn
+  var HL = null;
+  function hail(t) {
+    if (HL === null) {
+      var tr = $('.hl__trail'), pk = $('.hl__pk'), svg = $('.hl__over');
+      if (!tr || !pk || !svg) { HL = false; return; }
+      var vb = svg.getAttribute('viewBox').split(' ').map(Number);
+      HL = { tr: tr, pk: pk, at: curve(tr.getAttribute('d'), 120), w: vb[2], h: vb[3], ring: $('.hl__ring') };
+    }
+    if (!HL) return;
+    var f = clamp((t - 0.25) / 0.7, 0, 1);
+    f = f < .5 ? 2 * f * f : 1 - Math.pow(-2 * f + 2, 2) / 2;                 // out of the terminal, into the bay
+    var q = HL.at(f);
+    HL.pk.style.left = (q[0] / HL.w * 100).toFixed(3) + '%';
+    HL.pk.style.top = (q[1] / HL.h * 100).toFixed(3) + '%';
+    HL.tr.style.strokeDashoffset = (1 - f).toFixed(4);
+    var s = t < 0.95 ? 1 : t < 1.07 ? 1.18 - 0.18 * ease((t - 0.95) / 0.12) : 1;
+    HL.pk.style.transform = s === 1 ? '' : 'scale(' + s.toFixed(3) + ')';
+    if (HL.ring) HL.ring.classList.toggle('on', t >= 1.07 && t < 1e8);
+  }
+
+  // Thrice: the three walk in along the way (y = k x + b in the drawing's units, from x0), each 0.64 s, 0.09 s apart,
+  // at an even pace and then slowing over the last 0.14 s; they stop short of its end
   var W = null;
   function walk(t) {
     if (W === null) {
@@ -120,12 +160,44 @@
         return { g: g, x1: +m[1], k: L[0], b: L[1], x0: L[2] };
       });
     }
+    var ud = 0.5 / 0.64, v = 1 / (ud + (1 - ud) / 2);
     W.forEach(function (w, i) {
-      var p = ease((t - 0.35 - i * 0.12) / 1.1);
-      var x = w.x0 + (w.x1 - w.x0) * p;
-      w.g.setAttribute('transform', 'translate(' + x.toFixed(0) + ' ' + (w.k * x + w.b - 300).toFixed(0) + ')');
-      w.g.style.opacity = t < 0.3 + i * 0.12 ? '0' : '1';
+      var u = clamp((t - 0.25 - i * 0.09) / 0.64, 0, 1);
+      var p = u <= ud ? v * u : v * ud + v * (u - ud) - v * (u - ud) * (u - ud) / (2 * (1 - ud));
+      var x = w.x0 + (w.x1 - w.x0) * clamp(p, 0, 1);
+      w.g.setAttribute('transform', 'translate(' + x.toFixed(0) + ' ' + (w.k * x + w.b - 140).toFixed(0) + ')');
     });
+  }
+
+  // Lintel: how early the reader's terminal is, from its own date
+  function gap() {
+    var target = new Date(2066, 10, 1), el = $('[data-gap]'), box = $('.li__gap');
+    if (!el || !box) return;
+    if (now >= target) { set(el, 'On time.'); box.hidden = false; return; }
+    var y = target.getFullYear() - now.getFullYear(), d = new Date(now.getTime());
+    d.setFullYear(now.getFullYear() + y);
+    if (d > target) { y -= 1; d.setFullYear(now.getFullYear() + y); }
+    var days = Math.round((target - d) / 864e5);
+    set(el, y + (y === 1 ? ' year' : ' years') + ', ' + days + (days === 1 ? ' day' : ' days') + ' early.');
+    box.hidden = false;
+  }
+
+  // Fallow: collection runs along the furrows to the line in 0.75 s and stops there; then there are no collectors
+  var FA = null;
+  function fallow(t) {
+    if (FA === null) {
+      var svg = $('.fa__over'), fr = $('.fa__front');
+      if (!svg || !fr) { FA = false; return; }
+      FA = { fr: fr, a: svg.getAttribute('data-from').split(' ').map(Number), b: svg.getAttribute('data-to').split(' ').map(Number),
+             n: $('[data-fa-count]') };
+    }
+    if (!FA) return;
+    var f = clamp((t - 0.25) / 0.75, 0, 1), on = t < 1.0;
+    f = f * f * (1.6 - 0.6 * f);                             // gathering pace; it stops at the line, not before it
+    var p = FA.a.map(function (a, i) { return (a + (FA.b[i] - a) * f).toFixed(0); });
+    FA.fr.setAttribute('d', 'M' + p[0] + ' ' + p[1] + 'L' + p[2] + ' ' + p[3]);
+    FA.fr.classList.toggle('run', on);
+    set(FA.n, on ? '12' : '0');
   }
 
   // the telegraphic address in Morse on the tape: a dot, a dash three dots long, letters three apart, words seven
@@ -155,16 +227,32 @@
     if (r.final) r.final();
   }
   if (reduce) { if (r.init) r.init(); finish(); return; }
-  if (r.init) r.init();
-  tickCounts(0);
-  var t0 = 0;
-  function frame(ts) {
-    if (!t0) t0 = ts;
-    var t = (ts - t0) / 1000;
-    timed.forEach(function (x) { if (t >= x.at) x.el.classList.add('on'); });
-    tickCounts(t);
-    if (r.tick) r.tick(t);
-    if (t < END) requestAnimationFrame(frame); else finish();
+  // the event again, on request, once it is over: everything back to its start, then the same seconds
+  var stage = $('[data-scene]') || $('.rt__stage'), again = null;
+  function play() {
+    if (again) again.classList.remove('is-on');
+    timed.forEach(function (x) { x.el.classList.remove('on'); });
+    void document.body.offsetWidth;                      // a fresh start for the transitions and animations
+    if (r.init) r.init();
+    tickCounts(0);
+    var t0 = 0;
+    function frame(ts) {
+      if (!t0) t0 = ts;
+      var t = (ts - t0) / 1000;
+      timed.forEach(function (x) { if (t >= x.at) x.el.classList.add('on'); });
+      tickCounts(t);
+      if (r.tick) r.tick(t);
+      if (t < END) requestAnimationFrame(frame);
+      else { finish(); if (again) again.classList.add('is-on'); }
+    }
+    requestAnimationFrame(frame);
   }
-  requestAnimationFrame(frame);
+  if (stage && (timed.length || r.tick)) {
+    again = document.createElement('button');
+    again.type = 'button'; again.className = 'rt__again'; again.setAttribute('aria-label', 'Again');
+    again.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13 8a5 5 0 1 1-1.6-3.7"/><path d="M13.2 2.2v3h-3"/></svg>';
+    again.addEventListener('click', play);
+    stage.appendChild(again);
+  }
+  play();
 })();

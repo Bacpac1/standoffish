@@ -47,8 +47,8 @@ a { color: inherit; text-decoration: none; }
 .nos { background: var(--navy); color: var(--paper); text-align: center; padding-block: clamp(56px, 8vw, 96px) 0;
        overflow: hidden; }
 .nos__name { margin: 0; font: 620 clamp(52px, 7.2vw, 104px)/.95 var(--sans); font-stretch: 108%; letter-spacing: .01em; }
-.nos__line { margin: 16px 0 0; font: 400 clamp(22px, 2.2vw, 30px)/1.2 var(--sans); color: rgb(236 228 210 / .9); }
-.nos__from { margin: 12px 0 0; font: 400 13px/1.5 var(--mono); color: rgb(236 228 210 / .58); }
+.nos__line { margin: 16px 0 0; font: 400 clamp(22px, 2.2vw, 30px)/1.2 var(--sans); color: rgb(224 230 229 / .9); }
+.nos__from { margin: 12px 0 0; font: 400 13px/1.5 var(--mono); color: rgb(224 230 229 / .62); }
 .nos .ctas { justify-content: center; margin-top: 24px; font-size: 18px; }
 .nos .more { color: var(--voice); }
 /* the voice light: the picture, and over it (the same size) the light drawn live by voice.js, its stamp in its corner.
@@ -80,7 +80,7 @@ a { color: inherit; text-decoration: none; }
 
 /* ------------------------------------------------------------------------------------------- the work */
 .work { padding-block: clamp(72px, 10vw, 152px) 0; }
-.wk + .wk { margin-top: clamp(96px, 13vw, 200px); }
+.wk + .wk { margin-top: clamp(64px, 7vw, 96px); }
 .wk__head { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 24px; align-items: end;
             margin-bottom: clamp(22px, 2.6vw, 40px); }
 .wk__n { grid-column: 1 / -1; margin: 0 0 14px; font: 400 13px/1 var(--mono); color: var(--faint); letter-spacing: .04em; }
@@ -92,6 +92,9 @@ a { color: inherit; text-decoration: none; }
 .wk__pic { margin: 0; }
 /* a drawing (round 24): a vector picture on the page's own ground, whole, no frame; its stamp in its own corner */
 .wk__pic .draw, .draw { display: block; width: 100%; height: auto; }
+.work .wk__pic .draw { max-width: 1040px; margin-inline: auto; }
+/* on a work's own page the drawing stands in a band 440 px high, so its particulars begin within the first view */
+.page .wk__pic .draw { width: auto; max-width: 100%; max-height: 440px; margin-inline: auto; }
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
     .wk__h { animation: settle linear both; animation-timeline: view(); animation-range: entry 10% cover 42%; }
@@ -104,11 +107,12 @@ a { color: inherit; text-decoration: none; }
 .rgrid { list-style: none; margin: clamp(36px, 4vw, 56px) 0 0; padding: 0; display: grid;
          grid-template-columns: repeat(4, minmax(0, 1fr)); background: #fff; border-radius: 8px; overflow: hidden; }
 .rgrid li { min-width: 0; }
-.rgrid li + li { box-shadow: -1px 0 0 var(--hair); }
-.rgrid a { display: grid; align-content: start; gap: 6px; height: 100%; padding: 26px 26px 28px;
-           transition: background-color .15s ease; }
-.rgrid a:hover { background: #f9fbfa; }
-.rgrid .rmark { width: 40px; height: 40px; margin: 0 0 16px -2px; color: var(--ink); }
+.rgrid li + li { box-shadow: -1px 0 0 #d4dbd8; }
+.rgrid a { display: grid; align-content: start; gap: 8px; height: 100%; padding: 28px; color: var(--ink);
+           transition: background-color .12s ease, color .12s ease; }
+.rgrid a:hover { background: #f4f7f6; }
+.rgrid a:focus-visible { outline: 2px solid var(--link); outline-offset: -2px; border-radius: 8px; }
+.rgrid .rmark { width: 40px; height: 40px; margin: 0 0 12px -2px; color: #263747; }
 .rgrid a:hover .rgrid__n { text-decoration: underline; text-underline-offset: .22em; text-decoration-thickness: 1px; }
 /* the earlier systems, folded at the foot of a page: the small marks in the summary, the rows when opened */
 .earlier { margin-top: clamp(56px, 6vw, 88px); border-top: 1px solid var(--hair); }
@@ -193,7 +197,7 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
 .page { padding-block: clamp(48px, 7vw, 104px) 0; }
 .page__head { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 24px; align-items: end;
               margin-bottom: clamp(26px, 3vw, 44px); }
-.page__h { grid-column: 1 / span 7; margin: 0; font: 600 clamp(48px, 7vw, 112px)/.95 var(--sans); font-stretch: 94%;
+.page__h { grid-column: 1 / span 7; margin: 0; font: 600 clamp(44px, 5.3vw, 76px)/1.03 var(--sans); font-stretch: 94%;
            letter-spacing: -.026em; }
 .page__line { grid-column: 8 / -1; margin: 0 0 .6em; font-size: clamp(19px, 1.6vw, 23px); line-height: 1.36; color: var(--soft); max-width: 28ch; }
 .parts { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 24px;
@@ -424,7 +428,8 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
   .wk__side, .reg__side, .page__line { grid-column: 1 / -1; padding-bottom: 0; margin-top: 16px; }
   .rgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .rgrid li:nth-child(3) { box-shadow: none; }
-  .rgrid li:nth-child(n+3) { border-top: 1px solid var(--hair); }
+  .rgrid li:nth-child(n+3) { border-top: 1px solid #d4dbd8; }
+  .rgrid a { min-height: 148px; }
   .earlier__k, .elist { grid-column: 1 / -1; }
   .parts .parts__k, .parts dl { grid-column: 1 / -1; }
   .gf__map { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -432,10 +437,16 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
 @media (max-width: 560px) {
   .gf__map { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .gh { padding-block: 10px 4px; }
-  .gh__nav { gap: 2px 18px; font-size: 13px; }
+  /* the sections in one row that the thumb moves along, not two lines of links */
+  .gh__nav { flex-wrap: nowrap; gap: 2px 20px; width: 100%; overflow-x: auto; scrollbar-width: none; font-size: 13.5px;
+             mask-image: linear-gradient(90deg, #000 88%, transparent); }
+  .gh__nav::-webkit-scrollbar { display: none; }
+  .gh__nav a { flex: none; }
   .parts dl > div { grid-template-columns: 1fr; row-gap: 4px; }
   .rgrid a { padding: 20px 18px 22px; }
-  .rgrid .rmark { width: 36px; height: 36px; margin-bottom: 12px; }
+  .rgrid .rmark { width: 36px; height: 36px; margin-bottom: 8px; }
+  .rgrid .rgrid__n { font-size: 18px; line-height: 22px; }
+  .rgrid .rgrid__role { font-size: 14px; line-height: 20px; }
   .erow { grid-template-columns: minmax(0, 1fr); }
 }
 
@@ -523,8 +534,8 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
 .hero__fig--rest { letter-spacing: .14em; font-weight: 500; }
 
 /* ------------------------------------------------------------------------------------------- the Register's line */
-.motto { padding-block: clamp(96px, 14vw, 220px) clamp(24px, 4vw, 64px); }
-.motto__l { margin: 0; max-width: 13ch; font: 640 clamp(48px, 8.6vw, 136px)/.96 var(--sans); font-stretch: 94%;
+.motto { padding-block: clamp(64px, 8vw, 120px) clamp(24px, 3vw, 48px); }
+.motto__l { margin: 0; max-width: 18ch; font: 640 clamp(44px, 6.2vw, 96px)/.96 var(--sans); font-stretch: 94%;
             letter-spacing: -.032em; text-wrap: balance; color: var(--ink); }
 .motto__l span:last-child { color: var(--link); }
 @supports (animation-timeline: view()) {
@@ -782,8 +793,8 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
 .dband__n { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 22px 0 0; padding: 0; list-style: none; }
 .dband__plat { margin-top: clamp(48px, 5vw, 72px); }
 .dband__plat .rgrid, .ct-plat .rgrid { margin-top: 14px; }
-.rgrid .rgrid__n { font: 600 clamp(17px, 1.45vw, 20px)/1.15 var(--sans); letter-spacing: -.006em; }
-.rgrid .rgrid__role { font: 400 14px/1.35 var(--sans); color: var(--soft); }
+.rgrid .rgrid__n { font: 600 20px/24px var(--sans); letter-spacing: -.006em; }
+.rgrid .rgrid__role { font: 400 15px/21px var(--sans); color: var(--soft); }
 /* contact */
 .ct__v { display: block; margin-bottom: 2px; font: 500 16px/1.45 var(--mono); color: var(--ink); overflow-wrap: anywhere; }
 .parts dt a { color: var(--link); }
@@ -958,7 +969,7 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
 .mkb__grounds button[aria-checked="true"] { background: #fff; box-shadow: 0 1px 2px rgba(20, 22, 26, .1), 0 3px 10px rgba(20, 22, 26, .07); }
 .mkb__grounds button:focus-visible { outline-offset: -2px; }
 .mkb__sw { width: 12px; height: 12px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(18, 20, 23, .2); }
-.mkb__sw--ground { background: #f0f2f1; } .mkb__sw--paper { background: #e0e6e5; } .mkb__sw--ink { background: #121417; }
+.mkb__sw--ground { background: #f1f3f2; } .mkb__sw--paper { background: #ece4d2; } .mkb__sw--ink { background: #121417; }
 .mkb__sw--navy { background: #1a2944; }
 .mkb__pre { display: inline-flex; gap: 6px; }
 .mkb__pre button { min-width: 44px; min-height: 36px; padding: 6px 10px; border: 1px solid #bfc8c9; border-radius: 999px; background: transparent;
@@ -973,12 +984,12 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
 .mkb__cs { display: inline-flex; align-items: center; gap: 8px; font: 520 13.5px/1.2 var(--sans); cursor: pointer; }
 .mkb__cs input { width: 16px; height: 16px; accent-color: var(--ink); }
 .mkb__stage { display: grid; place-items: center; height: clamp(300px, 42vw, 440px); margin-top: 16px; border-radius: 10px;
-  background: #f0f2f1; box-shadow: inset 0 0 0 1px var(--hair); overflow: hidden; transition: background-color .22s cubic-bezier(.2, .8, .2, 1); }
-.mkb__stage[data-ground="paper"] { background: #e0e6e5; }
+  background: #f1f3f2; box-shadow: inset 0 0 0 1px var(--hair); overflow: hidden; transition: background-color .22s cubic-bezier(.2, .8, .2, 1); }
+.mkb__stage[data-ground="paper"] { background: #ece4d2; }
 .mkb__stage[data-ground="ink"] { background: #121417; }
 .mkb__stage[data-ground="navy"] { background: #1a2944; }
-.mkb__stage[data-ground="ink"] .mk__ink, .mkb__stage[data-ground="navy"] .mk__ink { fill: #f0f2f1; }
-.mkb__stage[data-ground="ink"] .mk__arc, .mkb__stage[data-ground="navy"] .mk__arc { stroke: #f0f2f1; }
+.mkb__stage[data-ground="ink"] .mk__ink, .mkb__stage[data-ground="navy"] .mk__ink { fill: #f1f3f2; }
+.mkb__stage[data-ground="ink"] .mk__arc, .mkb__stage[data-ground="navy"] .mk__arc { stroke: #f1f3f2; }
 .mkb__svg { display: block; max-width: 100%; height: auto; overflow: visible; }
 .mkb__clear, .mkb__box { fill: none; stroke: none; }
 .mkb__svg.is-cs .mkb__clear { stroke: #2d5ca4; stroke-width: .08; stroke-dasharray: .3 .22; }
