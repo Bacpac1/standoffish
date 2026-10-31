@@ -111,6 +111,8 @@ a { color: inherit; text-decoration: none; }
 .seatpic { position: relative; margin: 48px 0 0; }
 .seatpic picture { display: block; }
 .seatpic .draw { display: block; width: 100%; height: auto; }
+/* the store's far bay, close (round 31): under the section, at its own size at most */
+.seatpic--close { max-width: 960px; margin-inline: auto; }
 .draw__live { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
 .draw__live .lv-line { vector-effect: non-scaling-stroke; }
 .draw__live .rk path { vector-effect: non-scaling-stroke; }

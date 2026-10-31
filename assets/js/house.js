@@ -1456,12 +1456,15 @@
     }
     if (kit) kit.push(done);
   }
+  // The store's far bay, close (round 31), the same way: the whole scene on the canvas (the rack's parts and the
+  // flyer ordered together, so its dock hides it as it goes in), over a bare frame.
   function canvasScene(M, F, cv, img, k0) {
-    var C = Math.cos(Math.PI / 6), ctx = cv.getContext('2d'), seat = new RK_SEAT.Seat(M), d = 1, kd = 1;
+    var C = Math.cos(Math.PI / 6), ctx = cv.getContext('2d'), d = 1, kd = 1, bay = M.kind === 'bay';
+    var seat = bay ? new RK_BAY.Bay(M) : new RK_SEAT.Seat(M);
     var P = function (x, y, z) { return [((x - y) * C - F[0]) * F[2] + F[3], ((x + y) / 2 - z - F[1]) * F[2] + F[3]]; };
     var hp = [];
-    for (var i = 0; i < 8; i++) hp.push(P(i & 1 ? M.x1 : 0, i & 2 ? M.ys : 0, i & 4 ? M.slab[1] : M.slab[0]));
-    hp = hull(hp);
+    if (!bay) for (var i = 0; i < 8; i++) hp.push(P(i & 1 ? M.x1 : 0, i & 2 ? M.ys : 0, i & 4 ? M.slab[1] : M.slab[0]));
+    if (!bay) hp = hull(hp);
     var last = 0, cost = 0;
     return function (t) {
       var now = window.performance ? performance.now() : Date.now();
@@ -1474,6 +1477,12 @@
       ctx.setTransform(kd * d, 0, 0, kd * d, 0, 0);
       ctx.clearRect(-2, -2, F[4] + 4, F[5] + 4);
       var f = seat.frame(t), lw = k0 / kd;
+      if (bay) {
+        new RK.Painter(ctx, P, lw).draw(f.all);
+        var end = window.performance ? performance.now() : Date.now();
+        cost = cost ? cost * 0.9 + (end - now) * 0.1 : end - now;
+        return;
+      }
       ctx.save();
       ctx.beginPath(); ctx.rect(-10, -10, F[4] + 20, F[5] + 20);
       ctx.moveTo(hp[0][0], hp[0][1]);

@@ -1,5 +1,6 @@
-/* The house's machines (round 29): robokit, the machines and the seat's scene, from tools/robokit (robokit.js,
-   robots.js, seat.js), joined here as they are. The same scripts draw the seat's still picture. */
+/* The house's machines (rounds 29 and 31): robokit, the machines, the seat's scene and the far bay's, from
+   tools/robokit (robokit.js, robots.js, seat.js, bay.js), joined here as they are. The same scripts draw the
+   still pictures. */
 /* robokit: the house's machines from their parts (round 28).
 
    A machine is a tree of links joined by joints. Each link carries boxes in its own frame; a joint turns its child
@@ -60,8 +61,9 @@ var RK = (function () {
   // desc: { links: { name: { boxes: [...] } }, joints: [ { name, parent, child, type, axis, at, turn } ], root }. A box:
   // { at: [x, y, z] (its least corner), size: [sx, sy, sz], tone ('paper', 'recess', 'dark', 'skirt', 'wheel', 'accent'
   // or a colour), w (its outline: 1.4, 0.85 or 0.55), lamp: a key whose value (0 to 1) lights it, grow: [axis, key,
-  // base, k] (its size along that axis is base + k times the key's value: a part that runs out of another), bias: added
-  // to its depth where nothing else decides }
+  // base, k] (its size along that axis is base + k times the key's value: a part that runs out of another), spin:
+  // [axis, key, k] (it turns about its own middle line along that axis by k times the key's value, in degrees: a slat
+  // of a louvre, every slat by the one key), bias: added to its depth where nothing else decides }
   function Machine(desc) {
     var kids = {};
     desc.joints.forEach(function (j) { (kids[j.parent] = kids[j.parent] || []).push(j); j.seat = seat(j); });
@@ -90,6 +92,13 @@ var RK = (function () {
     if (b.grow) { var g = b.grow; s[g[0]] = (g[2] || 0) + (g[3] == null ? 1 : g[3]) * (q[g[1]] || 0); }
     if (s[0] < 0.02 || s[1] < 0.02 || s[2] < 0.02) return null;
     var x0 = b.at[0], y0 = b.at[1], z0 = b.at[2], x1 = x0 + s[0], y1 = y0 + s[1], z1 = z0 + s[2];
+    if (b.spin) {
+      var sp = b.spin, a = (sp[2] == null ? 1 : sp[2]) * (q[sp[1]] || 0);
+      if (a) {
+        var cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, cz = (z0 + z1) / 2;
+        M = mul(M, mul(move(cx, cy, cz), mul(rot(sp[0], a * Math.PI / 180), move(-cx, -cy, -cz))));
+      }
+    }
     var c = [];
     for (var i = 0; i < 8; i++) c.push(at(M, [i & 1 ? x1 : x0, i & 2 ? y1 : y0, i & 4 ? z1 : z0]));
     var lit = b.lamp != null ? (typeof b.lamp === 'number' ? b.lamp : (q[b.lamp] != null ? q[b.lamp] : 0)) : null;
@@ -814,55 +823,134 @@ var RK_MACHINES = (function () {
   M.floor.period = 5; M.floor.rest = M.floor.work(0);
 
   // ------------------------------------------------------------------------------------------------ the flyer
-  // FY-1, the store's tally flyer: a small craft 36 cm across that holds itself up on four grids of ion wind (no
-  // blade, nothing turning, no sound past a breath), a core between them, and a probe that runs out of its front to
-  // touch a case's tag at a lane's mouth. Blind as the house's machines are: it knows where it is from the store's
-  // own fixed marks and its own inertia, and what is before it by touch. Its light on the probe's lock, lit while it
-  // reads. It flies in a bay the shuttles leave to it, lane by lane and level by level.
+  // FY-1, the store's tally flyer (round 31): a plank 54 cm along the aisle, 32 across it and 5 deep, about 100 g,
+  // whose whole plan is its thrust: ion wind, nothing turning. A spine along its front (46 by 4.5: the cell, the
+  // converter, the roots of the probe and the fork); behind it the field, the emitter layer fixed and guarded under two
+  // insulated bars, and under that fifteen guide vanes that turn together a few degrees to turn the wind along the
+  // aisle; at each end a band of ten vanes across, for in and out. So the plank moves level, leans into nothing and
+  // stops where it means to. Blind as the house's machines are: the store's fixed marks (sensed, never seen), its own
+  // inertia between them, touch at the end. At a lane's mouth it stops short of the face, puts a short fork into the
+  // seats in the level's beam (it is held by the rack, never by pushing on a case), then runs its probe, a pad, to the
+  // case's tag; its light on the probe's lock, on the spine's top, lit while it reads. It lives in a lane of its own at
+  // its bay's foot, a dock that carries it: two load rails, a gate that rises behind it to hold it, a contact bar at the
+  // back, live (its light) only once it is seated and held and its own high voltage is off, a wiper that runs once
+  // under its vanes, the dust to a sealed bin below, a filter behind. Frame: the dock's, the plank seated in it; x into
+  // the lane (toward the rack's back), y along the aisle, z up from the rails' top.
   M.flyer = (function () {
-    var body = [C(0, 0, 0, 14, 14, 6, W(THIN)), C(0, 0, 6, 10, 10, 0.8, W(FINE, { tone: 'paper' })),
-                B(-7, 7, 3, 14, 0.1, 0.1, W(FINE)), B(7, -1, 2, 3, 2, 2, W(FINE))];
-    var slats = [];
-    [-1, 1].forEach(function (sx) {
-      [-1, 1].forEach(function (sy) {
-        body.push(C(sx * 13, sy * 13, 1, 10, 10, 2.2, W(THIN, { tone: 'recess' })));
-        for (var k = 0; k < 3; k++) slats.push(B(sx * 13 - 5, sy * 13 - 3.6 + 3 * k, 3.2, 10, 1.2, 0.3, W(FINE, { tone: 'paper' })));
+    var X = 16, Y = 27, Z0 = 0.6, Z1 = 5.0, H = Z1 - Z0;
+    var body = [
+      B(11.5, -23, Z0, X - 11.5, 46, H, W(THIN)),                                       // the spine
+      B(12.3, -20, Z1 - 0.05, 2.9, 40, 0.05, W(FINE, { tone: 'paper' })),               // its seam
+      B(13.3, -0.6, Z1, 0.6, 1.2, 0.05, { lamp: 'lit' }),                               // the probe's lock, its light
+      B(-X, -Y, Z0, 0.9, 2 * Y, H, W(FINE)),                                            // the rim behind
+      B(-X + 0.9, Y - 0.9, Z0, 2 * X - 0.9, 0.9, H, W(FINE)), B(-X + 0.9, -Y, Z0, 2 * X - 0.9, 0.9, H, W(FINE)),   // the ends
+      B(X - 0.9, 23.6, Z0, 0.9, 2.5, H, W(FINE)), B(X - 0.9, -26.1, Z0, 0.9, 2.5, H, W(FINE)),   // the bands' fronts
+      B(-X + 0.9, 23, Z0, 26.6, 0.6, H, W(FINE)), B(-X + 0.9, -23.6, Z0, 26.6, 0.6, H, W(FINE)),  // the bands' bars
+      B(-9.9, -23, 4.4, 0.6, 46, 0.6, W(FINE, { tone: 'paper' })),                      // the emitter layer's bars
+      B(1.3, -23, 4.4, 0.6, 46, 0.6, W(FINE, { tone: 'paper' })),
+      B(-14, 24, 0, 28, 1.6, Z0, W(FINE, { tone: 'dark' })), B(-14, -25.6, 0, 28, 1.6, Z0, W(FINE, { tone: 'dark' })),   // skids
+      B(X, -0.4, 3.2, 0, 0.8, 0.8, W(FINE, { grow: [0, 'probe', 0, 1] })),              // the probe's rod, run out
+      B(X, 9.6, 0.6, 0, 0.8, 0.8, W(FINE, { grow: [0, 'fork', 0, 1] })),                 // the fork's two pins, run out
+      B(X, -10.4, 0.6, 0, 0.8, 0.8, W(FINE, { grow: [0, 'fork', 0, 1] }))
+    ];
+    for (var k = 0; k < 15; k++)                                                        // the field's vanes: along the aisle
+      body.push(B(-14.6, -21.25 + 3 * k, 1.0, 25.6, 0.5, 3.2, W(FINE, { tone: 'recess', spin: ['x', 'vy', 1] })));
+    [1, -1].forEach(function (sy) {                                                     // the bands' vanes: in and out
+      for (var i = 0; i < 10; i++)
+        body.push(B(-13.75 + 3 * i, sy > 0 ? 23.7 : -26.0, 1.0, 0.5, 2.3, 3.2, W(FINE, { tone: 'recess', spin: ['y', 'vx', 1] })));
+    });
+    var dock = [
+      B(-17.6, -29, -2.4, 37.6, 58, 1.2, W(THIN)),                                      // its deck
+      B(-20, 23.6, -1.2, 40, 2.4, 1.2, W(FINE, { tone: 'dark' })), B(-20, -26, -1.2, 40, 2.4, 1.2, W(FINE, { tone: 'dark' })),   // rails
+      B(20, -22, -1.2, 2, 44, 7.2, W(THIN)),                                            // the contact bar
+      B(20.6, -0.6, 6.0, 0.8, 1.2, 0.05, { lamp: 'live' }),                             // its light: live once seated
+      B(22, -18, -2.4, 14, 36, 8.4, W(THIN, { tone: 'recess' })),                       // the filter behind
+      B(23, -16, 6.0, 12, 32, 0.15, W(FINE, { tone: 'paper' })),                        // its grille
+      B(2, -12, -14, 16, 24, 11.6, W(THIN, { tone: 'dark' }))                           // the sealed bin, under
+    ];
+    var links = { dock: { boxes: dock }, a1: { boxes: [] }, a2: { boxes: [] }, body: { boxes: body },
+                  tip: { boxes: [B(0, -1.4, -1.4, 1.0, 2.8, 2.8, W(THIN))] },
+                  pins: { boxes: [B(0, 9.5, -0.5, 1, 1, 1, W(FINE)), B(0, -10.5, -0.5, 1, 1, 1, W(FINE))] },
+                  gate: { boxes: [B(-19.4, -22, 0, 1.6, 44, 3.6, W(FINE))] },          // up behind it: held
+                  wiper: { boxes: [B(-1.2, -22.6, -1.1, 1.2, 45.2, 0.9, W(FINE, { tone: 'recess' }))] } };
+    var joints = [{ name: 'mx', parent: 'dock', child: 'a1', type: 'pri', axis: 'x', at: [0, 0, 0] },
+                  { name: 'my', parent: 'a1', child: 'a2', type: 'pri', axis: 'y', at: [0, 0, 0] },
+                  { name: 'mz', parent: 'a2', child: 'body', type: 'pri', axis: 'z', at: [0, 0, 0] },
+                  { name: 'probe', parent: 'body', child: 'tip', type: 'pri', axis: 'x', at: [X, 0, 3.6] },
+                  { name: 'fork', parent: 'body', child: 'pins', type: 'pri', axis: 'x', at: [X, 0, 1.0] },
+                  { name: 'gate', parent: 'dock', child: 'gate', type: 'pri', axis: 'z', at: [0, 0, 0] },
+                  { name: 'wipe', parent: 'dock', child: 'wiper', type: 'pri', axis: 'x', at: [-15, 0, 0] }];
+    // what it works against on its plate, in the dock's frame: the rack's face 24 cm before the seat, a level's beam
+    // under each row of cases (3 cm, the fork's seats in it, 10 cm either side of a lane's middle), a case at each mouth
+    // with its tag low on its front; the next lane along (y down by 60)
+    var props = [];
+    [0, 1, 2].forEach(function (lv) {
+      props.push(B(-24, -90, lv * 28 - 3, 3.5, 120, 3));                                 // a level's beam
+      [0, -60].forEach(function (ly) {
+        props.push(B(-24.1, ly + 9.4, lv * 28 - 2.2, 0.1, 1.2, 1.2), B(-24.1, ly - 10.6, lv * 28 - 2.2, 0.1, 1.2, 1.2));
+        if (lv === 0 && ly === 0) return;                                               // the dock's own lane
+        props.push(B(-24, ly - 24, lv * 28 + 0.2, 32, 48, 9.8), B(-24.3, ly - 4, lv * 28 + 0.4, 0.3, 8, 2));   // a case, its tag
       });
     });
-    var links = { air: { boxes: [] }, a1: { boxes: [] }, a2: { boxes: [] }, r: { boxes: [] }, body: { boxes: body },
-                  slats: { boxes: slats },
-                  rod: { boxes: [B(10, -0.5, 2.5, 0, 1, 1, W(FINE, { grow: [0, 'probe', 3, 1] }))] },
-                  tip: { boxes: [B(0, -1.2, -1.2, 1.2, 2.4, 2.4, W(THIN)), B(0, 1.2, -0.5, 1.2, 0.1, 1, { lamp: 'lit' })] } };
-    var joints = [{ name: 'my', parent: 'air', child: 'a1', type: 'pri', axis: 'y', at: [0, 0, 0] },
-                  { name: 'mz', parent: 'a1', child: 'a2', type: 'pri', axis: 'z', at: [0, 0, 0] },
-                  { name: 'roll', parent: 'a2', child: 'r', type: 'rev', axis: 'x', at: [0, 0, 3] },
-                  { name: 'pitch', parent: 'r', child: 'body', type: 'rev', axis: 'y', at: [0, 0, -3] },
-                  { name: 'slat', parent: 'body', child: 'slats', type: 'pri', axis: 'z', at: [0, 0, 0] },
-                  { name: 'rodj', parent: 'body', child: 'rod', type: 'pri', axis: 'x', at: [0, 0, 0] },
-                  { name: 'probe', parent: 'body', child: 'tip', type: 'pri', axis: 'x', at: [13, 0, 3] }];
-    // its four arms, short, out to the grids at its corners
-    [45, 135, 225, 315].forEach(function (a, i) {
-      links['arm' + i] = { boxes: [B(9.9, -0.8, 2.4, 1.6, 1.6, 1.2, W(FINE))] };
-      joints.push({ name: 'arm' + i, parent: 'body', child: 'arm' + i, type: 'rev', axis: 'z', at: [0, 0, 0], turn: [0, 0, a] });
-    });
-    return { name: 'flyer', root: 'air', links: links, joints: joints,
-             props: [B(26, -66, -14, 4, 132, 36), B(26, -24, -2, 0, 48, 12)],              // the rack's face, a lane's case
+    return { name: 'flyer', root: 'dock', links: links, joints: joints, props: props,
              info: { code: 'FY-1', en: 'Flyer', mobile: true } };
   })();
   (function () {
-    // touch a tag, run a lane along, touch, rise a level, touch, and back: leaning into each run, a breath of a bob
-    var P = 8, k = {
-      probe: [[0, 0], [0.3, 0], [0.65, 11.8], [1.15, 11.8], [1.5, 0], [2.6, 0], [2.95, 11.8], [3.45, 11.8], [3.8, 0],
-              [5.0, 0], [5.35, 11.8], [5.85, 11.8], [6.2, 0], [P, 0]],
-      lit: [[0, 0.15], [0.64, 0.15], [0.66, 1], [1.15, 1], [1.17, 0.15], [2.94, 0.15], [2.96, 1], [3.45, 1], [3.47, 0.15],
-            [5.34, 0.15], [5.36, 1], [5.85, 1], [5.87, 0.15], [P, 0.15]],
-      my: [[0, 0], [1.6, 0], [2.5, 60], [6.4, 60], [7.6, 0], [P, 0]],
-      roll: [[0, 0], [1.6, 0], [1.95, -7], [2.15, -7], [2.5, 0], [6.4, 0], [6.8, 6], [7.2, 6], [7.6, 0], [P, 0]],
-      mzr: [[0, 0], [3.9, 0], [4.9, 28], [6.4, 28], [7.6, 0], [P, 0]],
-      pitch: [[0, 0], [3.9, 0], [4.2, 3], [4.6, 3], [4.9, 0], [P, 0]],
-      slat: [[0, 0], [P, 0]]
-    }, f = tracks(k, P);
-    M.flyer.work = function (t) { var q = f(t); q.mz = q.mzr + 0.5 * Math.sin(2 * Math.PI * t / 1.6); q.rodj = 0; return q; };
+    // its flight: each move eased so that the wind is turned only while it gathers way and while it stops (the
+    // smooth step of the fifth degree, its acceleration zero at both ends and at the middle); the vanes turned with
+    // the acceleration, so they lean into a start, lie level through the run and lean the other way into the stop
+    function step(u) { return u <= 0 ? 0 : u >= 1 ? 1 : u * u * u * (10 + u * (-15 + 6 * u)); }
+    function step2(u) { return u <= 0 || u >= 1 ? 0 : u * (60 + u * (-180 + 120 * u)); }
+    // keys: { name: [[t, value], ...] } over P; at t, each value and its acceleration (cm/s/s)
+    function flight(keys, P) {
+      return function (t) {
+        t = ((t % P) + P) % P;
+        var q = {}, acc = {};
+        for (var n in keys) {
+          var K = keys[n], v = K[K.length - 1][1], a = 0;
+          for (var i = 1; i < K.length; i++) if (t <= K[i][0]) {
+            var t0 = K[i - 1][0], t1 = K[i][0], d = K[i][1] - K[i - 1][1], T = t1 - t0, u = T > 0 ? (t - t0) / T : 1;
+            v = K[i - 1][1] + d * step(u); a = T > 0 ? d * step2(u) / (T * T) : 0;
+            break;
+          }
+          q[n] = v; acc[n] = a;
+        }
+        q.acc = acc;
+        return q;
+      };
+    }
+    // the vanes from the accelerations: 0.35 degrees a cm/s/s, at most 12
+    function vanes(q) {
+      var c = function (v) { return Math.max(-12, Math.min(12, v)); }, a = q.acc || {};
+      q.vx = c(0.35 * (a.mx || 0)); q.vy = c(-0.35 * (a.my || 0));
+      delete q.acc;
+      return q;
+    }
+    // where it works, in the dock's frame: the aisle's middle; stopped short of a lane's face; its height at a level's
+    // tag (the probe 1.2 over the case's foot, the fork's pins in the beam's seats); the strokes from there
+    var PL = { OUT: -50, AT: -46, Z: function (k) { return 28 * k - 2.4; }, LIFT: 3, PROBE: 4.7, FORK: 4.9 };
+    // one tag: the fork into the seats, the probe to the tag, read, and back, from t0; 2.5 s
+    function tag(K, t0) {
+      K.fork.push([t0, 0], [t0 + 0.5, PL.FORK], [t0 + 2.0, PL.FORK], [t0 + 2.5, 0]);
+      K.probe.push([t0 + 0.5, 0], [t0 + 0.9, PL.PROBE], [t0 + 1.6, PL.PROBE], [t0 + 2.0, 0]);
+      K.lit.push([t0 + 0.88, 0.15], [t0 + 0.92, 1], [t0 + 1.58, 1], [t0 + 1.62, 0.15]);
+    }
+    // the plate: released, up off its rails, out, along to the next lane, in to its face, a tag at the foot; up a
+    // level, a tag; back along and down at once, into its dock, down on its rails, held, live; the wiper once
+    var P = 30, K = { mx: [[0, 0], [3.0, 0], [5.8, PL.OUT], [8.6, PL.OUT], [9.2, PL.AT], [12.4, PL.AT], [13.0, PL.OUT],
+                           [14.6, PL.OUT], [15.2, PL.AT], [18.4, PL.AT], [19.0, PL.OUT], [22.6, PL.OUT], [25.4, 0], [P, 0]],
+                      my: [[0, 0], [5.4, 0], [8.6, -60], [19.0, -60], [22.6, 0], [P, 0]],
+                      mz: [[0, 0], [2.0, 0], [3.0, PL.LIFT], [5.8, PL.LIFT], [8.6, PL.Z(0)], [13.0, PL.Z(0)], [14.6, PL.Z(1)],
+                           [19.0, PL.Z(1)], [22.6, PL.LIFT], [25.4, PL.LIFT], [26.2, 0], [P, 0]],
+                      fork: [[0, 0]], probe: [[0, 0]], lit: [[0, 0.15]],
+                      live: [[0, 1], [1.0, 1], [1.3, 0], [27.0, 0], [27.3, 1], [P, 1]],
+                      gate: [[0, 0], [1.4, 0], [1.9, -3.6], [26.2, -3.6], [26.7, 0], [P, 0]],
+                      wipe: [[0, 0], [27.6, 0], [28.8, 34], [29.4, 34], [P, 0]] };
+    tag(K, 9.9); tag(K, 15.9);
+    ['fork', 'probe', 'lit'].forEach(function (n) { K[n].push([P, K[n][0][1]]); });
+    var f = flight(K, P);
+    M.flyer.work = function (t) { return vanes(f(t)); };
+    M.flyer.flight = flight; M.flyer.vanes = vanes; M.flyer.tag = tag; M.flyer.places = PL;
     M.flyer.period = P; M.flyer.rest = M.flyer.work(0);
   })();
 
@@ -1078,14 +1166,24 @@ var RK_SEAT = (function () {
     ] };
   }
 
-  // the tally flyer as the section draws it: its grids' slats, under a pixel here, left to the design sheet's FY-1
-  function flyerUnit() { var d = clone(M.flyer); d.links.slats.boxes = []; return d; }
+  // the tally flyer as the section draws it: its field one plate here (a vane is under a pixel); of its dock only the
+  // gate at the lane's mouth (the rest lies inside the rack, behind its face); seated, the plank is inside too
+  function flyerUnit(seated) {
+    var d = clone(M.flyer);
+    d.links.body.boxes = seated ? [] : d.links.body.boxes.filter(function (b) { return !b.spin && b.tone !== 'paper'; });
+    if (!seated) d.links.body.boxes.push(B(-15.1, -23, 1.0, 26.6, 46, 3.4, W(FINE, { tone: 'recess' })),
+                                         B(-15.1, 23.6, 1.0, 30.2, 2.5, 3.4, W(FINE, { tone: 'recess' })),
+                                         B(-15.1, -26.1, 1.0, 30.2, 2.5, 3.4, W(FINE, { tone: 'recess' })));
+    if (seated) d.links.tip.boxes = d.links.pins.boxes = [];
+    d.links.dock.boxes = []; d.links.wiper.boxes = [];
+    return d;
+  }
 
   // ----------------------------------------------------------------------------------------------- the scene
   function Seat(L) {
     var U = { cell: new RK.Machine(cellUnit()), porter: new RK.Machine(porterUnit()), shuttle: new RK.Machine(shuttleUnit()),
               lift: new RK.Machine(liftUnit(L.lift[0])), steward: new RK.Machine(M.steward), floor: new RK.Machine(M.floor),
-              flyer: new RK.Machine(flyerUnit()) };
+              flyer: new RK.Machine(flyerUnit(false)), seated: new RK.Machine(flyerUnit(true)) };
     var ZF = L.floor, LV = L.levels, NL = LV.length, AYC = (L.aisle[0] + L.aisle[1]) / 2, FACE = L.rack.y[1] - AYC;
     var zones = [L.cells.A, L.cells.B].filter(function (z) { return z.length; }), NP = zones.length, ROUND = CYC * NP;
     var XO = L.buf.out, XI = L.buf.inn, YB = (L.buf.y[0] + L.buf.y[1]) / 2, YL = L.lane, CYL = L.cells.y, CZ = L.cells.z;
@@ -1230,23 +1328,57 @@ var RK_SEAT = (function () {
     }
 
     // ------------------------------------------------------------------- the flyers
-    // each in its bay, before the lanes' mouths: up the bay lane by lane and level by level, and back down; at each
-    // tag it settles, runs its probe out to the case's face, reads (its light) and draws it in; it leans into a run
-    var STOP = 2.05, YAW = RK.rot('z', -Math.PI / 2);
-    function flyer(side, t, out) {
+    // each in its bay, its dock a lane of its own at the bay's foot (the end lane: the right rack's last, the left's
+    // first): released, up off its rails and out; along the bay's lanes level by level, at each lane in to the face,
+    // the fork into the beam's seats, the probe to the tag, read, and back out; then down and along to its dock, in,
+    // down on its rails, held, live, the wiper once; a while there. Each move eased, its time from its length (about
+    // 35 cm/s at most); in the aisle a pan along the bay's foot catches a plank that loses its wind
+    var YAW = RK.rot('z', -Math.PI / 2), DY = 40, DZ = 13, PL = M.flyer.places;
+    function dur(d) { return 1.2 + Math.abs(d) / 22; }
+    function round(side) {
       var bay = FB[side];
-      if (!bay) return;
-      var lanes = (side === 'R' ? L.rack.R.lanes : L.rack.L.lanes).filter(inBay(bay)), nl = lanes.length, up = [];
-      for (var k = 0; k < NL; k++) for (var i = 0; i < nl; i++) up.push([k, k % 2 ? nl - 1 - i : i]);
-      var stops = up.concat(up.slice().reverse().slice(1, -1)), n = stops.length, T = n * STOP;
-      var u = mod(t + (side === 'L' ? T / 2 : 0), T), si = Math.floor(u / STOP), e = u - si * STOP;
-      var a = stops[mod(si - 1, n)], b = stops[si], m = seg(e, 0, 0.7);
-      var x = lanes[a[1]] + (lanes[b[1]] - lanes[a[1]]) * m;
-      var z = LV[a[0]] + (LV[b[0]] - LV[a[0]]) * m + 14 + 0.5 * Math.sin(2 * Math.PI * t / 1.6);
-      var run = lanes[b[1]] - lanes[a[1]], lean = run ? -7 * Math.sin(Math.PI * clamp(e / 0.7, 0, 1)) * (run > 0 ? 1 : -1) : 0;
-      var q = { my: 0, mz: 0, roll: lean, pitch: 0, slat: 0, rodj: 0,
-                probe: 11.8 * (seg(e, 0.85, 1.2) - seg(e, 1.7, 2.05)), lit: e > 1.2 && e < 1.7 ? 1 : 0.15 };
-      U.flyer.place(q, RK.mul(RK.move(x, AYC, z), YAW), out);
+      if (!bay) return null;
+      var lanes = (side === 'R' ? L.rack.R.lanes : L.rack.L.lanes).filter(inBay(bay));
+      if (side === 'R') lanes = lanes.slice().reverse();                      // from the dock's end inward
+      var dock = lanes[0], t = 0, cur = { mx: 0, my: 0, mz: 0 };
+      var K = { mx: [[0, 0]], my: [[0, 0]], mz: [[0, 0]], fork: [[0, 0]], probe: [[0, 0]], lit: [[0, 0.15]],
+                live: [[0, 1]], gate: [[0, 0]], wipe: [[0, 0]] };
+      function key(n, v) { K[n].push([t, v]); }
+      function go(n, v, d) { key(n, cur[n]); t += d || dur(v - cur[n]); key(n, v); cur[n] = v; }
+      t = 16; key('live', 1); t += 0.3; key('live', 0); key('gate', 0); t += 0.5; key('gate', -3.6);
+      go('mz', PL.LIFT, 1.0); go('mx', PL.OUT, 2.8);
+      for (var k = 0; k < NL; k++) {
+        var row = k % 2 ? lanes.slice().reverse() : lanes;
+        for (var i = 0; i < row.length; i++) {
+          if (k === 0 && row[i] === dock) continue;
+          var my = row[i] - dock, mz = PL.Z(k);
+          if (cur.my !== my && cur.mz !== mz) {                               // to a new level: up, then along
+            go('mz', mz); go('my', my);
+          } else if (cur.mz !== mz) go('mz', mz);
+          else if (cur.my !== my) go('my', my);
+          go('mx', PL.AT, 0.6); t += 0.3; M.flyer.tag(K, t); t += 2.5; go('mx', PL.OUT, 0.6);
+        }
+      }
+      go('mz', PL.LIFT); go('my', 0); go('mx', 0, 2.8); go('mz', 0, 0.8);
+      key('gate', -3.6); t += 0.5; key('gate', 0); key('live', 0); t += 0.3; key('live', 1);
+      key('wipe', 0); t += 1.2; key('wipe', 34); t += 0.6; key('wipe', 34); t += 0.6; key('wipe', 0);
+      var T = t + 1;
+      for (var n in K) { K[n].sort(function (a, b) { return a[0] - b[0]; }); K[n].push([T, K[n][K[n].length - 1][1]]); }
+      return { f: M.flyer.flight(K, T), T: T, at: RK.mul(RK.move(dock, DY, LV[0] + DZ), YAW) };
+    }
+    var FR = { R: round('R'), L: round('L') };
+    function flyer(side, t, out) {
+      var r = FR[side];
+      if (!r) return;
+      var q = M.flyer.vanes(r.f(t + (side === 'L' ? r.T / 2 : 0)));
+      (q.mx > -8 ? U.seated : U.flyer).place(q, r.at, out);           // its back rim inside the face: out of sight
+    }
+    // the catch pans along the flyers' bays, on the store's floor across the aisle
+    function pans(out) {
+      ['R', 'L'].forEach(function (sd) {
+        var b = FB[sd];
+        if (b) out.push(RK.box(b[0], L.aisle[0] + 1, ZF, b[1], L.aisle[1] - 1, ZF + 3, { w: FINE, tone: 'recess', link: 'pan' + sd }));
+      });
     }
 
     // ------------------------------------------------------------------- the store's floor: the steward, the floor unit
@@ -1284,7 +1416,7 @@ var RK_SEAT = (function () {
       var store = [], hall = [], q = lift(t);
       U.lift.place(q, null, q.z >= 0 ? hall : store);
       for (var k = 0; k < NL; k++) { shuttle(k, 'L', t, store); shuttle(k, 'R', t, store); }
-      flyer('R', t, store); flyer('L', t, store);
+      flyer('R', t, store); flyer('L', t, store); pans(store);
       store.push(RK.box(post, L.rack.y[0], ZF, post + 8, L.rack.y[1], LV[NL - 1] + 34, { w: 0.85, link: 'post' }));
       U.steward.place(M.steward.work(t), RK.move(SX, SY, ZF), store);
       store.push(RK.box(SX + 88, SY - 30, ZF, SX + 152, SY + 30, ZF + 52, { w: THIN, link: 'stand' }));
@@ -1296,4 +1428,72 @@ var RK_SEAT = (function () {
     return { frame: frame, levelOf: levelOf };
   }
   return { Seat: Seat, CYC: CYC };
+})();
+/* The store's far bay, close (round 31): the tally flyer at its work, as /visit/ draws it under the seat in section,
+   from robokit's machines and the rack's own parts, at the seat's numbers. One bay's last two lanes, three levels:
+   the flyer's dock in the end lane at the bay's foot, the next lane along its two cases to tally, the level over them
+   cut; the end upright; the store's floor before them, the aisle, and the catch pan along the aisle's floor. The
+   flyer runs its own loop (robots.js, FY-1: 30 s): released, up off its rails and out; along to the next lane, in to
+   its face, the fork into the beam's seats, the probe to the case's tag, read; up a level, the same; back along and
+   down at once, into its dock, held, live, the wiper once. Without the script, and under reduced motion, the picture
+   stands at the still moment (the probe at the upper tag, its light on).
+
+   Units are centimetres; x along the rack (to the lower right), y from the back wall toward the aisle (to the lower
+   left), z up from the store's floor. */
+var RK_BAY = (function () {
+  'use strict';
+  var R = RK_MACHINES, M = R.M, THIN = 0.85, FINE = 0.55;
+  var LANE = 60, POST = 8, RY0 = 4, RY1 = 64, AY0 = 66, AY1 = 114, LV0 = 24, PITCH = 28, DY = 40, DZ = 13;
+  var CASE = [48, 32, 10];
+
+  function layout(small) {
+    // the dock lane's middle at x = 0, the next lane at -60; the bay's end frame beyond the dock's lane; two levels,
+    // the rack cut over the second's cases
+    return { kind: 'bay', small: !!small, a: 0, b: -LANE, x0: small ? -LANE - 26 : -LANE - 32, x1: LANE / 2 + POST,
+             levels: [LV0, LV0 + PITCH], top: LV0 + PITCH + 13 + 10 + (small ? 4 : 7),
+             rack: [RY0, RY1], aisle: [AY0, AY1], still: 17.2 };
+  }
+
+  function Bay(L) {
+    var s = [], box = RK.box, x0 = L.x0, x1 = L.x1, LV = L.levels;
+    this.L = L;
+    this.unit = new RK.Machine(M.flyer);
+    this.at = RK.mul(RK.move(L.a, DY, LV[0] + DZ), RK.rot('z', -Math.PI / 2));
+    // the store's floor under the rack and the aisle, cut on all its sides; the back wall behind the rack, cut level
+    // with the rack's top
+    s.push(box(x0, RY0 - 8, -6, x1 + 3, AY1 + 3, 0, { w: THIN, link: 'floor' }));
+    s.push(box(x0, RY0 - 8, 0, x1 + 3, RY0, L.top, { w: THIN, link: 'wall' }));
+    // the bay's end frame beyond the dock's lane: an upright at the face and one at the back, a rail across at each
+    // level, open between, so the dock is seen from the side
+    s.push(box(x1 - POST, RY1 - 4, 0, x1, RY1, L.top, { w: THIN, link: 'up-f' }),
+           box(x1 - POST, RY0, 0, x1, RY0 + 4, L.top, { w: THIN, link: 'up-b' }));
+    LV.forEach(function (z, k) {
+      s.push(box(x1 - POST, RY0 + 4, z + 10, x1, RY1 - 4, z + 13, { w: FINE, link: 'side' + k }));
+      // the level's beam at the face, cut at the left; the fork's seats in it at each lane
+      s.push(box(x0, RY1 - 3.5, z + 10, x1 - POST, RY1, z + 13, { w: THIN, link: 'beam' + k }));
+      [L.a, L.b].forEach(function (xc, j) {
+        [-10, 10].forEach(function (dx) {
+          s.push(box(xc + dx - 0.6, RY1, z + 10.8, xc + dx + 0.6, RY1 + 0.1, z + 12, { w: FINE, tone: 'dark', link: 'seat' + k + j + dx }));
+        });
+        if (k === 0 && j === 0) return;                                  // the dock's own lane
+        [-1, 1].forEach(function (sd) {                                  // the lane's runners, under its case's sides
+          s.push(box(xc + sd * 22 - 1, RY0, z + 11, xc + sd * 22 + 1, RY1 - 3.5, z + 13, { w: FINE, link: 'run' + k + j + sd }));
+        });
+        s.push(box(xc - CASE[0] / 2, RY1 - CASE[1], z + 13.2, xc + CASE[0] / 2, RY1, z + 13 + CASE[2],
+                   { w: THIN, tone: 'paper', link: 'case' + k + j }));
+        s.push(box(xc - 4, RY1, z + 13.4, xc + 4, RY1 + 0.3, z + 15.4, { w: FINE, tone: 'recess', link: 'tag' + k + j }));
+      });
+    });
+    // the catch pan along the aisle's floor, under all the flyer's flight: a shallow tray
+    s.push(box(x0 + 2, AY0 + 3, 0, x1 - 2, AY1 - 3, 2.5, { w: FINE, tone: 'recess', link: 'pan' }));
+    s.push(box(x0 + 3.2, AY0 + 4.2, 2.5, x1 - 3.2, AY1 - 4.2, 2.55, { w: FINE, link: 'pan-in' }));
+    this.still = s;
+  }
+  Bay.prototype.frame = function (t) {
+    var out = this.still.slice();
+    this.unit.place(M.flyer.work(t), this.at, out);
+    return { all: out };
+  };
+
+  return { Bay: Bay, layout: layout };
 })();
