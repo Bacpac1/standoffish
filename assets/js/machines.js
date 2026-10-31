@@ -866,6 +866,127 @@ var RK_MACHINES = (function () {
     M.flyer.period = P; M.flyer.rest = M.flyer.work(0);
   })();
 
+  // ------------------------------------------------------------------------------------------------ the runner
+  // RN-3, the records store's runner: it goes along the racks of shallow drawers and moves a card from one drawer to
+  // another. Its body 56 long, 50 wide, 28 high; a guide 156 cm high near its right side, the rack's side, and on the
+  // guide's far face a carriage (40 wide) that rides up to the marked row. Three arms on the carriage, none like
+  // another, all in planes across the aisle and all to its right: D, the drawer arm (16 and 14 cm), low at the
+  // carriage's left, its hook a bar across to the pull, that draws a drawer out 11 cm and holds it; the carrier, a
+  // slide under a tray that goes out to the drawer's front; P, the picker (20 and 18 cm), from the carriage's top at
+  // its right, a bar across to a pair of fingers over the middle, that takes a card (26 by 11.2, standing) by its head,
+  // lifts it 4 cm clear of the drawer and sets it on the tray against its stop, or the other way. Two in motion at
+  // most; its light on the hook's lock and on the fingers' block. In its own frame: x along the racks, the racks to its
+  // right (-y).
+  M.runner = (function () {
+    var links = {
+      body: { boxes: gear(56, 50, 28).concat([
+        B(-6, -21, 29.1, 12, 6, 126.9, W(FIRM)),                                 // the guide
+        B(-6.5, -21.5, 156, 13, 7, 2, W(THIN)),                                  // its cap
+        B(-2, -15, 32, 4, 0.1, 121, W(FINE, { tone: 'recess' })),                // the slot down its face
+        B(28, -21, 13, 0.1, 42, 0.1, W(FINE))                                    // the body's seam, round its front
+      ]) },
+      car: { boxes: [B(-20, -28, 0, 40, 7, 10, W(THIN)),                         // the carriage
+                     B(-8, -21, -1, 2, 7, 13, W(THIN)), B(6, -21, -1, 2, 7, 13, W(THIN)),   // its shoe round the guide
+                     B(-6, -14.9, -1, 12, 1, 13, W(THIN)),
+                     B(16, -27, 10, 6, 6, 3, W(THIN))] },                        // P's shoulder block
+      d1: { boxes: [housing(4.4), bar(16, 3.8, 4.4, 4.4)] },
+      d2: { boxes: [housing(4.4), bar(14, 3.2, 4.4, 3.8)] },
+      hook: { boxes: [housing(3.8), B(-1.4, -2.2, -1.9, 2.8, 13.7, 3.8, W(THIN)),       // across to the pull
+                      B(-1.5, -1.2, 0.3, 0.1, 4, 1.2, { lamp: 'h_lit' })] },
+      tray: { boxes: [B(-14, 0, 0, 28, 8.5, 1.2, W(THIN, { tone: 'paper' })),
+                      B(-14, 7.4, 1.2, 28, 1.1, 1.5, W(FINE)),                     // its stop
+                      B(-3, 8.5, -1.6, 6, 0, 1.6, W(FINE, { grow: [1, 'sl', 0, 1] })),   // the slide, run out of the carriage
+                      shown(B(-13, 6.9, 1.2, 26, 0.5, 11.2, W(THIN, { tone: 'paper' })), 'con')] },   // a card on it
+      p1: { boxes: [housing(3.6), bar(20, 3.0, 3.6, 3.4)] },
+      p2: { boxes: [housing(3.4), bar(18, 2.6, 3.4, 3.2)] },
+      pw: { boxes: [housing(3.2), B(-1, -21, -1.6, 2, 21, 2, W(THIN)),             // the bar across to the middle
+                    B(-1.5, -21, -5.6, 3, 4, 4, W(THIN)),                           // the fingers' block
+                    B(-1.6, -20, -4.6, 0.1, 2, 1.2, { lamp: 'p_lit' }),
+                    shown(B(-0.25, -32, -18.2, 0.5, 26, 11.2, W(THIN, { tone: 'paper' })), 'cp')] },   // a card held
+      f1: { boxes: [B(-1.2, -20.6, -8.6, 1.2, 3.2, 3, W(FINE))] },
+      f2: { boxes: [B(0, -20.6, -8.6, 1.2, 3.2, 3, W(FINE))] },
+      // the drawer it works at (its plate shows it; the house's drawing draws its own): open at its top, a card in it
+      dr: { boxes: [shown(B(-35.2, -2.2, 0, 70.4, 2.2, 10.8, W(THIN)), 'dr'),
+                    shown(B(-35.2, -40, 0, 70.4, 37.8, 0.6, W(FINE)), 'dr'),
+                    shown(B(-35.2, -40, 0.6, 0.6, 37.8, 10.2, W(FINE)), 'dr'), shown(B(34.6, -40, 0.6, 0.6, 37.8, 10.2, W(FINE)), 'dr'),
+                    shown(B(-34.6, -40, 0.6, 69.2, 0.6, 10.2, W(FINE)), 'dr'),
+                    shown(B(-6, 0, 4.0, 12, 1.2, 1.2, W(FINE)), 'dr'),
+                    shown(B(-13, -6, 0.6, 26, 0.5, 11.2, W(THIN, { tone: 'paper' })), 'cin')] }
+    };
+    var joints = [
+      { name: 'lift', parent: 'body', child: 'car', type: 'pri', axis: 'z', at: [0, 0, 0] },
+      { name: 'd_sh', parent: 'car', child: 'd1', type: 'rev', axis: 'y', at: [-15, -28, 6], turn: [0, 0, -90] },
+      { name: 'd_el', parent: 'd1', child: 'd2', type: 'rev', axis: 'y', at: [16, 0, 0] },
+      { name: 'd_wr', parent: 'd2', child: 'hook', type: 'rev', axis: 'y', at: [14, 0, 0] },
+      { name: 'ce', parent: 'car', child: 'tray', type: 'pri', axis: 'y', at: [0, -32, 11] },
+      { name: 'p_sh', parent: 'car', child: 'p1', type: 'rev', axis: 'y', at: [19, -24, 13], turn: [0, 0, -90] },
+      { name: 'p_el', parent: 'p1', child: 'p2', type: 'rev', axis: 'y', at: [20, 0, 0] },
+      { name: 'p_wr', parent: 'p2', child: 'pw', type: 'rev', axis: 'y', at: [18, 0, 0] },
+      { name: 'p_f1', parent: 'pw', child: 'f1', type: 'pri', axis: 'x', at: [-0.9, 0, 0] },
+      { name: 'p_f2', parent: 'pw', child: 'f2', type: 'pri', axis: 'x', at: [0.9, 0, 0] },
+      { name: 'dw', parent: 'body', child: 'dr', type: 'pri', axis: 'y', at: [0, -54.8, 116.6] }
+    ];
+    return { name: 'runner', root: 'body', links: links, joints: joints,
+             // the rack round the drawer: below and above its row, the posts at its sides
+             props: [B(-76, -95, 8, 152, 38, 108), B(-76, -95, 128.6, 152, 38, 51.4),
+                     B(-38, -95, 116.6, 2.8, 38, 10.8), B(35.2, -95, 116.6, 2.8, 38, 10.8)],
+             info: { code: 'RN-3', en: 'Runner', mobile: true } };
+  })();
+  (function () {
+    // the arms' reach in their planes across the aisle (forward is toward the racks): D's hook from (-28, 6) on the
+    // carriage, P's wrist from (-24, 13); each moved along straight lines, its joints found at each moment
+    var D = arm(16, 14, 0, 0, false), Pk = arm(20, 18, 0, 0, true);
+    function d(y, z) { return D(-28 - y, z - 6); }                    // the hook's point at (y, z) on the carriage
+    function p(y, z) { return Pk(-24 - y, z - 13); }                  // P's wrist at (y, z) on the carriage
+    var ROW = 117, LOW = 55, OUT = 11;
+    // the hook at the pull of the drawer closed (its point 1.4 before the pull) and off; P's wrist over a card in the
+    // drawer drawn out and at its head, over the tray drawn out and at the head of a card on it; at rest high
+    var Q = { ROW: ROW, LOW: LOW, OUT: OUT, HOOK: -52.2, HOFF: -38, HZ: 4.2, TRAY: -OUT, OPEN: 1.0, SHUT: 0.65,
+              PY_D: -49.55, PZ_D: 18.4, PY_T: -35.85, PZ_T: 30.4, PZ_UP: 33, PY_R: -27, PZ_R: 37, CARD: [18.2, 7.0] };
+    M.runner.poses = Q; M.runner.reachD = d; M.runner.reachP = p;
+    // its loop on its plate: up to the row; the drawer drawn out; the tray out; P takes the card from the drawer onto the
+    // tray; tray back, drawer back; then the card set back in the same way, and down again
+    var P = 16, spec = {};
+    function key(ch, t, v) { (spec[ch] = spec[ch] || []).push([t, v]); }
+    key('lift', 0, LOW); key('lift', 0.4, LOW); key('lift', 1.1, ROW); key('lift', 14.9, ROW); key('lift', 15.6, LOW);
+    function visit(o, onto) {              // a visit to the drawer from o: onto (true) takes the card out onto the tray
+      key('hy', o, Q.HOFF); key('hy', o + 0.3, Q.HOOK); key('h_lit', o + 0.28, 0.15); key('h_lit', o + 0.3, 1);
+      key('dw', o + 0.3, 0); key('dw', o + 0.9, OUT); key('hy', o + 0.9, Q.HOOK + OUT);   // the drawer drawn out, held
+      key('ce', o + 0.9, 0); key('ce', o + 1.55, Q.TRAY);                                  // the tray out to its front
+      var y0 = onto ? Q.PY_D : Q.PY_T, z0 = onto ? Q.PZ_D : Q.PZ_T, y1 = onto ? Q.PY_T : Q.PY_D, z1 = onto ? Q.PZ_T : Q.PZ_D;
+      [[1.3, Q.PY_R, Q.PZ_R], [1.9, y0, Q.PZ_UP], [2.15, y0, z0], [2.3, y0, z0], [2.65, y0, Q.PZ_UP], [3.05, y1, Q.PZ_UP],
+       [3.3, y1, z1], [3.45, y1, z1], [3.75, y1, Q.PZ_UP], [4.3, Q.PY_R, Q.PZ_R]]
+        .forEach(function (k) { key('py', o + k[0], k[1]); key('pz', o + k[0], k[2]); });
+      [[1.6, 0], [1.8, -Q.OPEN], [2.15, -Q.OPEN], [2.3, Q.SHUT], [3.3, Q.SHUT], [3.45, -Q.OPEN], [3.75, -Q.OPEN], [4.1, 0]]
+        .forEach(function (k) { key('pf', o + k[0], k[1]); });
+      key('p_lit', o + 2.28, 0.15); key('p_lit', o + 2.3, 1); key('p_lit', o + 3.43, 1); key('p_lit', o + 3.45, 0.15);
+      // the card: in the drawer, held, on the tray (or the other way)
+      key(onto ? 'cin' : 'con', o + 2.29, 1); key(onto ? 'cin' : 'con', o + 2.3, 0); key('cp', o + 2.29, 0); key('cp', o + 2.3, 1);
+      key('cp', o + 3.44, 1); key('cp', o + 3.45, 0); key(onto ? 'con' : 'cin', o + 3.44, 0); key(onto ? 'con' : 'cin', o + 3.45, 1);
+      key('ce', o + 3.9, Q.TRAY); key('ce', o + 4.55, 0);                                 // the tray back
+      key('dw', o + 4.55, OUT); key('dw', o + 5.1, 0); key('hy', o + 4.55, Q.HOOK + OUT); key('hy', o + 5.1, Q.HOOK);   // the drawer run back
+      key('h_lit', o + 5.1, 1); key('h_lit', o + 5.12, 0.15); key('hy', o + 5.35, Q.HOFF);   // the hook off
+    }
+    key('hy', 0, Q.HOFF); key('py', 0, Q.PY_R); key('pz', 0, Q.PZ_R); key('dw', 0, 0); key('ce', 0, 0); key('pf', 0, 0);
+    key('h_lit', 0, 0.15); key('p_lit', 0, 0.15); key('cin', 0, 1); key('con', 0, 0); key('cp', 0, 0); key('dr', 0, 1);
+    visit(1.3, true); visit(7.9, false);
+    for (var ch in spec) { var l = spec[ch]; l.sort(function (a, b) { return a[0] - b[0]; }); l.push([P, l[l.length - 1][1]]); }
+    var f = tracks(spec, P);
+    // a pose from the arms' points (the house's drawing makes its own points and poses them the same way)
+    M.runner.pose = function (q) {
+      var a = d(q.hy, Q.HZ), b = p(q.py, q.pz);
+      q.d_sh = a[0]; q.d_el = a[1]; q.d_wr = a[2]; q.p_sh = b[0]; q.p_el = b[1]; q.p_wr = b[2];
+      q.p_f1 = q.pf; q.p_f2 = -q.pf; q.sl = Math.max(0, -q.ce - 4.5);
+      return q;
+    };
+    M.runner.work = function (t) {
+      var q = f(t);
+      ['cin', 'con', 'cp', 'dr'].forEach(function (k) { q[k] = q[k] > 0.5 ? 1 : 0; });
+      return M.runner.pose(q);
+    };
+    M.runner.period = P; M.runner.rest = M.runner.work(0); M.runner.rest.dr = 0; M.runner.rest.cin = 0;   // at rest: itself alone
+  })();
+
   return { M: M, reach: reach, track: track, tracks: tracks, B: B, C: C, W: W, gear: gear, shown: shown };
 })();
 /* The seat at Longyearbyen at its numbers (round 29): what moves in the section, from robokit's machines, as the page
