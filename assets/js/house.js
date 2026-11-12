@@ -1,4 +1,4 @@
-/* The house's one script. It requests nothing from anyone, stores nothing and reads nothing back; the pages are
+/* The house's script (its light is kept by light.js, in the head). It requests nothing from anyone, stores nothing and reads nothing back; the pages are
    whole without it.
    1. (Retired in round 24, 2026-10-30: the house's pictures are drawings now, and they stand still.)
    2. The seat. The time in Longyearbyen, and whether the sun rises there today.

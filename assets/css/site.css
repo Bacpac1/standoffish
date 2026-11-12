@@ -14,6 +14,12 @@
   --light-system: #7aa2ff;                /* the system's own light: the label it drafts */
   --voice: #ffc24a;
   --col: var(--max);                     /* the house's measure: NOSLEN's edges are the header's and the footer's */
+  --btn-hover: #1f4a8c; --pn: #33414a;
+}
+/* at night (round 33; the house's light, house.css): the ground goes under the dark of a screen, the panel with it */
+:root[data-light="night"] {
+  --ground: #0b1015; --ink: #e9edef; --soft: #9daab3; --hair: #232c35; --link: #8db4f6; --panel: #131b23;
+  --btn-hover: #b3cdfa; --pn: #c5ced4;
 }
 html, body { background: var(--ground); }
 body { color: var(--ink); }
@@ -21,9 +27,9 @@ body { color: var(--ink); }
 
 /* ------------------------------------------------------------------ buttons */
 .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 22px;
-       border-radius: 999px; background: var(--link); color: #fff; font: 540 16px/1.1 var(--sans);
+       border-radius: 999px; background: var(--link); color: var(--on-link); font: 540 16px/1.1 var(--sans);
        letter-spacing: -.004em; white-space: nowrap; transition: background-color .15s ease, color .15s ease; }
-.btn:hover { background: #1f4a8c; }
+.btn:hover { background: var(--btn-hover); }
 .btn--s { min-height: 30px; padding: 0 14px; font-size: 12.5px; font-weight: 580; letter-spacing: .005em; }
 .btn--voice { background: var(--voice); color: var(--nsl); }
 .btn--voice:hover { background: #ffd47a; }
@@ -40,7 +46,7 @@ body { color: var(--ink); }
 .pn__sep { color: var(--hair); font-weight: 300; }
 .pn__here { font: 500 14px/1 var(--mono); color: var(--soft); letter-spacing: .02em; }
 .pn__links { margin: 0 0 0 auto; display: flex; align-items: center; gap: 0 24px; font: 460 13px/18px var(--sans); }
-.pn__links a { display: inline-flex; align-items: center; min-height: 44px; color: #33414a; transition: color .15s ease; }
+.pn__links a { display: inline-flex; align-items: center; min-height: 44px; color: var(--pn); transition: color .15s ease; }
 .pn__links a:hover { color: var(--link); }
 /* on a phone the bar takes two rows: the name and Watch, then its sections (Astra, 24e) */
 @media (max-width: 700px) {
