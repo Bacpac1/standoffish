@@ -1134,3 +1134,13 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
 .mk figcaption { margin: 12px 0 0; }
 .mk__min { display: inline-block; vertical-align: -1px; margin-left: 4px; }
 @media (max-width: 760px) { .mk__panels { grid-template-columns: minmax(0, 1fr); } .mk__panel svg { max-width: 300px; } }
+
+/* ------------------------------------------------------------------------------- arrival (arrive.js, 2026-11-14) */
+/* a heading received letter by letter: each word holds together, each letter keeps its place while it is still a
+   wrong character, drawn in the heading's own colour, a little fainter */
+.ar__w { white-space: nowrap; }
+.ar__c { position: relative; }
+.ar__c.is-wait { -webkit-text-fill-color: transparent; }
+.ar__c.is-wait::after { content: attr(data-g); position: absolute; left: 50%; bottom: .08em; transform: translateX(-50%);
+                        font-family: var(--mono); font-size: .62em; font-stretch: 100%; line-height: 1;
+                        -webkit-text-fill-color: currentColor; opacity: .6; }
