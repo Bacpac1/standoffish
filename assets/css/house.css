@@ -587,6 +587,20 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
 .doc__note { margin-top: 40px !important; padding-top: 16px; border-top: 1px solid var(--hair); font: 400 13.5px/1.6 var(--mono); color: var(--faint); }
 @media (max-width: 900px) { .doc__toc { grid-column: 1 / -1; } .doc__text { grid-column: 1 / -1; } }
 
+/* ------------------------------------------------------------------------------------------- legible while it moves (WCAG 2.2 AA) */
+/* a word that is not yet lit still has to read: large text at 3:1 at its faintest */
+@media (max-width: 700px) {
+  .nos.is-seq .nos__say { font-size: clamp(24px, 6vw, 28px); }
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .motto__l span { animation-name: lit-read; }
+    .motto__l span:last-child { animation-name: lit-read-blue; }   /* the blue word is lighter to begin with */
+    @keyframes lit-read { from { opacity: .55; } to { opacity: 1; } }
+    @keyframes lit-read-blue { from { opacity: .75; } to { opacity: 1; } }
+  }
+}
+
 /* ------------------------------------------------------------------------------------------- the site map */
 .smap { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 32px 24px; margin-top: clamp(36px, 4vw, 56px);
         border-top: 1px solid var(--hair); padding-top: 16px; }
@@ -1111,17 +1125,3 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
 .mk figcaption { margin: 12px 0 0; }
 .mk__min { display: inline-block; vertical-align: -1px; margin-left: 4px; }
 @media (max-width: 760px) { .mk__panels { grid-template-columns: minmax(0, 1fr); } .mk__panel svg { max-width: 300px; } }
-
-/* ------------------------------------------------------------------------------------------- legible while it moves (WCAG 2.2 AA) */
-/* a word that is not yet lit still has to read: large text at 3:1 at its faintest */
-@media (max-width: 700px) {
-  .nos.is-seq .nos__say { font-size: clamp(24px, 6vw, 28px); }
-}
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
-    .motto__l span { animation-name: lit-read; }
-    .motto__l span:last-child { animation-name: lit-read-blue; }   /* the blue word is lighter to begin with */
-    @keyframes lit-read { from { opacity: .55; } to { opacity: 1; } }
-    @keyframes lit-read-blue { from { opacity: .75; } to { opacity: 1; } }
-  }
-}
