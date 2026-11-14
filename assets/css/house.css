@@ -186,8 +186,20 @@ a { color: inherit; text-decoration: none; }
   @media (prefers-reduced-motion: no-preference) {
     .wk__h { animation: settle linear both; animation-timeline: view(); animation-range: entry 10% cover 42%; }
     @keyframes settle { from { font-stretch: 112%; } to { font-stretch: 96%; } }
+    /* (2026-11-14) a drawing on the home is received as you come to it: top to bottom, whole above its edge, in
+       lines just under it, with the scroll and back; by the time it is a third into the view it is all there */
+    .work .wk__pic { animation: scan linear both; animation-timeline: view(); animation-range: entry 0% cover 34%;
+      -webkit-mask-image: linear-gradient(180deg, #000 var(--scan), transparent var(--scan)),
+        linear-gradient(180deg, transparent var(--scan), #000 var(--scan), transparent calc(var(--scan) + 9%)),
+        repeating-linear-gradient(180deg, #000 0 2px, transparent 2px 5px);
+      mask-image: linear-gradient(180deg, #000 var(--scan), transparent var(--scan)),
+        linear-gradient(180deg, transparent var(--scan), #000 var(--scan), transparent calc(var(--scan) + 9%)),
+        repeating-linear-gradient(180deg, #000 0 2px, transparent 2px 5px);
+      -webkit-mask-composite: source-over, source-in; mask-composite: add, intersect; }
+    @keyframes scan { from { --scan: -9%; } to { --scan: 100%; } }
   }
 }
+@property --scan { syntax: "<percentage>"; inherits: false; initial-value: 100%; }
 
 /* ------------------------------------------------------------------------------------------- platforms (tiles) */
 /* the routes of 2095 as one panel (round 24): four cells between hairlines, each its mark, its name and its use */
@@ -510,14 +522,30 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
 }
 @media (prefers-reduced-motion: reduce) { .slip [data-k], .slip__kn { transition: none; } }
 
-/* cross-document transitions: the photograph keeps its place between the home and its page */
+/* cross-document transitions: the photograph keeps its place between the home and its page.
+   (2026-11-14) A page arrives the way a sending does: the head of the house stays where it is, the page left behind
+   goes dim, and the new one comes in from the top down behind a soft edge, as a picture is received line by line.
+   A Sheet's picture on NOSLEN's page becomes the first frame of its record (the names below). Under 0.4 s in all; where the
+   browser has no such transitions, the page simply opens. */
+@property --vt-edge { syntax: "<percentage>"; inherits: false; initial-value: 120%; }
 @media (prefers-reduced-motion: no-preference) {
   @view-transition { navigation: auto; }
-  ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .28s; }
+  .gh { view-transition-name: house-head; }
+  ::view-transition-group(*) { animation-duration: .34s; animation-timing-function: cubic-bezier(.4, 0, .2, 1); }
+  ::view-transition-old(root) { animation: vt-dim .2s cubic-bezier(.4, 0, .2, 1) both; }
+  ::view-transition-new(root) { animation: vt-arrive .34s cubic-bezier(.4, 0, .2, 1) both;
+    -webkit-mask-image: linear-gradient(180deg, #000 calc(var(--vt-edge) - 14%), rgb(0 0 0 / .18) var(--vt-edge), transparent calc(var(--vt-edge) + 6%));
+    mask-image: linear-gradient(180deg, #000 calc(var(--vt-edge) - 14%), rgb(0 0 0 / .18) var(--vt-edge), transparent calc(var(--vt-edge) + 6%)); }
+  @keyframes vt-dim { to { opacity: .35; } }
+  @keyframes vt-arrive { from { --vt-edge: 0%; } to { --vt-edge: 120%; } }
 }
 .vt-reply { view-transition-name: room-reply; }
 .vt-certify { view-transition-name: room-certify; }
 .vt-records { view-transition-name: room-records; }
+/* a Sheet on NOSLEN's page and the first frame of its record are the same picture */
+.vt-nsl01 { view-transition-name: sheet-nsl01; }
+.vt-nsl02 { view-transition-name: sheet-nsl02; }
+.vt-nsl03 { view-transition-name: sheet-nsl03; }
 
 /* ------------------------------------------------------------------------------------------- narrower */
 @media (max-width: 900px) {
@@ -1143,3 +1171,13 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
 .mk figcaption { margin: 12px 0 0; }
 .mk__min { display: inline-block; vertical-align: -1px; margin-left: 4px; }
 @media (max-width: 760px) { .mk__panels { grid-template-columns: minmax(0, 1fr); } .mk__panel svg { max-width: 300px; } }
+
+/* ------------------------------------------------------------------------------- arrival (arrive.js, 2026-11-14) */
+/* a heading received letter by letter: each word holds together, each letter keeps its place while it is still a
+   wrong character, drawn in the heading's own colour, a little fainter */
+.ar__w { white-space: nowrap; }
+.ar__c { position: relative; }
+.ar__c.is-wait { -webkit-text-fill-color: transparent; }
+.ar__c.is-wait::after { content: attr(data-g); position: absolute; left: 50%; bottom: .08em; transform: translateX(-50%);
+                        font-family: var(--mono); font-size: .62em; font-stretch: 100%; line-height: 1;
+                        -webkit-text-fill-color: currentColor; opacity: .6; }
