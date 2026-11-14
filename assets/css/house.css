@@ -488,14 +488,30 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
 }
 @media (prefers-reduced-motion: reduce) { .slip [data-k], .slip__kn { transition: none; } }
 
-/* cross-document transitions: the photograph keeps its place between the home and its page */
+/* cross-document transitions: the photograph keeps its place between the home and its page.
+   (2026-11-14) A page arrives the way a sending does: the head of the house stays where it is, the page left behind
+   goes dim, and the new one comes in from the top down behind a soft edge, as a picture is received line by line.
+   A Sheet's picture on NOSLEN's page becomes the first frame of its record (the names below). Under 0.4 s in all; where the
+   browser has no such transitions, the page simply opens. */
+@property --vt-edge { syntax: "<percentage>"; inherits: false; initial-value: 120%; }
 @media (prefers-reduced-motion: no-preference) {
   @view-transition { navigation: auto; }
-  ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .28s; }
+  .gh { view-transition-name: house-head; }
+  ::view-transition-group(*) { animation-duration: .34s; animation-timing-function: cubic-bezier(.4, 0, .2, 1); }
+  ::view-transition-old(root) { animation: vt-dim .2s cubic-bezier(.4, 0, .2, 1) both; }
+  ::view-transition-new(root) { animation: vt-arrive .34s cubic-bezier(.4, 0, .2, 1) both;
+    -webkit-mask-image: linear-gradient(180deg, #000 calc(var(--vt-edge) - 14%), rgb(0 0 0 / .18) var(--vt-edge), transparent calc(var(--vt-edge) + 6%));
+    mask-image: linear-gradient(180deg, #000 calc(var(--vt-edge) - 14%), rgb(0 0 0 / .18) var(--vt-edge), transparent calc(var(--vt-edge) + 6%)); }
+  @keyframes vt-dim { to { opacity: .35; } }
+  @keyframes vt-arrive { from { --vt-edge: 0%; } to { --vt-edge: 120%; } }
 }
 .vt-reply { view-transition-name: room-reply; }
 .vt-certify { view-transition-name: room-certify; }
 .vt-records { view-transition-name: room-records; }
+/* a Sheet on NOSLEN's page and the first frame of its record are the same picture */
+.vt-nsl01 { view-transition-name: sheet-nsl01; }
+.vt-nsl02 { view-transition-name: sheet-nsl02; }
+.vt-nsl03 { view-transition-name: sheet-nsl03; }
 
 /* ------------------------------------------------------------------------------------------- narrower */
 @media (max-width: 900px) {
