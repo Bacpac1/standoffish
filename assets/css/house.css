@@ -97,14 +97,14 @@ a { color: inherit; text-decoration: none; }
                           justify-content: center; padding-block: clamp(20px, 4svh, 56px); }
 .nos.is-seq .nos__light { flex: 0 0 auto; width: 100%; height: min(44svh, 40vw); aspect-ratio: auto; }
 .nos.is-seq .nos__say { padding-bottom: 0; }
-.nos.is-seq .w { opacity: .17; transition: opacity .16s linear, color .3s linear; }
+.nos.is-seq .w { opacity: .42; transition: opacity .16s linear, color .3s linear; }
 .nos.is-seq .w--lit { opacity: 1; }
 .nos.is-seq .w--now { color: var(--voice); }
 @media (max-width: 700px) {
   .nos__light { aspect-ratio: 4 / 5; }
   .nos__light.is-live { aspect-ratio: 16 / 9; }
   .nos.is-seq .nos__light { height: min(25svh, 52vw); }
-  .nos.is-seq .nos__say { font-size: clamp(21px, 6vw, 28px); }
+  .nos.is-seq .nos__say { font-size: clamp(24px, 6vw, 28px); }   /* large text at its smallest, so an unlit word still reads at 3:1 */
 }
 
 /* ------------------------------------------------------------------------------------------- the work */
@@ -243,8 +243,9 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
 .gf__map a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: .2em; }
 /* the line of other ways, as Apple's "More ways to shop" */
 .gf__more { margin: 16px 0 0; padding-block: 14px; border-top: 1px solid var(--hair); max-width: none; }
-.gf__more a { color: var(--link); }
-.gf__more a:hover { text-decoration: underline; text-underline-offset: .2em; }
+.gf__more a { color: var(--link); text-decoration: underline; text-underline-offset: .2em; text-decoration-thickness: 1px;
+              text-decoration-color: color-mix(in srgb, currentColor 45%, transparent); }   /* a link in a sentence is told by more than its colour (WCAG 1.4.1) */
+.gf__more a:hover { text-decoration-color: currentColor; }
 .gf__end { display: flex; align-items: center; gap: 10px 28px; flex-wrap: wrap; padding-block: 14px 10px;
            border-top: 1px solid var(--hair); }
 .gf__end .wm { font-size: 11px; color: var(--ink); }
@@ -280,8 +281,9 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
 .parts dt { font: 560 16px/1.45 var(--sans); }
 .parts dd { margin: 0; font-size: 17px; line-height: 1.55; color: var(--ink-2); max-width: 60ch; }
 .parts dd .cite { display: block; margin-top: 4px; font: 400 13px/1.4 var(--mono); color: var(--faint); }
-.parts dd a { color: var(--link); }
-.parts dd a:hover { text-decoration: underline; text-underline-offset: .2em; }
+.parts dd a { color: var(--link); text-decoration: underline; text-underline-offset: .2em; text-decoration-thickness: 1px;
+               text-decoration-color: color-mix(in srgb, currentColor 45%, transparent); }
+.parts dd a:hover { text-decoration-color: currentColor; }
 .chlist { list-style: none; margin: 0; padding: 0; }
 .chlist a { display: inline-flex; gap: 14px; align-items: baseline; font: 560 22px/1.3 var(--sans); }
 .chlist a .code { font: 400 13px/1 var(--mono); color: var(--faint); }
@@ -630,7 +632,9 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
     .motto__l span:nth-child(5) { animation-range: cover 30% cover 42%; }
     .motto__l span:nth-child(6) { animation-range: cover 33% cover 45%; }
     .motto__l span:nth-child(7) { animation-range: cover 52% cover 60%; }
-    @keyframes lit { from { opacity: .1; } to { opacity: 1; } }
+    @keyframes lit { from { opacity: .55; } to { opacity: 1; } }
+    .motto__l span:last-child { animation-name: lit-last; }   /* the blue word is lighter to begin with */
+    @keyframes lit-last { from { opacity: .75; } to { opacity: 1; } }   /* at its faintest a word still reads at 3:1 */
   }
 }
 
@@ -902,8 +906,9 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
 .tbl th, .tbl td { padding: 12px 14px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--hair); }
 .tbl thead th { font: 500 12.5px/1.4 var(--mono); letter-spacing: .05em; color: var(--soft); background: var(--head); }
 .tbl tbody th { font-weight: 600; }
-.tbl tbody th a { color: var(--link); }
-.tbl tbody th a:hover { text-decoration: underline; text-underline-offset: .2em; }
+.tbl tbody th a { color: var(--link); text-decoration: underline; text-underline-offset: .2em; text-decoration-thickness: 1px;
+                  text-decoration-color: color-mix(in srgb, currentColor 45%, transparent); }
+.tbl tbody th a:hover { text-decoration-color: currentColor; }
 .tbl tr:last-child th, .tbl tr:last-child td { border-bottom: 0; }
 .code { font-family: var(--mono); font-size: .92em; }
 .plist { grid-column: 4 / -1; margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--hair); }
@@ -936,7 +941,9 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
 .tbl td.fee { white-space: nowrap; font-weight: 560; color: var(--ink); }
 .tbl td.fee--free { color: var(--soft); font-weight: 450; }
 .tbl td .cite { display: block; margin-top: 4px; font: 400 13px/1.4 var(--mono); color: var(--faint); }
-.tbl td a { color: var(--link); }
+.tbl td a, .desk__meta a, .spec__panel span > a { color: var(--link); text-decoration: underline; text-underline-offset: .2em;
+  text-decoration-thickness: 1px; text-decoration-color: color-mix(in srgb, currentColor 45%, transparent); }
+.tbl td a:hover, .desk__meta a:hover, .spec__panel span > a:hover { text-decoration-color: currentColor; }
 .tbl .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .tbl .nw { white-space: nowrap; }
 .tbl tbody th .sub { display: block; margin-top: 2px; font-weight: 450; color: var(--soft); }

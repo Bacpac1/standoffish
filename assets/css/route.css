@@ -180,13 +180,13 @@ dl, dd { margin: 0; }
 .rc { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .ro__st { display: inline-block; padding: 4px 9px 3px; border: 2.5px solid var(--acc); color: var(--acc); rotate: -3deg;
           font: 820 15px/1 var(--sans); font-stretch: 125%; letter-spacing: .06em; }
-.ro__st--held { opacity: .3; border-style: dashed; }
+.ro__st--held { border-style: dashed; border-color: color-mix(in srgb, var(--acc) 35%, transparent); color: var(--dim); }   /* held: faint in its ink, legible in its word */
 @media (prefers-reduced-motion: no-preference) {
   .js .ro__log tr.on .ro__st { animation: ro-stamp .22s cubic-bezier(.7, 0, .9, .4) both; }
   .js .ro__log tr.on .ro__st--held { animation: ro-held 1.15s ease both; }
 }
 @keyframes ro-stamp { from { opacity: 0; scale: 1.9; } to { opacity: 1; scale: 1; } }
-@keyframes ro-held { 0% { opacity: 0; scale: 1.9; } 40%, 72% { opacity: .95; scale: 1.18; } 100% { opacity: .3; scale: 1; } }
+@keyframes ro-held { 0% { opacity: 0; scale: 1.9; } 40%, 72% { opacity: .95; scale: 1.18; } 100% { opacity: 1; scale: 1; } }
 
 /* ======================================================================== Understudy · 2061-73: the window */
 .rt--understudy { --bg: #dfe3e8; --fg: #172741; --dim: #475366; --acc: #2a5fc0; --line: rgb(23 39 65 / .16); --say-at: 2.5s; }
@@ -215,7 +215,7 @@ dl, dd { margin: 0; }
 .js .us__stand.on:not(.gone) { translate: 0 0; opacity: .95; }
 
 /* ======================================================================== Glasshouse · 2031-: glass */
-.rt--glasshouse { --bg: #5d5fdb; --fg: #fff; --dim: #f2f2ff; --line: rgb(255 255 255 / .35); color-scheme: dark; --say-at: 1.5s; }
+.rt--glasshouse { --bg: #4a4cc6; --fg: #fff; --dim: #fff; --line: rgb(255 255 255 / .35); color-scheme: dark; --say-at: 1.5s; }
 .rt--glasshouse .rt__brand, .rt--glasshouse .rt__say, .rt--glasshouse .rt__status { font-family: ui-rounded, "SF Pro Rounded", var(--sans); }
 .rt--glasshouse .rt__say { font-weight: 600; font-size: clamp(28px, 3.8vw, 46px); }
 .rt--glasshouse .rt__status { letter-spacing: .01em; font-size: 13px; font-weight: 600; }
@@ -243,7 +243,7 @@ dl, dd { margin: 0; }
 .gh__av { width: 34px; height: 34px; border-radius: 50%; border: 2px solid rgb(255 255 255 / .75); background: rgb(255 255 255 / .12); }
 .gh__who { font: 600 15px/1 ui-rounded, "SF Pro Rounded", var(--sans); }
 .gh__pill { margin-left: auto; display: inline-flex; align-items: center; gap: 7px; padding: 7px 12px; border-radius: 999px;
-            background: rgb(255 255 255 / .2); font: 600 12.5px/1 ui-rounded, "SF Pro Rounded", var(--sans); transition: background-color .4s; }
+            background: rgb(0 0 0 / .14); font: 600 12.5px/1 ui-rounded, "SF Pro Rounded", var(--sans); transition: background-color .4s; }
 .gh__pill i { width: 8px; height: 8px; border-radius: 50%; background: rgb(255 255 255 / .6); transition: background-color .4s, box-shadow .4s; }
 .gh__live { display: none; }
 .js .gh__pill:not(.on) { background: rgb(255 59 92 / .32); }
