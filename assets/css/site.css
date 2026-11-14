@@ -316,3 +316,27 @@ label.sw { cursor: pointer; }
   .nh, .sx, .frames { background: none; color: #182127; }
   .drafted { color: #1a2944; }
 }
+
+/* ------------------------------------------------------------------- an episode receives its record (receive.js) */
+/* (2026-11-14) only once the script has built it: the first frame holds under NOSLEN's bar while the record's other
+   frames come in over it, each a share of about half a screen of scrolling; a line under it keeps the count */
+.rx.is-on { height: calc(100svh - var(--rx-top, 0px) + 4 * 55svh); }
+.rx.is-on .rx__stage { position: sticky; top: var(--rx-top, 0px); height: calc(100svh - var(--rx-top, 0px));
+                       display: flex; align-items: flex-start; justify-content: center; padding-top: clamp(40px, 5vw, 72px); }
+.rx.is-on .sx__frame { margin: 0 auto; width: min(100% - 2 * var(--gut), 960px, (100svh - var(--rx-top, 0px) - clamp(40px, 5vw, 72px) - 72px) * 4 / 3); }
+.rx.is-on .view--hero { position: relative; }
+.rx__c { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 4px; pointer-events: none; }
+.rx__hud { display: flex; align-items: center; gap: 16px; margin-top: 14px; font: 400 12.5px/1 var(--mono);
+           letter-spacing: .04em; color: var(--on-dark-soft); font-variant-numeric: tabular-nums; }
+.rx__l { flex: 0 1 auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rx__ticks { flex: 1 1 auto; display: flex; gap: 4px; min-width: 40px; }
+.rx__ticks i { flex: 1 1 0; height: 2px; background: currentColor; opacity: .25; }
+.rx__ticks i.is-in { opacity: .6; }
+.rx__ticks i.is-now { opacity: 1; background: var(--voice); }
+.rx__r { flex: 0 0 auto; white-space: nowrap; }
+@media (max-width: 699px) {
+  .rx.is-on { height: calc(100svh - var(--rx-top, 0px) + 4 * 45svh); }
+  .rx__hud { flex-wrap: wrap; gap: 8px 12px; }
+  .rx__ticks { order: 3; flex-basis: 100%; }
+}
+@media print { .rx.is-on { height: auto; } .rx.is-on .rx__stage { position: static; height: auto; } .rx__c, .rx__hud { display: none; } }

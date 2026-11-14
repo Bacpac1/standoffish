@@ -76,7 +76,7 @@
       var letters = held.get(en.target); held.delete(en.target);
       if (letters) play(letters);
     });
-  }, { rootMargin: "0px 0px -12% 0px", threshold: 0.4 });
+  }, { rootMargin: "0px 0px -8% 0px", threshold: 0 });
   els.forEach(function (el) { io.observe(el); });
 
   /* a page restored from the back-forward cache is shown as it was left: nothing waits there */
