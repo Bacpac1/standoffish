@@ -49,6 +49,9 @@
       a.textContent = 'Open on YouTube';
       out.appendChild(a);
       if (hero) hero.hidden = true;
+      // where the page receives its record over the first frame (receive.js), its frame counter steps aside too
+      var hud = fig.querySelector('.rx__hud');
+      if (hud) hud.hidden = true;
       fig.appendChild(player);
       fig.appendChild(out);
     }
