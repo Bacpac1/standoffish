@@ -93,6 +93,7 @@
   var STEPS = [16, 24, 36, 54, 80, 120, 180, 270, 400, 0];
   var shown = { k: -1, b: -1 }, dirty = true, current = 0;
   function draw(k, b) {
+    if (!W || !H) return;   /* the picture is not on the page just now (an episode playing in its place) */
     var im = pics[k];
     if (!im) { if (k > 0 && pics[k - 1]) im = pics[k - 1], b = 0; else { ctx.clearRect(0, 0, W, H); return; } }
     if (!b) {
