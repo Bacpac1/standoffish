@@ -1,8 +1,8 @@
 /* The Sheets, come through the delay (round 36, 2026-11-15; the client: louder). On the home the row of Sheets becomes a
    held scene: the page stands still while the reader goes on, and the Sheets come one after another out of the distance,
    each to the front, whole, then past; behind them the light's fronts go by, and each Sheet's name stands behind it at
-   the size of the screen. The Sheet at the front plays its glimpse. The scroll is the only clock: nothing moves that
-   the reader does not move. Serial order; no count is said.
+   the size of the screen. The Sheet at the front plays its glimpse. The scroll is the only clock: the scene goes after
+   where the page is and comes to rest there; nothing else moves it. Serial order; no count is said.
    Without this script, where motion is reduced, or in a window too short to hold a frame: the row, as written. */
 (function () {
   'use strict';
@@ -33,7 +33,7 @@
   });
   var boxes = items.map(function (li) { return li.querySelector('[data-glimpse]'); });
 
-  var W = 0, H = 0, top = 0, span = 1, front = -1, since = 0, playing = -1, raf = 0;
+  var W = 0, H = 0, top = 0, span = 1, front = -1, since = 0, playing = -1, raf = 0, cur = null, last = 0;
   function measure() {
     W = window.innerWidth; H = window.innerHeight;
     var r = sec.getBoundingClientRect(); top = r.top + window.scrollY; span = Math.max(1, (n - 1) * STEP * H);
@@ -43,8 +43,16 @@
 
   function draw() {
     raf = 0;
-    var p = (window.scrollY - top - 0.12 * H) / span * (n - 1);      // which Sheet is at the front (0 .. n - 1), and how far past
-    p = Math.max(-0.6, Math.min(n - 1, p));
+    var want = (window.scrollY - top - 0.12 * H) / span * (n - 1);   // which Sheet is at the front (0 .. n - 1), and how far past
+    want = Math.max(-0.6, Math.min(n - 1, want));
+    // A wheel moves the page a notch at a time. The scene does not take the notch: it goes after where the page is, quickly and
+    // without a step, and comes to rest there (2026-11-15, the client: it followed the wheel, in jerks).
+    var now0 = performance.now(), dt = Math.min(0.05, (now0 - last) / 1000 || 0.016); last = now0;
+    if (cur === null || Math.abs(want - cur) > 1.6) cur = want;       // arriving from elsewhere on the page: no chase across the whole scene
+    else cur += (want - cur) * (1 - Math.exp(-dt / 0.14));
+    var settled = Math.abs(want - cur) < 0.0006;
+    if (settled) cur = want;
+    var p = cur;
     var cx = W * 0.5, cy = H * 0.52, vx = W * 0.5, vy = H * 0.34;   // where the front stands; where the distance is
     var nearest = -1, best = 9;
     for (var i = 0; i < n; i++) {
@@ -77,9 +85,9 @@
     var now = performance.now(), f = best < 0.22 ? nearest : -1;   // the Sheet that has come to the front and stayed plays
     if (f !== front) { front = f; since = now; if (playing >= 0) { fire(playing, 'glimpse:stop'); playing = -1; } }
     if (front >= 0 && playing < 0 && now - since > 320) { playing = front; fire(front, 'glimpse:start'); }
-    if (front >= 0 && playing < 0) raf = requestAnimationFrame(draw);
+    if (!settled || (front >= 0 && playing < 0)) raf = requestAnimationFrame(draw);
   }
-  function ask() { if (!raf) raf = requestAnimationFrame(draw); }
+  function ask() { if (!raf) { if (performance.now() - last > 200) last = performance.now() - 16; raf = requestAnimationFrame(draw); } }
 
   measure(); draw();
   window.addEventListener('scroll', ask, { passive: true });

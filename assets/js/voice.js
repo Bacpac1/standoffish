@@ -194,13 +194,20 @@
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
-  var visible = false, raf = 0, last = -1, moved = 0, odd = 0;
+  var visible = false, raf = 0, last = -1, moved = 0, odd = 0, tauCur = null, tLast = 0;
   function frame(now) {
     raf = 0;
     if (!visible || document.hidden) return;
     if (now - moved > 400 && (odd ^= 1)) { if (!reduce) raf = requestAnimationFrame(frame); return; }   // at rest, half rate
     size();
     var tau = seq ? tauOf(progress()) : 0;
+    if (seq && !reduce) {      // a wheel moves the page a notch at a time; the voice goes after where the page is, without a step (2026-11-15)
+      var dt = Math.min(0.05, (now - tLast) / 1000 || 0.016); tLast = now;
+      if (tauCur === null) tauCur = tau;
+      else if (Math.abs(tau - tauCur) < 0.002) tauCur = tau;
+      else { tauCur += (tau - tauCur) * (1 - Math.exp(-dt / 0.16)); moved = now; }
+      tau = tauCur;
+    }
     if (seq) mark(tau);
     draw(now, tau);
     if (!reduce) raf = requestAnimationFrame(frame);
