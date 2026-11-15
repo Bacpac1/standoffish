@@ -54,6 +54,8 @@
         if (live === api) live = null;
       }
     };
+    box.addEventListener('glimpse:start', api.start);         // asked for by the page itself (deep.js: the Sheet that has come to the front)
+    box.addEventListener('glimpse:stop', api.stop);
     if (fine) {
       card.addEventListener('pointerenter', api.start);
       card.addEventListener('pointerleave', api.stop);
@@ -64,7 +66,7 @@
   }
 
   var apis = boxes.map(setup);
-  if (!fine && 'IntersectionObserver' in window) {
+  if (!fine && 'IntersectionObserver' in window && !document.documentElement.classList.contains('deep')) {
     var rest = new Map();
     var io = new IntersectionObserver(function (es) {
       es.forEach(function (e) {

@@ -1281,3 +1281,25 @@ a.erow__v:hover { text-decoration: underline; text-underline-offset: .22em; }
 @media (max-width: 700px) {
   .shs__it { width: 82vw; }
 }
+
+/* ------------------------------------------------------------------------------- round 36 (2026-11-15): louder */
+/* The Sheets come through the delay (deep.js adds .shs--deep and the stage): a held scene, the scroll its clock. */
+.shs--deep { padding-block: 0; }
+.shs--deep .shs__stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; }
+.shs--deep .shs__head { position: absolute; z-index: 200; left: 0; right: 0; top: clamp(18px, 3.4svh, 40px); }
+.shs--deep .shs__h { font-size: clamp(30px, 3.4vw, 48px); }
+.shs--deep .shs__row { position: absolute; inset: 0; margin: 0; padding: 0; display: block; overflow: visible; }
+.shs--deep .shs__it { position: absolute; left: 50%; top: 52%; width: min(72vw, calc((100svh - 250px) * 4 / 3), 1100px);
+                      will-change: transform, opacity; transform: translate(-50%, -50%); }
+.shs--deep .shs__pic .gl { box-shadow: 0 30px 80px rgb(0 0 0 / .35); }
+.shs--deep .shs__code, .shs--deep .shs__t, .shs--deep .shs__n, .shs--deep .gl__bar { opacity: 0; transition: opacity .25s ease; }
+.shs--deep .is-front .shs__code, .shs--deep .is-front .shs__t, .shs--deep .is-front .shs__n, .shs--deep .is-front .gl__bar { opacity: 1; }
+.shs__big { position: absolute; z-index: 1; left: 50%; top: 50%; margin: 0; white-space: nowrap; pointer-events: none;
+            font: 700 clamp(120px, 27vw, 460px)/.8 var(--sans); font-stretch: 112%; letter-spacing: -.03em;
+            color: color-mix(in srgb, var(--ink) 5%, transparent); -webkit-text-stroke: 2px var(--edge); will-change: transform, opacity; }
+.shs__fronts { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+.shs__fronts circle { stroke: var(--edge); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.shs__fronts circle.is-near { stroke: var(--warm); stroke-width: 2; }
+@media (max-width: 700px) {
+  .shs--deep .shs__it { width: min(88vw, calc((100svh - 300px) * 4 / 3)); }
+}

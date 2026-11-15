@@ -340,3 +340,16 @@ label.sw { cursor: pointer; }
   .rx__ticks { order: 3; flex-basis: 100%; }
 }
 @media print { .rx.is-on { height: auto; } .rx.is-on .rx__stage { position: static; height: auto; } .rx__c, .rx__hud { display: none; } }
+
+/* round 36 (2026-11-15): the strip is film through a gate (band.js): it runs; its perforations run with it */
+.reel.is-running { scroll-snap-type: none; }
+.reel__list { position: relative; padding-block: 22px; }
+.reel__list::before, .reel__list::after { content: ""; position: absolute; left: 0; right: 0; height: 10px; pointer-events: none;
+  background: repeating-linear-gradient(90deg, rgb(171 184 195 / .34) 0 14px, transparent 14px 30px); border-radius: 2px;
+  -webkit-mask-image: linear-gradient(#000, #000); }
+.reel__list::before { top: 2px; }
+.reel__list::after { bottom: 2px; }
+.reel__hold { appearance: none; margin: 0 4px 0 0; padding: 5px 13px; border: 1px solid rgb(171 184 195 / .5); border-radius: 999px; background: none;
+              color: var(--on-dark-soft); font: 450 13px/18px var(--sans); cursor: pointer; order: -1; }
+.reel__hold:hover { border-color: var(--on-dark); color: var(--on-dark); }
+.reel__hold[aria-pressed="true"] { background: var(--on-dark); border-color: var(--on-dark); color: #111a22; }
