@@ -1328,3 +1328,125 @@ p.fine sup { font: 500 10.5px/1 var(--mono); margin-right: .2em; }
 .cterms__pre p:first-child { font: 600 clamp(24px, 2.4vw, 32px)/1.2 var(--sans); letter-spacing: -.012em; color: var(--ink); }
 .cterms__pre a { color: var(--link); text-decoration: underline; text-underline-offset: .2em; text-decoration-thickness: 1px; }
 .cterms__eff { display: flex; flex-wrap: wrap; gap: 4px 12px; font: 400 13px/1.5 var(--mono); color: var(--faint); }
+
+/* ------------------------------------------------------------------- the circle, at work (round 40, 2026-11-17)
+   Each card of the Register's circle carries a stage, and on it the thing the card leads to does its work by itself
+   (inst.js; the strings are the linked page's own, src/live.py). Two cards to a row, so that a stage has room.
+   The first state is printed in the page: it stands without script and where motion is reduced. */
+.circle__bar { display: flex; justify-content: flex-end; margin: 0 0 14px; min-height: 30px; }
+.circle[data-insts] .circle__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.circle[data-insts] .circle__grid a { min-height: 0; padding: 32px 32px 26px; transition: transform .5s cubic-bezier(.2, .7, .2, 1), box-shadow .5s ease; }
+.circle[data-insts] .circle__l { max-width: 40ch; }
+.circle[data-insts] .more { margin-top: 20px; }
+@media (hover: hover) { .circle[data-insts] .circle__grid a:hover { transform: translateY(-3px); box-shadow: 0 18px 44px rgb(0 0 0 / .1); } }
+@media (max-width: 900px) { .circle[data-insts] .circle__grid { grid-template-columns: 1fr; } }
+@media (max-width: 560px) { .circle[data-insts] .circle__grid a { padding: 24px 20px 20px; } }
+
+.inst { display: block; position: relative; height: 236px; margin-top: 24px; padding: 22px 24px; overflow: hidden; border-radius: 14px;
+        background: var(--ground); box-shadow: inset 0 0 0 1px var(--hair); color: var(--ink); font: 420 15px/1.4 var(--sans); }
+.inst > span, .inst span { display: block; }
+@media (max-width: 560px) { .inst { height: 252px; padding: 18px 16px; } }
+/* what comes onto a stage lands: a short rise out of a blur */
+@keyframes inst-land { from { opacity: 0; transform: translateY(9px); filter: blur(5px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes inst-roll { from { opacity: 0; transform: translateY(46%); filter: blur(7px); } to { opacity: 1; transform: none; filter: none; } }
+.inst .land { animation: inst-land .46s cubic-bezier(.2, .7, .2, 1) both; }
+.inst .land-2 { animation: inst-land .46s cubic-bezier(.2, .7, .2, 1) .09s both; }
+.inst .land-3 { animation: inst-land .46s cubic-bezier(.2, .7, .2, 1) .18s both; }
+/* the cards come up as the circle comes into view (only once inst.js is running) */
+.circle.is-live .circle__grid li { opacity: 0; transform: translateY(26px); }
+.circle.is-live.is-seen .circle__grid li { opacity: 1; transform: none; transition: opacity .7s ease, transform .8s cubic-bezier(.2, .7, .2, 1); }
+.circle.is-live.is-seen .circle__grid li:nth-child(2) { transition-delay: .08s; }
+.circle.is-live.is-seen .circle__grid li:nth-child(3) { transition-delay: .14s; }
+.circle.is-live.is-seen .circle__grid li:nth-child(4) { transition-delay: .2s; }
+.circle.is-live.is-seen .circle__grid li:nth-child(5) { transition-delay: .26s; }
+.circle.is-live.is-seen .circle__grid li:nth-child(6) { transition-delay: .32s; }
+
+/* reading a record: the coded line of NSL01, one code lit at a time, and the key's reading of it */
+.ird__line { font: 400 13.5px/1.95 var(--mono); color: var(--faint); letter-spacing: .01em; }
+.inst .ird__tok { display: inline; white-space: nowrap; padding: 3px 5px; margin: 0 -1px; border-radius: 5px; transition: background-color .35s ease, color .35s ease; }
+.inst .ird__tok.is-on { background: var(--ink); color: var(--ground); }
+.ird__out { position: absolute; left: 24px; right: 24px; bottom: 20px; }
+.ird__f { font: 500 12.5px/1.4 var(--mono); letter-spacing: .02em; color: var(--faint); }
+.ird__v { margin-top: 4px; font: 600 clamp(19px, 1.9vw, 25px)/1.15 var(--sans); font-stretch: 96%; letter-spacing: -.012em; }
+.ird__r { margin-top: 6px; font: 400 12.5px/1.4 var(--mono); color: var(--soft); }
+
+/* jurisdictions: the four places; a receiver chooses one, and the notice that every record carries for it stands below */
+.inst .ijr__tabs { display: flex; gap: 6px; padding: 4px; border-radius: 999px; background: var(--well); width: max-content; max-width: 100%; }
+.inst .ijr__tab { padding: 6px 13px; border-radius: 999px; font: 500 13px/18px var(--sans); color: var(--soft); white-space: nowrap;
+                  transition: background-color .3s ease, color .3s ease; }
+.inst .ijr__tab.is-on { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px rgb(0 0 0 / .16); }
+.ijr__k { margin-top: 20px; font: 500 12.5px/1.4 var(--mono); letter-spacing: .02em; color: var(--faint); }
+.ijr__k2 { margin-top: 14px; }
+.ijr__a { margin-top: 4px; font: 600 clamp(17px, 1.6vw, 21px)/1.2 var(--sans); font-stretch: 96%; letter-spacing: -.01em; }
+.ijr__b { margin-top: 3px; font-size: 15px; line-height: 1.35; color: var(--ink-2); max-width: 44ch; }
+.inst .ijr__cur { display: none; position: absolute; left: 0; top: 0; width: 0; height: 0; pointer-events: none;
+                  transition: transform .62s cubic-bezier(.3, .1, .2, 1); will-change: transform; }
+.is-live .inst .ijr__cur { display: block; }
+.ijr__cur::before { content: ""; position: absolute; left: -1px; top: -1px; width: 15px; height: 20px; background: var(--ink);
+                    clip-path: polygon(0 0, 0 78%, 26% 60%, 46% 100%, 62% 92%, 43% 54%, 78% 54%); }
+.inst .ijr__cur > span { position: absolute; left: 13px; top: 17px; padding: 2px 7px; border-radius: 6px; background: var(--ink); color: var(--ground);
+                         font: 500 11px/15px var(--sans); white-space: nowrap; }
+.ijr__cur.is-down::before { transform: scale(.86); }
+@media (max-width: 560px) { .inst .ijr__tab { padding: 5px 9px; font-size: 12px; } }
+
+/* one way: a page goes out and is delivered; where a count would stand, three dashes */
+.inst .ion__lane { position: relative; height: 34px; margin-top: 6px; }
+.inst .ion__from, .inst .ion__to { position: absolute; top: 5px; width: 24px; height: 24px; border-radius: 4px; }
+.ion__from { left: 0; background: var(--navy); box-shadow: 0 0 0 1px var(--hair-2); }
+.inst .ion__from::after { content: ""; position: absolute; inset: 9px; background: var(--paper); }
+.ion__to { right: 0; box-shadow: inset 0 0 0 1.5px var(--edge-2); transition: background-color .3s ease, box-shadow .3s ease, transform .3s cubic-bezier(.3, 1.6, .5, 1); }
+.ion__to.is-got { background: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink); transform: scale(1.12); }
+.inst .ion__way { position: absolute; left: 34px; right: 34px; top: 16.5px; height: 1px; background: repeating-linear-gradient(90deg, var(--edge) 0 5px, transparent 5px 10px); }
+.inst .ion__way::after { content: ""; position: absolute; right: -1px; top: -4px; width: 9px; height: 9px; border: solid var(--edge-2); border-width: 1.5px 1.5px 0 0; transform: rotate(45deg); }
+.inst .ion__chip { position: absolute; left: 34px; top: 11px; width: 16px; height: 12px; border-radius: 2px; background: var(--warm); opacity: 0; }
+.ion__chip.is-go { opacity: 1; left: calc(100% - 52px); transition: left 2.3s cubic-bezier(.45, 0, .2, 1), opacity .25s ease; }
+.ion__chip.is-in { opacity: 0; left: calc(100% - 52px); transition: opacity .25s ease; }
+.ion__say { margin-top: 12px; font: 600 clamp(17px, 1.6vw, 21px)/1.2 var(--sans); font-stretch: 96%; letter-spacing: -.01em; }
+.ion__count { position: absolute; left: 24px; right: 24px; bottom: 18px; }
+.ion__k { font: 500 11.5px/1.4 var(--mono); letter-spacing: .1em; color: var(--faint); }
+.ion__fig { margin-top: 2px; font: 300 54px/1 var(--mono); letter-spacing: .04em; font-variant-numeric: tabular-nums; }
+.ion__fig { min-height: 1em; transition: color .5s ease; }
+.ion__fig.is-spin { color: var(--edge); }
+@keyframes inst-snap { 0% { transform: translateX(0); } 30% { transform: translateX(-4px); } 60% { transform: translateX(3px); } 100% { transform: none; } }
+.ion__fig.is-snap { animation: inst-snap .32s ease-out both; }
+.ion__sub { margin-top: 6px; font: 400 12.5px/1.4 var(--mono); color: var(--soft); }
+
+/* the Terms: leafed through, a section at a time */
+.inst--terms { display: grid !important; grid-template-columns: auto minmax(0, 1fr); align-content: center; column-gap: 22px; row-gap: 26px; }
+.itm__n { font: 600 clamp(64px, 7vw, 96px)/.9 var(--sans); font-stretch: 88%; letter-spacing: -.04em; font-variant-numeric: tabular-nums; min-width: 2.1ch; }
+.itm__t { align-self: center; font: 600 clamp(19px, 1.9vw, 25px)/1.15 var(--sans); font-stretch: 96%; letter-spacing: -.012em; max-width: 18ch; }
+.inst .itm__rule { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 5px; }
+.inst .itm__tk { height: 3px; border-radius: 2px; background: var(--hair-2); transition: background-color .35s ease; }
+.inst .itm__tk.is-on { background: var(--ink); }
+.itm__n.roll { animation: inst-roll .5s cubic-bezier(.2, .7, .2, 1) both; }
+
+/* the seat: the year's light passes over it, the hours of each day down the strip */
+.inst--visit { --yl-night: #0e172d; --yl-astro: #19284a; --yl-naut: #29416f; --yl-civil: #5673a6; --yl-day: #e3dcc5; }
+.inst--visit { padding: 0; background: var(--yl-night); box-shadow: none; color: #eef1f4; }
+.inst .ivs__c { display: block; width: 100%; height: 132px; }
+.inst .ivs__d { position: absolute; left: 18px; top: 12px; font: 500 12.5px/1.4 var(--mono); letter-spacing: .06em; color: #fff; text-shadow: 0 0 6px rgb(0 0 0 / .7); }
+.inst .ivs__flag { position: absolute; top: 96px; left: 0; padding: 2px 8px; border-radius: 6px; background: #fff; color: #0e172d; font: 500 12px/17px var(--sans);
+                   white-space: nowrap; opacity: 0; transform: translate(-50%, 6px); transition: opacity .3s ease, transform .4s cubic-bezier(.2, .7, .2, 1); }
+.inst .ivs__flag.is-up { opacity: 1; transform: translate(-50%, 0); }
+.ivs__say { padding: 16px 22px 0; font-size: 14.5px; line-height: 1.4; color: #c9d2de; max-width: 52ch; }
+.inst .ivs__now { position: absolute; left: 22px; bottom: 16px; font: 400 12.5px/1.4 var(--mono); color: #9fb0c8; }
+@media (max-width: 560px) { .ivs__say { padding: 14px 16px 0; font-size: 13.5px; } .inst .ivs__now { left: 16px; bottom: 12px; } }
+
+/* careers: the open roles come up, one after another */
+.inst .ijb__rows { position: relative; height: 100%; }
+.inst .ijb__row { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 14px; align-items: baseline; padding: 11px 14px; margin-bottom: 8px;
+                  border-radius: 10px; background: var(--card); box-shadow: 0 1px 2px rgb(0 0 0 / .08), inset 0 0 0 1px var(--hair-3); }
+.ijb__t { font: 600 16.5px/1.25 var(--sans); font-stretch: 96%; letter-spacing: -.008em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ijb__p { grid-column: 1; font-size: 13.5px; line-height: 1.35; color: var(--soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ijb__n { grid-column: 2; grid-row: 1; font: 400 12px/1.4 var(--mono); color: var(--faint); white-space: nowrap; }
+@media (max-width: 560px) { .inst .ijb__row { padding: 10px 12px; } .ijb__t { grid-column: 1 / -1; } .ijb__n { grid-row: 2; }
+  .ird__out, .ion__count { left: 16px; right: 16px; } }
+.is-live .inst .ijb__row { position: absolute; left: 0; right: 0; top: 0; margin: 0; transform: translateY(calc(var(--i, 0) * 68px));
+                           transition: transform .6s cubic-bezier(.2, .7, .2, 1), opacity .45s ease; }
+.is-live .inst .ijb__row.is-new { opacity: 0; transform: translateY(-40px) scale(.97); }
+.is-live .inst .ijb__row.is-old { opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .inst .land, .inst .land-2, .inst .land-3, .itm__n.roll, .ion__fig.is-snap { animation: none; }
+  .circle.is-live .circle__grid li { opacity: 1; transform: none; }
+  .inst .ijr__cur { display: none !important; }
+}
