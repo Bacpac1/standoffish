@@ -1508,3 +1508,6 @@ p.fine sup { font: 500 10.5px/1 var(--mono); margin-right: .2em; }
 .work__stage { position: relative; }
 .work__line { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 1;
               filter: var(--draw); }
+/* (round 43) what stands still is one picture, painted once; what moves is another, over it */
+.work__line:not(.work__line--live) { will-change: transform; }
+.work__line--live { z-index: 2; will-change: transform; }

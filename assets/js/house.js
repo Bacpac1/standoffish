@@ -1729,13 +1729,81 @@
     var pics = slice(document.querySelectorAll('picture[data-live]'));
     if (!pics.length || mq.matches) return;
     var C = Math.cos(Math.PI / 6), live = [];
-    // The line between the rooms (round 42), where the three stand on one page with room beside them (the home, on a
-    // desk): from where it leaves Replies at the front, down and on into Certification through its back wall; from
-    // Certification's end wall down and on into the records' left end wall. Each length keeps to the drawings' own
-    // three directions (along a room, across it, upright), so the line is one thing in one space with the rooms.
-    // Drawn by robokit over the stage, in the drawings' tones.
-    var rooms = {}, stage = document.querySelector('.work__stage'), links = null, linkT = 0;
+    // The plant between the rooms (rounds 42 and 43), where the three stand on one page with room beside them (the home,
+    // on a desk). Round 42 drew the line from room to room; round 43 makes of the page one works, the rooms its three
+    // levels, and puts beside the line what a works has outside its rooms:
+    // - two service shafts, Replies down to Certification and Certification down to the records: with the line, two
+    //   ducts (34 cm square, a collar every 140 cm; on one a fan unit, a steward on a deck beside it at work at its
+    //   head) and a cable tray (a ladder, a rung every 36 cm).
+    //   The ducts come out from under Replies' floor, where a main runs along its front; the trays run on the heads of
+    //   the walls and from one room's to the next's;
+    // - a main along the front of each room under its floor, with its stubs up to the floor's edge; a cabinet on each
+    //   end wall's face, its conduit up to the tray;
+    // - the yard's flyers (FY-4: a plank 130 by 80 cm, the tally flyer's kind made large, a case slung under it): five
+    //   of them go round from a pad off Replies' left wall, down the first shaft's side to a pad behind Certification's
+    //   back wall, over that room and down to a pad off the records' left wall, and back up a lane beside, a case
+    //   carried down and none up; each stops where it means to (every length eased), and its mark is lit on a pad.
+    // Every length keeps to the drawings' own three directions (along a room, across it, upright), each from a point of
+    // one room to a point of the next, so the whole is one thing in one space with the rooms. What goes in behind a wall
+    // stops at the wall (each group is cut by the shape of the room it goes behind). The line's carriers are the rooms'
+    // own (what a room has sent out, by that room's clock); the flyers keep the page's clock. Drawn by robokit over the
+    // stage, in the drawings' tones and their night.
+    var rooms = {}, stage = document.querySelector('.work__stage'), plant = null, linkT = 0;
     function between() { clearTimeout(linkT); linkT = setTimeout(link, 120); }
+    function put(out, b) { if (b) out.push(b); }
+    // a square duct w across, through points joined one axis at a time; a collar every 140 cm
+    function duct(out, pts, w, lw) {
+      var h = w / 2;
+      for (var i = 1; i < pts.length; i++) {
+        var a = pts[i - 1], b = pts[i], ax = a[0] !== b[0] ? 0 : a[1] !== b[1] ? 1 : 2, l = Math.abs(b[ax] - a[ax]), s = b[ax] > a[ax] ? 1 : -1;
+        if (l < 0.5) continue;
+        var lo = [Math.min(a[0], b[0]) - h, Math.min(a[1], b[1]) - h, Math.min(a[2], b[2]) - h], hi = [Math.max(a[0], b[0]) + h, Math.max(a[1], b[1]) + h, Math.max(a[2], b[2]) + h];
+        put(out, RK.box(lo[0], lo[1], lo[2], hi[0], hi[1], hi[2], { w: lw || 0.85, link: 'duct' }));
+        for (var n = Math.floor(l / 140), k = 1; k <= n; k++) {
+          var c = a.slice(); c[ax] += s * k * l / (n + 1);
+          var cl = [c[0] - h - 2.5, c[1] - h - 2.5, c[2] - h - 2.5], ch = [c[0] + h + 2.5, c[1] + h + 2.5, c[2] + h + 2.5];
+          cl[ax] = c[ax] - 1.5; ch[ax] = c[ax] + 1.5;
+          put(out, RK.box(cl[0], cl[1], cl[2], ch[0], ch[1], ch[2], { w: 0.55, link: 'collar' }));
+        }
+      }
+    }
+    // a cable tray w wide: two rails and a rung every 36 cm; up or down, it is wide across wa (0: along a room, 1: across it)
+    function ladder(out, pts, w, wa) {
+      var h = w / 2;
+      for (var i = 1; i < pts.length; i++) {
+        var a = pts[i - 1], b = pts[i], ax = a[0] !== b[0] ? 0 : a[1] !== b[1] ? 1 : 2, l = Math.abs(b[ax] - a[ax]), s = b[ax] > a[ax] ? 1 : -1;
+        if (l < 0.5) continue;
+        var u = ax === 2 ? wa : 1 - ax;                          // the axis it is wide across
+        [-1, 1].forEach(function (e) {
+          var lo = [Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.min(a[2], b[2])], hi = [Math.max(a[0], b[0]), Math.max(a[1], b[1]), Math.max(a[2], b[2])];
+          lo[u] += e * h - 1; hi[u] += e * h + 1;
+          if (ax === 2) { lo[1 - u] -= 1; hi[1 - u] += 1; } else { hi[2] += 3; lo[ax] -= 1; hi[ax] += 1; }
+          put(out, RK.box(lo[0], lo[1], lo[2], hi[0], hi[1], hi[2], { w: 0.55, link: 'tray' }));
+        });
+        for (var d = 18; d < l - 6; d += 36) {
+          var c = a.slice(); c[ax] += s * d;
+          var rl = c.slice(), rh = c.slice();
+          rl[u] -= h - 1; rh[u] += h - 1; rl[ax] -= 1; rh[ax] += 1;
+          if (ax === 2) { rl[1 - u] -= 0.5; rh[1 - u] += 0.5; } else { rl[2] += 0.5; rh[2] += 1.5; }
+          put(out, RK.box(rl[0], rl[1], rl[2], rh[0], rh[1], rh[2], { w: 0.55, tone: 'recess', link: 'rung' }));
+        }
+      }
+    }
+    // FY-4 at p (its middle, the underside of its plank), its length along ax (0 or 1)
+    function freighter(out, p, ax, load, lit) {
+      var x = p[0], y = p[1], z = p[2], hx = ax ? 40 : 65, hy = ax ? 65 : 40;
+      out.push(RK.box(x - hx, y - hy, z, x + hx, y + hy, z + 4, { w: 1.4, link: 'fy' }));
+      for (var k = -2; k <= 2; k += 1) {                         // its louvres: five bands across, either side of the spine
+        var d = k * 23;
+        [-1, 1].forEach(function (e) {
+          out.push(ax ? RK.box(x + e * 21 - 13, y + d - 7, z + 4, x + e * 21 + 13, y + d + 7, z + 4.3, { w: 0.55, tone: 'recess', link: 'fy' })
+                      : RK.box(x + d - 7, y + e * 21 - 13, z + 4, x + d + 7, y + e * 21 + 13, z + 4.3, { w: 0.55, tone: 'recess', link: 'fy' }));
+        });
+      }
+      out.push(ax ? RK.box(x - 4, y - 62, z + 4, x + 4, y + 62, z + 8.5, { w: 0.85, link: 'fy' }) : RK.box(x - 62, y - 4, z + 4, x + 62, y + 4, z + 8.5, { w: 0.85, link: 'fy' }));
+      out.push(ax ? RK.box(x - 8, y + 65, z + 0.6, x + 8, y + 65.2, z + 2.4, { lit: lit, link: 'fy' }) : RK.box(x + 65, y - 8, z + 0.6, x + 65.2, y + 8, z + 2.4, { lit: lit, link: 'fy' }));
+      if (load) out.push(RK.box(x - (ax ? 17 : 25), y - (ax ? 25 : 17), z - 11.5, x + (ax ? 17 : 25), y + (ax ? 25 : 17), z - 0.5, { w: 0.85, tone: 'paper', link: 'fy' }));
+    }
     function link() {
       if (!stage || !window.RK || !rooms.reply || !rooms.certify || !rooms.records) return;
       var s0 = stage.getBoundingClientRect();
@@ -1743,56 +1811,246 @@
         var R = rooms[kind], r = R.img.getBoundingClientRect(), p = R.T(x, y, z), k = r.width / R.F[4];
         return [r.left - s0.left + p[0] * k, r.top - s0.top + p[1] * k, R.F[2] * k];
       }
-      var Lr = rooms.reply.L, Lc = rooms.certify.L, Lx = rooms.records.L;
-      var A = at('reply', Lr.pos[0].slot[1] - 6, Lr.wall[4] + 12, Lr.floor + 208);
-      var B = at('certify', 70, -Lc.clock[1] + 4, Lc.floor + 236), Cc = at('certify', Lc.wall[3], Lc.clock[1], Lc.floor + 236);
-      var D = at('records', -8, Lx.yf - 72, Lx.floor + 242);
-      var s1 = (A[2] + B[2]) / 2, s2 = (Cc[2] + D[2]) / 2;
-      var a = -(B[0] - A[0]) / s1 / C, va = (B[1] - A[1]) / s1 - a / 2;
-      var b = (D[0] - Cc[0]) / s2 / C, vb = (D[1] - Cc[1]) / s2 - b / 2;
-      var ok = a > 60 && b > 24 && matchMedia('(min-width: 901px)').matches;
-      Lr.linked = ok;
-      if (!ok) { if (links) { links.svg.remove(); links.stop(); links = null; } return; }
-      var a1 = Math.min(110, a * 0.4), b1 = Math.min(70, b * 0.4);
-      var w1 = Way([[0, 0, 0], [0, a1, 0], [0, a1, -va], [0, a, -va]], [1, 0]), w2 = Way([[0, 0, 0], [b1, 0, 0], [b1, 0, -vb], [b, 0, -vb]], [0, 1]);
-      if (!links) {
-        var el = mk('svg', { 'class': 'work__line', 'aria-hidden': 'true', focusable: 'false' });
-        stage.appendChild(el);
-        links = { svg: el, g1: mk('g', { 'class': 'rk' }, el), g2: mk('g', { 'class': 'rk' }, el), on: false, raf: 0, t: 0, last: 0 };
-        var step = function (ts) {
-          if (!links || !links.on) return;
-          if (links.last) links.t += Math.min(0.1, (ts - links.last) / 1000);
-          links.last = ts;
-          links.draw(links.t);
-          links.raf = requestAnimationFrame(step);
-        };
-        var sync = function () {
-          if (!links) return;
-          var go = links.seen && !document.hidden && !mq.matches;
-          if (go && !links.on) { links.on = true; links.last = 0; links.raf = requestAnimationFrame(step); }
-          else if (!go && links.on) { links.on = false; cancelAnimationFrame(links.raf); }
-        };
-        links.stop = function () { links.on = false; cancelAnimationFrame(links.raf); if (links.io) links.io.disconnect(); document.removeEventListener('visibilitychange', sync); };
-        links.seen = !('IntersectionObserver' in window);
-        if (!links.seen) { links.io = new IntersectionObserver(function (es) { links.seen = es[0].isIntersecting; sync(); }, { rootMargin: '100px' }); links.io.observe(stage); }
-        document.addEventListener('visibilitychange', sync);
-        links.sync = sync;
+      function proj(o, s) { return function (x, y, z) { return [o[0] + (x - y) * C * s, o[1] + ((x + y) / 2 - z) * s]; }; }
+      // from S to E on the picture: how far along the axis (1: across the rooms, toward the lower left; 0: along them,
+      // toward the lower right), and how far down
+      function along(S, E, s, ax) { var dx = (E[0] - S[0]) / s / C, dy = (E[1] - S[1]) / s; return ax ? [-dx, dy + dx / 2] : [dx, dy - dx / 2]; }
+      function uniq(pts) { return pts.filter(function (p, i) { return !i || Math.abs(p[0] - pts[i - 1][0]) + Math.abs(p[1] - pts[i - 1][1]) + Math.abs(p[2] - pts[i - 1][2]) > 0.5; }); }
+      // a lane from S to E in its own frame (from S): along its axis a1, down, along to the end
+      function lane(S, E, s, ax, a1) {
+        var l = along(S, E, s, ax), a = l[0], v = l[1];
+        a1 = Math.max(0, Math.min(a, a1));
+        return { pts: uniq(ax ? [[0, 0, 0], [0, a1, 0], [0, a1, -v], [0, a, -v]] : [[0, 0, 0], [a1, 0, 0], [a1, 0, -v], [a, 0, -v]]), P: proj(S, s), a: a, v: v, a1: a1 };
       }
-      var P1 = function (x, y, z) { return [A[0] + (x - y) * C * s1, A[1] + ((x + y) / 2 - z) * s1]; };
-      var P2 = function (x, y, z) { return [Cc[0] + (x - y) * C * s2, Cc[1] + ((x + y) / 2 - z) * s2]; };
-      var r1 = new RK.Renderer(links.g1, P1, 1), r2 = new RK.Renderer(links.g2, P2, 1), f1_ = w1.rail([], 0, null, 0.85), f2_ = w2.rail([], 0, null, 0.85);
-      while (links.g1.firstChild) links.g1.removeChild(links.g1.firstChild);
-      while (links.g2.firstChild) links.g2.removeChild(links.g2.firstChild);
-      // each length carries on what the room behind it has sent out, by that room's own clock: a carrier leaves a room
-      // and is on the line outside in the same moment, and where a room stands still so does what it has sent
-      links.draw = function () {
-        var x1 = f1_.slice(), x2 = f2_.slice();
+      var Lr = rooms.reply.L, Lc = rooms.certify.L, Lx = rooms.records.L;
+      var FR = Lr.floor, FC = Lc.floor, FX = Lx.floor, ZR = FR + 208, ZC = FC + 236, ZX = FX + 242;
+      var WR = Lr.pos[0].slot[1] - 10, WC = Lc.clock[1] - 4, WX = Lx.yf - 76;          // the walls' thickness
+      var DR = Lr.wall[4], DC = Lc.wall[4], DX_ = Lx.wall[4], LR = Lr.wall[3], LC = Lc.wall[3], LX = Lx.wall[3];
+      var A = at('reply', WR + 4, DR + 12, ZR), B = at('certify', 70, 0, ZC), Cc = at('certify', LC, WC + 4, ZC), D = at('records', 0, WX + 4, ZX);
+      var s1 = (A[2] + B[2]) / 2, s2 = (Cc[2] + D[2]) / 2;
+      var la = along(A, B, s1, 1), lb = along(Cc, D, s2, 0);
+      var ok = la[0] > 60 && lb[0] > 24 && matchMedia('(min-width: 901px)').matches;
+      Lr.linked = ok;
+      if (plant) { plant.stop(); plant = null; }
+      if (!ok) return;
+      var A1 = Math.min(110, la[0] * 0.4), B1 = Math.min(70, lb[0] * 0.4);
+      // two pictures over the stage: what stands still, drawn once, and what moves, drawn at each frame (so the still
+      // one, by far the larger, is painted once). In each, the same groups: what goes behind a room is cut by the room's
+      // shape on the page
+      function sheet(pre, pts) {
+        sheet.n = (sheet.n || 0) + 1;
+        var el = mk('svg', { 'class': 'work__line' + (pre === 'm' ? ' work__line--live' : ''), 'aria-hidden': 'true', focusable: 'false' }), defs = mk('defs', {}, el);
+        stage.appendChild(el);
+        if (pts) {                                               // no larger than what it holds: these points and 190 px round them
+          var x0 = Math.min.apply(null, pts.map(function (q) { return q[0]; })) - 190, y0 = Math.min.apply(null, pts.map(function (q) { return q[1]; })) - 190;
+          var x1 = Math.max.apply(null, pts.map(function (q) { return q[0]; })) + 190, y1 = Math.max.apply(null, pts.map(function (q) { return q[1]; })) + 190;
+          el.style.left = Math.floor(x0) + 'px'; el.style.top = Math.floor(y0) + 'px'; el.style.width = Math.ceil(x1 - x0) + 'px'; el.style.height = Math.ceil(y1 - y0) + 'px';
+          el.style.overflow = 'hidden';
+          el = mk('g', { transform: 'translate(' + (-Math.floor(x0)) + ' ' + (-Math.floor(y0)) + ')' }, el);
+        }
+        function behind(kind, Lv) {
+          var id = 'pl' + sheet.n + '-' + kind, cp = mk('clipPath', { id: id }, defs), hp = [];
+          for (var i = 0; i < 8; i++) { var p = at(kind, i & 1 ? Lv.wall[3] : 0, i & 2 ? Lv.wall[4] : 0, i & 4 ? Lv.wall[5] : Lv.floor - 25); hp.push([p[0], p[1]]); }
+          mk('path', { 'clip-rule': 'evenodd', d: 'M-4000 -4000H8000V12000H-4000Z' + poly(hull(hp)) }, cp);
+          return mk('g', { 'clip-path': 'url(#' + id + ')' }, el);
+        }
+        var o = { el: el.ownerSVGElement || el, R0: behind('reply', Lr), L1: behind('certify', Lc) };
+        o.C0 = mk('g', {}, o.L1); o.L2 = behind('records', Lx); o.X0 = mk('g', {}, o.L2); o.Top = mk('g', {}, el); o.Fly = mk('g', {}, el);
+        return o;
+      }
+      // (what moves is two pictures, one to a shaft, each no larger than what moves in it)
+      var ZP = 268, HV = 4;                                      // the pads' tops, above each room's floor; a flyer's underside over a pad it stands on
+      var pR = at('reply', -110, 190, FR + ZP + HV), pX = at('records', -73, 87, FX + ZP + HV);
+      var pC = { d: at('certify', 340, -52, FC + ZP + HV), u: at('certify', 268, -114, FC + ZP + HV) };
+      var SS = sheet('s'), SM = { L1: sheet('m', [A, B, pR, pC.d, pC.u]), L2: sheet('m', [Cc, D, pC.d, pC.u, pX]) }, el = SS.el;
+      var gR0 = 'R0', gL1 = 'L1', gC0 = 'C0', gL2 = 'L2', gX0 = 'X0', gTop = 'Top';
+      function still(g, P, boxes) { var q = mk('g', { 'class': 'rk' }, SS[g]); new RK.Renderer(q, P, 1).draw(boxes); return q; }
+      function moving(g, P, fly) { return new RK.Renderer(mk('g', { 'class': 'rk' }, fly ? SM[g].Fly : SM[g][g]), P, 1); }
+
+      // ---- the first shaft: Replies' front, down, to Certification's back wall (lanes side by side along a room)
+      var t1 = lane(at('reply', 6, DR, FR + 253), at('certify', 34, 0, FC + 253), s1, 1, A1 + 12 + 46);
+      var l1 = lane(A, B, s1, 1, A1);
+      var d1 = lane(at('reply', 66, DR + 3, FR - 26), at('certify', 120, 0, ZC - 40), s1, 1, A1 + 9);
+      var d2 = lane(at('reply', 112, DR + 3, FR - 26), at('certify', 166, 0, ZC - 40), s1, 1, A1 + 9);
+      var w1 = Way(l1.pts, [1, 0]), o;
+      // along each shaft's tray, on its open side, a tally flyer (FY-1) goes down and up, a length of 150 cm at a time,
+      // stopping at each to read (its mark lit)
+      var tal = [{ ln: t1, off: [-38, 0, 2], r: moving(gL1, t1.P) }];
+      o = []; ladder(o, t1.pts, 20, 0); still(gL1, t1.P, o);
+      still(gL1, l1.P, w1.rail([], 0, null, 0.85));
+      var r1 = moving(gL1, l1.P);
+      // on the outer duct's drop a fan unit, its mark lit, and beside it a deck where a steward (ST-6) stands and works
+      // at the unit's head, at its own turn of 8 s
+      var ST = RK_MACHINES.M.steward, stew = new RK.Machine(ST), tend = [];
+      [d1, d2].forEach(function (d, n) {
+        o = []; duct(o, d.pts, 34);
+        var zm = -d.v * 0.5, fan = n && d.v > 300;
+        if (fan) {
+          put(o, RK.box(-30, d.a1 - 30, zm - 40, 30, d.a1 + 30, zm + 40, { w: 0.85, link: 'fan' }));
+          put(o, RK.box(30, d.a1 - 12, zm + 20, 30.2, d.a1 + 12, zm + 24, { lit: 1, link: 'mark' }));
+          put(o, RK.box(30, d.a1 - 46, zm - 22, 148, d.a1 + 46, zm - 18, { w: 0.85, link: 'deck' }));
+        }
+        still(gL1, d.P, o);
+        if (fan) tend.push({ r: moving(gL1, d.P), B: RK.mul(RK.move(108, d.a1, zm - 18), RK.rot('z', Math.PI)), t0: 0 });
+      });
+      // ---- the second: Certification's end wall, down, to the records' left wall (lanes side by side across a room)
+      var t2 = lane(at('certify', LC, WC / 2, FC + 253), at('records', 0, WX / 2, FX + 253), s2, 0, B1 + 44);
+      var l2 = lane(Cc, D, s2, 0, B1);
+      var e1 = lane(at('certify', LC, 52, ZC - 40), at('records', 0, 62, ZX - 40), s2, 0, B1);
+      var e2 = lane(at('certify', LC, 92, ZC - 40), at('records', 0, 102, ZX - 40), s2, 0, B1);
+      var w2 = Way(l2.pts, [0, 1]);
+      tal.push({ ln: t2, off: [0, -38, 2], r: moving(gL2, t2.P) });
+      o = []; ladder(o, t2.pts, 20, 1); still(gL2, t2.P, o);
+      still(gL2, l2.P, w2.rail([], 0, null, 0.85));
+      var r2 = moving(gL2, l2.P);
+      [e1, e2].forEach(function (d, n) {
+        o = []; duct(o, d.pts, 34);
+        var zm = -d.v * 0.72, fan = n && d.v > 300;              // low on its drop, under the level of Certification's steps
+        if (fan) {
+          put(o, RK.box(d.a1 - 30, -30, zm - 40, d.a1 + 30, 30, zm + 40, { w: 0.85, link: 'fan' }));
+          put(o, RK.box(d.a1 - 12, 30, zm + 20, d.a1 + 12, 30.2, zm + 24, { lit: 1, link: 'mark' }));
+          put(o, RK.box(d.a1 - 46, 30, zm - 22, d.a1 + 46, 148, zm - 18, { w: 0.85, link: 'deck' }));
+        }
+        still(gL2, d.P, o);
+        if (fan) tend.push({ r: moving(gL2, d.P), B: RK.mul(RK.move(d.a1, 108, zm - 18), RK.rot('z', -Math.PI / 2)), t0: 4 });
+      });
+      // ---- on the rooms themselves: the trays on the walls' heads, the main along the front under the floor with its
+      // stubs, the cabinet on the end wall's face and its conduit up
+      function fit(kind, Lv, t, trays, main, stubs) {
+        var P = proj(at(kind, 0, 0, 0), rooms[kind].F[2] * rooms[kind].img.getBoundingClientRect().width / rooms[kind].F[4]);
+        var F0 = Lv.floor, Dv = Lv.wall[4], Lw = Lv.wall[3], b = [];
+        trays.forEach(function (tr) { ladder(b, tr, 20, 0); });
+        duct(b, main, 34);
+        stubs.forEach(function (x) { put(b, RK.box(x - 8, Dv + 4, F0 - 9, x + 8, Dv + 20, F0 - 1, { w: 0.55, link: 'stub' })); });
+        put(b, RK.box(Lw, Dv - 44, F0 + 96, Lw + 12, Dv - 10, F0 + 150, { w: 0.85, link: 'cabinet' }));
+        put(b, RK.box(Lw + 12, Dv - 33, F0 + 132, Lw + 12.2, Dv - 21, F0 + 136, { lit: 0.15, link: 'mark' }));
+        put(b, RK.box(Lw, Dv - 29, F0 + 150, Lw + 4, Dv - 25, F0 + 250, { w: 0.55, link: 'conduit' }));
+        return [P, b];
+      }
+      var f;
+      f = fit('reply', Lr, WR, [[[6, 24, FR + 253], [6, DR, FR + 253]], [[18, WR / 2, FR + 253], [LR - 20, WR / 2, FR + 253]]],
+              [[LR - 20, DR + 20, FR - 26], [112, DR + 20, FR - 26]], [200, 400, 600]);
+      still(gTop, f[0], f[1]);
+      f = fit('certify', Lc, WC, [[[34, WC / 2, FC + 253], [LC, WC / 2, FC + 253]]],
+              [[20, DC + 20, FC - 26], [LC - 20, DC + 20, FC - 26]], [120, 270, 420]);
+      still(gTop, f[0], f[1]);
+      f = fit('records', Lx, WX, [[[0, WX / 2, FX + 253], [LX - 20, WX / 2, FX + 253]]],
+              [[40, DX_ + 20, FX - 26], [LX - 40, DX_ + 20, FX - 26]], [150, 430, 700]);
+      still(gTop, f[0], f[1]);
+
+      // ---- the flyers' pads (each off a wall's head, on two arms) and their lanes: down (a case carried) and up
+      function pad(g, kind, x0, y0, x1, y1, z, arms) {
+        var R = rooms[kind], P = proj(at(kind, 0, 0, 0), R.F[2] * R.img.getBoundingClientRect().width / R.F[4]), b = [];
+        put(b, RK.box(x0, y0, z - 4, x1, y1, z, { w: 0.85, link: 'pad' }));
+        put(b, RK.box(x0 + 8, y0 + 8, z, x1 - 8, y0 + 11, z + 0.3, { w: 0.55, tone: 'recess', link: 'pad' }));
+        put(b, RK.box(x0 + 8, y1 - 11, z, x1 - 8, y1 - 8, z + 0.3, { w: 0.55, tone: 'recess', link: 'pad' }));
+        arms.forEach(function (a) { put(b, RK.box(a[0], a[1], z - 10, a[2], a[3], z - 4, { w: 0.55, link: 'arm' })); });
+        still(g, P, b);
+      }
+      pad(gR0, 'reply', -200, 136, -22, 244, FR + ZP, [[-22, 150, 6, 156], [-22, 224, 6, 230]]);
+      pad(gC0, 'certify', 216, -150, 392, -18, FC + ZP, [[236, -18, 242, 6], [366, -18, 372, 6]]);
+      pad(gX0, 'records', -124, 22, -22, 152, FX + ZP, [[-22, 40, 6, 46], [-22, 128, 6, 134]]);
+      // (Certification's pad has two places, one for those going down and one for those going up; at the ends of the
+      // round a flyer comes in and goes out by the one place)
+      // a lane's drop stands beside its shaft, clear of the words: the first's left of the tray, as far as its pad
+      // below lets it; the second's right of the tray, short of Certification's words
+      var heads = slice(stage.querySelectorAll('.wk__head')), box2 = heads[1] ? heads[1].getBoundingClientRect() : null;
+      var x1 = t1.P(0, t1.a1, 0)[0], x2 = t2.P(t2.a1, 0, 0)[0], lim2 = box2 && box2.left - s0.left > x2 ? box2.left - s0.left - 62 : x2 + 70;
+      function dropY(S, x) { return (S[0] - x) / (C * s1); }     // for a lane across the rooms: how far along before it drops at x on the page
+      function dropX(S, x) { return (x - S[0]) / (C * s2); }
+      var LIFT = 46, lanes = [
+        lane(pR, pC.d, s1, 1, dropY(pR, x1 - 70)), lane(pC.d, pX, s2, 0, dropX(pC.d, Math.max(x2 + 34, lim2))),
+        lane(pC.u, pX, s2, 0, dropX(pC.u, Math.max(x2 + 34, lim2) - 0)), lane(pR, pC.u, s1, 1, dropY(pR, x1 - 118))];
+      // a lane as a flight: up off the pad, its lengths one after another (each eased, a pause between), down on the next
+      function flight(ln, back) {
+        var p = ln.pts.map(function (q) { return [q[0], q[1], q[2] + LIFT]; });
+        p.unshift(ln.pts[0].slice()); p.push(ln.pts[ln.pts.length - 1].slice());
+        p = uniq(p);
+        if (back) p.reverse();
+        var legs = [], t = 0, V = 170;
+        for (var i = 1; i < p.length; i++) {
+          var a = p[i - 1], b = p[i], ax = a[0] !== b[0] ? 0 : a[1] !== b[1] ? 1 : 2, l = Math.abs(b[ax] - a[ax]), d = l / V + 0.5;
+          legs.push({ a: a, b: b, ax: ax, t0: t, d: d }); t += d + 0.12;
+        }
+        return { P: ln.P, legs: legs, T: t, at: function (u) {
+          var g = legs[legs.length - 1], hd = ln.pts.length > 1 && ln.pts[0][0] !== ln.pts[1][0] ? 0 : 1;
+          for (var i = 0; i < legs.length; i++) if (u < legs[i].t0 + legs[i].d + 0.12) { g = legs[i]; break; }
+          var e = clamp((u - g.t0) / g.d, 0, 1); e = e * e * e * (10 + e * (-15 + 6 * e));
+          return [[g.a[0] + (g.b[0] - g.a[0]) * e, g.a[1] + (g.b[1] - g.a[1]) * e, g.a[2] + (g.b[2] - g.a[2]) * e], hd];
+        } };
+      }
+      // the round: from Replies' pad down to Certification's, to the records'; and up again by the lanes beside
+      var HOLD = 1.6, round = [flight(lanes[0]), flight(lanes[1]), flight(lanes[2], true), flight(lanes[3], true)];
+      var TR = round.reduce(function (a, f2) { return a + f2.T + HOLD; }, 0), NF = 5;
+      var rf = round.map(function (f2, k) { return moving(k === 0 || k === 3 ? gL1 : gL2, f2.P, true); });
+      function flyers(t) {
+        var lists = round.map(function () { return []; });
+        for (var n = 0; n < NF; n++) {
+          var u = (t + n * TR / NF) % TR;
+          for (var k = 0; k < round.length; k++) {
+            var f2 = round[k];
+            if (u < f2.T + HOLD) {
+              var hold = u >= f2.T, q = f2.at(hold ? f2.T : u);
+              freighter(lists[k], q[0], q[1], k < 2 ? 1 : 0, hold || u < 0.3 ? 1 : 0.15);
+              break;
+            }
+            u -= f2.T + HOLD;
+          }
+        }
+        rf.forEach(function (r, k) { r.draw(lists[k]); });
+      }
+
+      tal.forEach(function (q, n) {
+        var pts = q.ln.pts, len = 0, seg = [];
+        for (var i = 1; i < pts.length; i++) { var a = pts[i - 1], b = pts[i], l = Math.abs(b[0] - a[0]) + Math.abs(b[1] - a[1]) + Math.abs(b[2] - a[2]); seg.push([a, b, len, l]); len += l; }
+        var N = Math.max(1, Math.floor((len - 60) / 150)), STEP = 1.9;
+        q.draw = function (t) {
+          var u = (t / STEP + n * 3.5) % (2 * N), i = Math.floor(u), f = u - i, e = clamp(f / 0.62, 0, 1);
+          e = e * e * (3 - 2 * e);
+          var k = u < N ? i + e : 2 * N - i - e, d = 30 + k * 150, g = seg[seg.length - 1];
+          for (var j = 0; j < seg.length; j++) if (d <= seg[j][2] + seg[j][3]) { g = seg[j]; break; }
+          var w = g[3] ? clamp((d - g[2]) / g[3], 0, 1) : 0, x = g[0][0] + (g[1][0] - g[0][0]) * w + q.off[0], y = g[0][1] + (g[1][1] - g[0][1]) * w + q.off[1], z = g[0][2] + (g[1][2] - g[0][2]) * w + q.off[2];
+          var ax = q.off[0] ? 1 : 0, hx = ax ? 16 : 27, hy = ax ? 27 : 16;
+          q.r.draw([RK.box(x - hx, y - hy, z, x + hx, y + hy, z + 2.6, { w: 0.85, link: 'fy1' }),
+                    ax ? RK.box(x + 11, y - 23, z + 2.6, x + 15, y + 23, z + 5.4, { w: 0.55, link: 'fy1' }) : RK.box(x - 23, y + 11, z + 2.6, x + 23, y + 15, z + 5.4, { w: 0.55, link: 'fy1' }),
+                    ax ? RK.box(x + 16, y - 5, z + 0.5, x + 16.2, y + 5, z + 2.1, { lit: f > 0.66 ? 1 : 0.15, link: 'fy1' }) : RK.box(x - 5, y + 16, z + 0.5, x + 5, y + 16.2, z + 2.1, { lit: f > 0.66 ? 1 : 0.15, link: 'fy1' })]);
+        };
+      });
+      plant = { svg: el, on: false, raf: 0, t: 0, last: 0, odd: false, n: 0, k: 0, w0: 0, wn: 0, slow: false };
+      // each of the line's lengths carries what the room behind it has sent out, by that room's own clock: a carrier
+      // leaves a room and is on the line outside in the same moment, and where a room stands still so does what it has sent
+      plant.draw = function (t) {
+        var x1 = [], x2 = [];
         (Lr.out || []).forEach(function (d) { w1.car(x1, d); });
         (Lc.out || []).forEach(function (d) { w2.car(x2, d); });
         r1.draw(x1); r2.draw(x2);
+        if (!(plant.n++ % 3)) tend.forEach(function (o2) { o2.r.draw(stew.place(ST.work(t + o2.t0), o2.B)); });   // the stewards: every third picture
+        tal.forEach(function (q) { q.draw(t); });
+        flyers(t);
       };
-      links.draw(links.t);
-      links.sync();
+      var step = function (ts) {
+        if (!plant || !plant.on) return;
+        if (plant.last) plant.t += Math.min(0.1, (ts - plant.last) / 1000);
+        plant.last = ts;
+        plant.odd = !plant.odd;
+        if (ts - plant.w0 > 2000) { plant.slow = plant.wn < 48; plant.w0 = ts; plant.wn = 0; }   // under 24 frames a second: the plant draws a quarter of them
+        plant.wn++; plant.k++;
+        if (plant.slow ? !(plant.k % 4) : plant.odd) plant.draw(plant.t);   // thirty pictures a second at most: the rooms keep their own
+        plant.raf = requestAnimationFrame(step);
+      };
+      var sync = function () {
+        if (!plant) return;
+        var go = plant.seen && !document.hidden && !mq.matches;
+        if (go && !plant.on) { plant.on = true; plant.last = 0; plant.w0 = window.performance ? performance.now() : 0; plant.wn = 0; plant.raf = requestAnimationFrame(step); }
+        else if (!go && plant.on) { plant.on = false; cancelAnimationFrame(plant.raf); }
+      };
+      plant.seen = !('IntersectionObserver' in window);
+      var io = null;
+      if (!plant.seen) { io = new IntersectionObserver(function (es) { if (plant) { plant.seen = es[0].isIntersecting; sync(); } }, { rootMargin: '100px' }); io.observe(stage); }
+      document.addEventListener('visibilitychange', sync);
+      plant.stop = function () { this.on = false; cancelAnimationFrame(this.raf); if (io) io.disconnect(); document.removeEventListener('visibilitychange', sync); SS.el.remove(); SM.L1.el.remove(); SM.L2.el.remove(); };
+      plant.draw(plant.t);
+      sync();
     }
     pics.forEach(function (pic) {
       var img = pic.querySelector('img'), fig = pic.parentNode, L;
@@ -1872,7 +2130,7 @@
       img.addEventListener('load', function () { if (!robo || window.RK_SEAT) build(); });   // a phone's picture and a wider one: each its frame
       if ('ResizeObserver' in window) new ResizeObserver(place).observe(img);
       window.addEventListener('resize', place);
-      live.push({ stop: function () { if (links) { links.stop(); links.svg.remove(); links = null; } } });
+      live.push({ stop: function () { if (plant) { plant.stop(); plant = null; } } });
     });
     var off = function () { if (mq.matches) live.forEach(function (l) { l.stop(); }); };
     if (mq.addEventListener) mq.addEventListener('change', off); else if (mq.addListener) mq.addListener(off);
