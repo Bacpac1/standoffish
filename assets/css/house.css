@@ -1450,3 +1450,54 @@ p.fine sup { font: 500 10.5px/1 var(--mono); margin-right: .2em; }
   .circle.is-live .circle__grid li { opacity: 1; transform: none; }
   .inst .ijr__cur { display: none !important; }
 }
+
+/* ------------------------------------------------------------------- the pages, received in order (round 41, 2026-11-17)
+   page.js marks what stands below the first view (.will-land); as it comes into view (.is-in) its heading and its
+   rows land one after another. Nothing waits without the script, in print, or where motion is reduced. */
+@media (prefers-reduced-motion: no-preference) {
+  .will-land > .parts__k, .will-land > dl > div, .will-land.slipsec > .slipsec__body, .will-land > tbody > tr,
+  .will-land > thead, h2.will-land, h3.will-land { opacity: 0; transform: translateY(14px); }
+  .will-land.is-in > .parts__k, .will-land.is-in > dl > div, .will-land.is-in.slipsec > .slipsec__body, .will-land.is-in > tbody > tr,
+  .will-land.is-in > thead, h2.will-land.is-in, h3.will-land.is-in {
+    opacity: 1; transform: none; transition: opacity .5s ease, transform .62s cubic-bezier(.2, .7, .2, 1);
+    transition-delay: calc(var(--i, 0) * 50ms + 40ms); }
+  .will-land.is-in > .parts__k, .will-land.is-in > thead { transition-delay: 0s; }
+}
+@media print { .will-land * , .will-land { opacity: 1 !important; transform: none !important; } }
+
+/* a work's own page: its room stands across the page, as large as the first view lets it (round 41: the rooms are worth it) */
+.page .wk__pic .draw { max-height: min(66vh, 640px); }
+@media (min-width: 901px) {
+  .page .wrap > .wk__pic > picture { grid-column: 1 / -1; }
+  .page .wrap > .wk__pic .draw { margin-inline: auto; }
+}
+
+/* a page's own instrument, at the page's width: the home's stage, larger */
+.pstage { position: relative; margin: clamp(32px, 4.4vw, 60px) 0 0; }
+.pstage__bar { position: absolute; right: 16px; top: 16px; z-index: 2; margin: 0; }
+.pstage .inst { margin-top: 0; height: clamp(252px, 25vw, 330px); padding: clamp(22px, 2.8vw, 40px) clamp(18px, 3.2vw, 46px); border-radius: 18px;
+                background: var(--card); box-shadow: 0 1px 2px rgb(0 0 0 / .06), inset 0 0 0 1px var(--hair-3); }
+.pstage .ird__line { max-width: calc(100% - 88px); font-size: clamp(13.5px, 1.4vw, 19px); line-height: 2.15; }
+.pstage .inst .ird__tok { padding: 4px 7px; border-radius: 6px; }
+.pstage .ird__out, .pstage .ion__count { left: clamp(18px, 3.2vw, 46px); right: clamp(18px, 3.2vw, 46px); bottom: clamp(20px, 2.6vw, 36px); }
+.pstage .ird__f { font-size: clamp(13px, 1.1vw, 15px); }
+.pstage .ird__v { margin-top: 6px; font-size: clamp(26px, 3.6vw, 52px); letter-spacing: -.02em; }
+.pstage .ird__r { margin-top: 10px; font-size: clamp(13px, 1.1vw, 15px); }
+.pstage .inst--terms { column-gap: clamp(22px, 4vw, 64px); row-gap: clamp(26px, 3vw, 44px); }
+.pstage .itm__n { font-size: clamp(88px, 13vw, 184px); }
+.pstage .itm__t { font-size: clamp(24px, 3.4vw, 50px); letter-spacing: -.02em; max-width: 20ch; }
+.pstage .inst .itm__tk { height: 4px; }
+.pstage .inst--one { height: clamp(300px, 30vw, 400px); }
+.pstage .ion__lane { max-width: calc(100% - 88px); }
+.pstage .ion__say { margin-top: clamp(14px, 1.8vw, 26px); font-size: clamp(20px, 2.4vw, 34px); }
+.pstage .ion__fig { margin-top: 6px; font-size: clamp(72px, 10vw, 148px); font-weight: 200; }
+.pstage .ion__sub { margin-top: 10px; font-size: clamp(13px, 1.1vw, 15px); }
+.pstage .inst--jobs { height: 332px; }
+.pstage .inst .ijb__rows { max-width: calc(100% - 88px); }
+@media (max-width: 560px) {
+  .pstage__bar { right: 10px; top: 10px; }
+  .pstage .inst--jobs { height: 342px; padding-top: 52px; }
+  .pstage .inst .ijb__rows, .pstage .ird__line, .pstage .ion__lane { max-width: none; }
+  .pstage .inst--read, .pstage .inst--one { padding-top: 52px; }
+  .pstage .inst--read { height: 330px; }
+}

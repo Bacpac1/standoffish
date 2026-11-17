@@ -10,6 +10,7 @@
 
   var TARGETS = [
     ".work .wk__h",          /* home: Replies. Certification. Records. */
+    ".page__h",              /* a page of the house: its title (round 41) */
     ".dband__h",             /* home: Find a desk. */
     ".sx__h", ".sx__t",      /* an episode: its code and its name */
     ".glance__big"           /* an episode: its delay */

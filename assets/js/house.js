@@ -558,11 +558,20 @@
       p.addEventListener('pointerleave', function () { parts.forEach(function (q) { q.classList.remove('is-on'); }); });
     });
     if (mq.matches || !('IntersectionObserver' in window)) return;
+    // once it stands printed, its four parts are named in turn, each lit with its name, once through (round 41);
+    // the pointer on the slip takes over
+    var touched = false;
+    slip.closest('section').addEventListener('pointerenter', function () { touched = true; }, true);
+    function read(k) {
+      if (touched) return;
+      parts.forEach(function (q) { q.classList.toggle('is-on', +q.getAttribute('data-k') === k); });
+      if (k <= 4) setTimeout(function () { read(k + 1); }, 1100);
+    }
     var r = slip.getBoundingClientRect();
-    if (r.top < innerHeight && r.bottom > 0) return;          // already in view on arrival: it stands, printed
+    if (r.top < innerHeight && r.bottom > 0) { setTimeout(function () { read(1); }, 1400); return; }   // in view on arrival: it stands, printed
     slip.classList.add('is-ready');
     var io = new IntersectionObserver(function (es) {
-      es.forEach(function (e) { if (e.isIntersecting) { slip.classList.add('is-printed'); io.disconnect(); } });
+      es.forEach(function (e) { if (e.isIntersecting) { slip.classList.add('is-printed'); io.disconnect(); setTimeout(function () { read(1); }, 1300); } });
     }, { threshold: .3 });
     io.observe(slip);
   })();
@@ -1062,85 +1071,103 @@
     g.setAttribute('clip-path', 'url(#' + cp.id + ')');
   }
   var SCENES = {
-    // Replies, a turn of about 34 s, in the house's own causes. The courier (RC-4, tools/robokit/robots.js) works with
-    // four arms, none like another, two of them moving at once at most, the others holding: its body 46 by 56 cm and
-    // 24 high, a tote in its front half where three envelopes stand in a row on their short edge, a pusher behind them,
-    // its mast at its back (140 cm). A, the long arm (50 and 52 cm) from a bracket high on the mast, takes the front
-    // envelope by its head in a jaw of two plates; B, a short arm low on the mast (22 and 20 cm), holds the next one down
-    // while A draws it out; C, the pusher, brings the row forward; D, a strut out of a sleeve high on the mast, sets its
-    // flat foot against the counter's front edge while A reaches over. It keeps its berth at the left end wall, under
-    // the supply's hood, where its tote is filled. It backs out to the first position and, standing in the room (at the
-    // counter A's elbow would meet the counter's top), A goes down to the front envelope, B comes over the next and holds
-    // it, A takes the front one and lifts it clear, B lets go, and C brings the row forward while the courier runs into
-    // the bay, in under the counter's edge. D's foot goes to the edge (0.4 s); A reaches over the counter (0.7 s), sets
-    // the envelope's foot in the slot (12 mm, held 0.25 s) and lets go (0.15 s): 0.18 s on, the slot draws it in, 21 cm
-    // in 0.45 s, and the bezel answers; the record is set on the three displays, the position's own first and its
-    // neighbours after, 0.12 s apart. A comes back, D's foot comes off, the courier backs out, and at the next position
-    // takes the next envelope the same way. At the window (1.6 s after the third) the bar runs once (0.8 s) and what was
-    // held is carried (0.24 s); the displays go back to rest. The courier goes back to its berth, the pusher draws back
-    // and three envelopes are set in from the supply (1.6 s), and the turn begins again. Its light is the mark on the
-    // jaw's lock and on B's block, lit while each holds. The machine is drawn from its parts by robokit, what hides what
-    // decided again at each picture.
+    // Replies, a round of four couriers on one beat (round 41; before it one courier served the three positions in a
+    // turn of 34 s). The courier (RC-4, tools/robokit/robots.js) works with four arms, none like another, two of them
+    // moving at once at most, the others holding: its body 46 by 56 cm and 24 high, a tote in its front half where three
+    // envelopes stand in a row on their short edge, a pusher behind them, its mast at its back (140 cm). A, the long arm
+    // (50 and 52 cm) from a bracket high on the mast, takes the front envelope by its head in a jaw of two plates; B, a
+    // short arm low on the mast (22 and 20 cm), holds the next one down while A draws it out; C, the pusher, brings the
+    // row forward; D, a strut out of a sleeve high on the mast, sets its flat foot against the counter's front edge while
+    // A reaches over.
+    // The round: a courier leaves the berth under the supply's hood (at the left end wall, by the front) with three
+    // envelopes, and goes along the lane before the counters a position a beat: at each it takes its front envelope
+    // standing in the room (at the counter A's elbow would meet the counter's top), runs into the bay in under the
+    // counter's edge, sets D's foot, reaches over, sets the envelope's foot in the slot (12 mm, held 0.25 s) and lets
+    // go: 0.18 s on, the slot draws it in, 21 cm in 0.45 s, and the bezel answers. After the third it comes back along
+    // the front of the room to the berth, where the pusher draws back and three envelopes are set in from the supply.
+    // Four couriers keep the round a beat apart, so at every beat three stand at the three positions and do the same
+    // work together, each a third of a second after its neighbour on the left, while the fourth is at the supply; when
+    // they move, they move a position on together. Each beat the three records are set on the three displays (the
+    // position's own first, its neighbours after, 0.12 s apart); at the window (1.6 s after the third) the bar runs once
+    // (0.8 s) and what was held is carried (0.24 s). A courier's light is the mark on the jaw's lock and on B's block,
+    // lit while each holds. The machines are drawn from their parts by robokit, all together, what hides what decided
+    // again at each picture.
     reply: function (L, T, g, dim, svg) {
-      var IN = 0.45, ANS = 0.18, STEP = 0.12, BAR = 0.8, CLR = 0.24, F0 = L.floor;
+      var IN = 0.45, ANS = 0.18, STEP = 0.12, BAR = 0.8, CLR = 0.24, WAVE = 0.3, F0 = L.floor;
       var order = [0, 1, 2];                                     // the positions in the order they lodge
       var EXP = 20.8;                                            // what stands above the slot, its foot 12 mm in
       var R = RK_MACHINES.M.courier, Q = R.poses, mach = new RK.Machine(R);
       var XS = L.pos.map(function (p) { return (p.slot[0] + p.slot[2]) / 2 - 4.5; });   // its middle: A's arm over the slot
+      var NP = XS.length, NC = NP + 1;                           // the positions; the couriers
       var LANE = 112, BAYY = LANE + Q.LANE;                      // its head: out in the room; in a bay, in under the edge
+      var FR = 182;                                              // its head on the way back, along the front of the room
       var BX = 12 + 32 + 2 + 28;                                 // its middle in its berth
-      var init = { x: BX, yb: LANE, c: 0, d: 0, j: 0, p0: 10, p1: 5, p2: 0 };
       function pose(n, q) { var m = {}; m[n + '_sh'] = q[0]; m[n + '_el'] = q[1]; m[n + '_wr'] = q[2]; return m; }
-      [pose('a', Q.REST), pose('b', Q.BREST)].forEach(function (m) { for (var k in m) init[k] = m[k]; });
-      var P = Plan(init);
       // how far up from the tote (as a part of A's lift) the envelope's foot is out of it: its lower half shown from then
       var UB = 1;
       for (var i = 0; i <= 100; i++) {
         var e = std(i / 100), z = R.wristZ([0, 1].map(function (j) { return Q.TAKE[j] + (Q.LIFT[j] - Q.TAKE[j]) * e; }));
         if (z - 32.5 >= 36.7) { UB = i / 100; break; }
       }
-      var put = [], S = [], tk = [], tb = [], press = [], rel = [], fill = [];
-      P.wait(0.4);
-      P.run('x', XS[0], 0.8);                                    // out of the berth (it backs out) to the first position
-      XS.forEach(function (x, k) {
-        if (k) P.run('x', x, 1.4);
-        // standing in the room: the front envelope out of the tote
-        P.also({ j: -Q.OPEN }, P.at() + 0.25, 0.2);
-        P.go(pose('a', Q.TAKE), k ? 0.6 : 0.7);
-        if (k < 2) { P.go(pose('b', Q.BOVER), 0.3); P.go(pose('b', Q.PRESS), 0.15); press[k] = P.at(); }
-        tk[k] = P.go({ j: Q.SHUT }, 0.15);
-        var up = P.at();
-        P.go(pose('a', Q.LIFT), 0.85);
-        tb[k] = up + 0.85 * UB;
-        if (k < 2) {                                             // B lets go; C brings the row forward
-          rel[k] = up + 0.75;
-          P.also(pose('b', Q.BOVER), rel[k], 0.25);
-          P.also(pose('b', Q.BREST), rel[k] + 0.25, 0.4);
-          var m = { c: 5 * (k + 1) };
-          for (var j = k + 1; j < 3; j++) m['p' + j] = 10 - 5 * (j - k - 1);
-          P.also(m, rel[k] + 0.65, 0.6);
-        }
-        P.run('yb', BAYY, 0.8);                                  // in under the counter's edge
-        P.wait(0.25);                                            // stood still before an arm moves
-        P.go({ d: Q.BRACE }, 0.4);                               // D's foot to the counter's edge
-        P.go(pose('a', Q.OVER), 0.7);                            // A over the counter
-        P.go(pose('a', Q.SET), 0.3);                             // the envelope's foot into the slot
-        P.wait(0.25);
-        put[k] = P.go({ j: -Q.OPEN }, 0.15);                     // the jaw opens
-        S[k] = P.wait(0.18);                                     // the slot draws it in from here
-        P.go(pose('a', Q.OVER), 0.3);
-        P.go(pose('a', Q.LIFT), 0.6);                            // A back
-        P.go({ d: 0 }, 0.4);                                     // D's foot off
-        P.run('yb', LANE, 0.8);                                  // out of the bay
-      });
-      P.also(pose('a', Q.REST), P.at(), 0.8);
-      P.also({ j: 0 }, P.at() + 0.4, 0.3);
-      P.run('x', BX, 2.6);                                       // back to the berth
-      var berth = P.at();
-      P.also({ p1: 5, p2: 0 }, berth, 0.01);                     // (the slides of the gone envelopes, unseen)
-      P.also({ c: 0 }, berth + 0.1, 0.4);                        // the pusher draws back
-      fill = [berth + 0.6, berth + 0.9, berth + 1.2];            // the envelopes set in from the supply: the far one first
-      var TURN = P.wait(1.6), WIN = S[2] + 1.6;
+      // one courier's round, a beat (D) to a position: built once to find the beat, then to it
+      function round(D) {
+        var init = { x: BX, yb: FR, c: 0, d: 0, j: 0, p0: 10, p1: 5, p2: 0 };
+        [pose('a', Q.REST), pose('b', Q.BREST)].forEach(function (m) { for (var k in m) init[k] = m[k]; });
+        var P = Plan(init), o = { P: P, put: [], S: [], tk: [], tb: [], press: [], rel: [], fill: [], beat: 0 };
+        XS.forEach(function (x, k) {
+          var b0 = P.at();
+          if (k) P.run('x', x, 1.4);                             // a position on, with the others
+          else { P.wait(0.3); P.run('x', x, 0.4); P.run('yb', LANE, 0.7); }   // out from under the hood, and up to the lane
+          var pre = (k ? 0.6 : 0.7) + (k < NP - 1 ? 0.45 : 0);   // what its own first moves take: the three kept in step
+          P.wait(WAVE * k + 1.15 - pre);
+          // standing in the room: the front envelope out of the tote
+          P.also({ j: -Q.OPEN }, P.at() + 0.25, 0.2);
+          P.go(pose('a', Q.TAKE), k ? 0.6 : 0.7);
+          if (k < NP - 1) { P.go(pose('b', Q.BOVER), 0.3); P.go(pose('b', Q.PRESS), 0.15); o.press[k] = P.at(); }
+          o.tk[k] = P.go({ j: Q.SHUT }, 0.15);
+          var up = P.at();
+          P.go(pose('a', Q.LIFT), 0.85);
+          o.tb[k] = up + 0.85 * UB;
+          if (k < NP - 1) {                                      // B lets go; C brings the row forward
+            o.rel[k] = up + 0.75;
+            P.also(pose('b', Q.BOVER), o.rel[k], 0.25);
+            P.also(pose('b', Q.BREST), o.rel[k] + 0.25, 0.4);
+            var m = { c: 5 * (k + 1) };
+            for (var j = k + 1; j < 3; j++) m['p' + j] = 10 - 5 * (j - k - 1);
+            P.also(m, o.rel[k] + 0.65, 0.6);
+          }
+          P.run('yb', BAYY, 0.8);                                // in under the counter's edge
+          P.wait(0.25);                                          // stood still before an arm moves
+          P.go({ d: Q.BRACE }, 0.4);                             // D's foot to the counter's edge
+          P.go(pose('a', Q.OVER), 0.7);                          // A over the counter
+          P.go(pose('a', Q.SET), 0.3);                           // the envelope's foot into the slot
+          P.wait(0.25);
+          o.put[k] = P.go({ j: -Q.OPEN }, 0.15);                 // the jaw opens
+          o.S[k] = P.wait(0.18);                                 // the slot draws it in from here
+          P.go(pose('a', Q.OVER), 0.3);
+          P.go(pose('a', Q.LIFT), 0.6);                          // A back
+          P.go({ d: 0 }, 0.4);                                   // D's foot off
+          P.run('yb', LANE, 0.8);                                // out of the bay
+          if (k === NP - 1) { P.also(pose('a', Q.REST), P.at(), 0.8); P.also({ j: 0 }, P.at() + 0.4, 0.3); }
+          P.wait(WAVE * (NP - 1 - k) + 0.25);
+          o.beat = Math.max(o.beat, P.at() - b0);
+          if (D) P.wait(b0 + D - P.at());
+        });
+        P.run('yb', FR, 0.7);                                    // to the front of the room,
+        P.run('x', BX, 2.6);                                     // along it, and in under the hood
+        var berth = P.at();
+        P.also({ p1: 5, p2: 0 }, berth, 0.01);                   // (the slides of the gone envelopes, unseen)
+        P.also({ c: 0 }, berth + 0.1, 0.4);                      // the pusher draws back
+        o.fill = [berth + 0.6, berth + 0.9, berth + 1.2];        // the envelopes set in from the supply: the far one first
+        P.wait(1.6);
+        if (D) P.wait(NC * D - P.at());
+        return o;
+      }
+      var D = round(0).beat, C = round(D), P = C.P, TURN = NC * D;
+      // each position's events, as parts of the beat: the jaw opens, the slot draws in
+      var putB = C.put.map(function (v, k) { return v - k * D; }), SB = C.S.map(function (v, k) { return v - k * D; });
+      var WIN = Math.max.apply(null, SB) + 1.6;
+      function since(tb, x) { return (((tb - x) % D) + D) % D; } // how long since x last came round
 
       var pos = L.pos.map(function (p, q) {
         var d = p.disp, y = d[4], b = p.bezel, sl = p.slot;
@@ -1164,40 +1191,45 @@
         o.bar = mk('path', { 'class': 'lv-line', fill: 'none', stroke: INK.accent, 'stroke-width': 1.4, 'stroke-linecap': 'round' }, o.g);
         return o;
       });
-      // the courier and its berth, drawn after the positions: they stand before them. The supply against the end wall,
-      // its hood over the berth and the hood's lip, with the courier's parts, in the order what hides what
+      // the couriers and the berth, drawn after the positions: they stand before them. The supply against the end
+      // wall by the front, its hood over the berth and the hood's lip, with the couriers' parts, in the order what
+      // hides what
       var rb = mk('g', { 'class': 'rk' }, g);
       behindWall(svg, rb, T, L.wall);
       var ren = new RK.Renderer(rb, T, T.k || 1);
-      var fixed = [RK.box(12, LANE - 8, F0, 44, LANE + 48, F0 + 118, { w: 0.85, link: 'supply' }),
-                   RK.box(12, LANE - 4, F0 + 51, 88, LANE + 24, F0 + 57, { w: 0.85, link: 'hood' }),
-                   RK.box(44, LANE + 22.5, F0 + 48, 88, LANE + 24, F0 + 51, { w: 0.55, link: 'lip' })];
+      var fixed = [RK.box(12, FR - 8, F0, 44, FR + 48, F0 + 118, { w: 0.85, link: 'supply' }),
+                   RK.box(12, FR - 4, F0 + 51, 88, FR + 24, F0 + 57, { w: 0.85, link: 'hood' }),
+                   RK.box(44, FR + 22.5, F0 + 48, 88, FR + 24, F0 + 51, { w: 0.55, link: 'lip' })];
       var YAW = RK.rot('z', -Math.PI / 2);                       // its front to the counters
+      var CH = ['a_sh', 'a_el', 'a_wr', 'b_sh', 'b_el', 'b_wr', 'c', 'd', 'p0', 'p1', 'p2'];
       // when the record of position p reaches the display of position q: the own display first, then the nearer
       function at(p, q) {
         var n = [0, 1, 2].sort(function (a, b) { return Math.abs(a - p) - Math.abs(b - p) || a - b; }).indexOf(q);
-        return S[p] + IN + ANS + STEP * n;
+        return SB[p] + IN + ANS + STEP * n;
       }
       return function (t) {
-        t = t % TURN;
-        var q = { run: 0 }, k;
-        ['a_sh', 'a_el', 'a_wr', 'b_sh', 'b_el', 'b_wr', 'c', 'd', 'p0', 'p1', 'p2'].forEach(function (n) { q[n] = P.val(n, t); });
-        q.a_j1 = P.val('j', t); q.a_j2 = -q.a_j1;
-        var held = -1;
-        for (k = 0; k < 3; k++) {
-          if (t >= tk[k] && t < put[k]) held = k;
-          q['e' + k] = t < tk[k] ? 11 : t < fill[k] ? 0 : 11 + 3 * (1 - out3((t - fill[k]) / 0.25));
+        var all = fixed.slice(), k;
+        for (var n = 0; n < NC; n++) {                           // the couriers, a beat apart on the one round
+          var u = (t + n * D) % TURN, q = { run: 0 };
+          for (k = 0; k < CH.length; k++) q[CH[k]] = P.val(CH[k], u);
+          q.a_j1 = P.val('j', u); q.a_j2 = -q.a_j1;
+          var held = -1;
+          for (k = 0; k < 3; k++) {
+            if (u >= C.tk[k] && u < C.put[k]) held = k;
+            q['e' + k] = u < C.tk[k] ? 11 : u < C.fill[k] ? 0 : 11 + 3 * (1 - out3((u - C.fill[k]) / 0.25));
+          }
+          q.env_a = held >= 0 ? 1 : 0; q.env_b = held >= 0 && u >= C.tb[held] ? 1 : 0; q.a_lit = held >= 0 ? 1 : 0.15;
+          q.b_lit = (u >= C.press[0] && u < C.rel[0]) || (u >= C.press[1] && u < C.rel[1]) ? 1 : 0.15;
+          mach.place(q, RK.mul(RK.move(P.val('x', u), P.val('yb', u) + 23, F0), YAW), all);
         }
-        q.env_a = held >= 0 ? 1 : 0; q.env_b = held >= 0 && t >= tb[held] ? 1 : 0; q.a_lit = held >= 0 ? 1 : 0.15;
-        q.b_lit = (t >= press[0] && t < rel[0]) || (t >= press[1] && t < rel[1]) ? 1 : 0.15;
-        var B = RK.mul(RK.move(P.val('x', t), P.val('yb', t) + 23, F0), YAW);
-        ren.draw(mach.place(q, B).concat(fixed));
-        // the positions
+        ren.draw(all);
+        // the positions, by the beat
+        var tb = t % D, sW = since(tb, WIN);
         pos.forEach(function (o, q) {
           var d = o.d, y = d[4];
-          // the envelope in the slot: set there by the courier, drawn in once the jaw has let it go
-          var e2 = t - S[q], exp = e2 < 0 ? EXP : EXP * (1 - std(e2 / IN));
-          if (t < put[q] || exp <= 0.2) o.env.style.opacity = '0';
+          // the envelope in the slot: set there by its courier, drawn in once the jaw has let it go
+          var sp = since(tb, putB[q]), e2 = sp - (SB[q] - putB[q]), exp = e2 < 0 ? EXP : EXP * (1 - std(e2 / IN));
+          if (e2 > IN || exp <= 0.2) o.env.style.opacity = '0';
           else {
             o.env.style.opacity = '1';
             var xa = o.ex - 5.5, xb2 = o.ex + 5.5, ya = o.ey - 0.25, yb2 = o.ey + 0.25, z0 = o.ez, z1 = o.ez + exp;
@@ -1207,33 +1239,32 @@
             o.eo.setAttribute('d', poly([T(xa, yb2, z0), T(xa, yb2, z1), T(xa, ya, z1), T(xb2, ya, z1), T(xb2, ya, z0)]) + line([T(xb2, yb2, z0), T(xb2, yb2, z1), T(xa, yb2, z1)]));
           }
           // the bezel answers once the envelope is in
-          var a = e2 - IN;
-          o.flash.style.opacity = a >= 0 && a < ANS ? (0.75 * Math.sin(Math.PI * a / ANS)).toFixed(3) : '0';
+          var a = since(tb, SB[q] + IN);
+          o.flash.style.opacity = a < ANS ? (0.75 * Math.sin(Math.PI * a / ANS)).toFixed(3) : '0';
           // the display: lit from the first record set on it until what was held is carried
-          var first = Math.min(at(0, q), at(1, q), at(2, q)) - 0.15, gone = clamp((t - WIN - BAR) / CLR, 0, 1);
-          var on = t < first ? 0 : t < first + 0.2 ? (t - first) / 0.2 : t < WIN + BAR + CLR ? 1 : 1 - clamp((t - WIN - BAR - CLR) / 0.3, 0, 1);
+          var first = Math.min(at(0, q), at(1, q), at(2, q)) - 0.15, span = WIN + BAR + CLR - first, sF = since(tb, first);
+          var on = sF < 0.2 ? sF / 0.2 : sF < span ? 1 : sF < span + 0.3 ? 1 - (sF - span) / 0.3 : 0;
           o.scr.style.opacity = on.toFixed(3); o.edge.style.opacity = on.toFixed(3);
           order.forEach(function (p, k) {
-            var u = clamp((t - at(p, q)) / 0.12, 0, 1);
-            o.lines[k].style.opacity = (u * on * (1 - gone)).toFixed(3);
+            var t0 = at(p, q), s = since(tb, t0), v = 0;
+            if (s < WIN + BAR + CLR + 0.3 - t0) v = clamp(s / 0.12, 0, 1) * on * (1 - clamp((s - (WIN + BAR - t0)) / CLR, 0, 1));
+            o.lines[k].style.opacity = v.toFixed(3);
           });
-          var bu = clamp((t - WIN) / BAR, 0, 1);
-          if (bu > 0 && gone < 1) {
+          if (sW < BAR + CLR) {
             var x0 = d[0] + 5, w = d[1] - d[0] - 10;
-            o.bar.setAttribute('d', line([T(x0, y, d[2] + 5), T(x0 + w * std(bu), y, d[2] + 5)]));
-            o.bar.style.opacity = (on * (1 - gone)).toFixed(3);
+            o.bar.setAttribute('d', line([T(x0, y, d[2] + 5), T(x0 + w * std(clamp(sW / BAR, 0, 1)), y, d[2] + 5)]));
+            o.bar.style.opacity = (on * (1 - clamp((sW - BAR) / CLR, 0, 1))).toFixed(3);
           } else o.bar.style.opacity = '0';
         });
       };
     },
-    // Certification, a day of 20 s from ten in the morning: the day at about an hour and a fifth a second (ten
-    // seconds of it), an hour a second at night (eight), dusk and dawn a second each, the changes of pace eased over a
-    // quarter of a second; the clock's one hand goes on with it, always forward; the high window's glass from the
-    // day's #DDE5E5 to dusk and night; the room's faces a little darker at night, at most six in a hundred, the lines
-    // as they are. The floor's unit keeps its dock at the back wall, under the high window, by day; with the night it
-    // comes out (0.5 s) and goes along the bench, its edge module swung out square to its side (0.45 s) so its shoe
-    // runs under the bench's edge, the unit going straight on, and folded again (0.45 s) before it turns; out to the
-    // front and along it (4.4 s in all), its corners round (20 cm); back (2 s), and into its dock (0.7 s) before dawn.
+    // Certification, a day of 20 s from ten in the morning: the day and its dusk and dawn at two hours a second (eight
+    // seconds of it), the night at two thirds of an hour a second (twelve: round 41 gave the night the longer part,
+    // for the room's work is done then), the changes of pace eased over a quarter of a second; the clock's one hand goes
+    // on with it, always forward; the high window's glass from the day's #DDE5E5 to dusk and night; the room's faces a
+    // little darker at night, at most six in a hundred, the lines as they are. The floor's three units keep their docks
+    // at the back wall, under the high window, by day; with the night they come out in file, sweep along the bench and
+    // round to the front, turn about together, and are back in their docks before dawn (below).
     certify: function (L, T, g, dim, svg) {
       var c = L.clock, cx = c[0], cy = c[1], cz = c[2], r = c[3], hand = c[4], gl = L.glass, F0 = L.floor;
       var face = [];
@@ -1243,14 +1274,14 @@
       mk('path', { 'class': 'lv-fill', fill: INK.paper, d: poly(face) }, g);
       var hd = mk('path', { 'class': 'lv-line', fill: 'none', stroke: INK.ink, 'stroke-width': 1.4, 'stroke-linecap': 'round' }, g);
       var DAY = 20, N = 2000, HR = [];
-      // the hour at each moment of the turn: the day's pace (10:00 to 19:00, 07:00 to 10:00), dusk's and dawn's
-      // (19:00 to 21:00, 05:00 to 07:00) and the night's (21:00 to 05:00), each change eased over a quarter second,
-      // the whole made to come round in exactly twenty-four hours
+      // the hour at each moment of the turn: the day's pace with dusk's and dawn's (10:00 to 21:00, 05:00 to 10:00) and
+      // the night's (21:00 to 05:00), each change eased over a quarter second, the whole made to come round in exactly
+      // twenty-four hours
       (function () {
         function sm(x) { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); }
-        var edges = [[7.5, 2], [8.5, 1], [16.5, 2], [17.5, 1.2]], dt = DAY / N, rate = [], sum = 0;
+        var edges = [[5.5, 2 / 3], [17.5, 2]], dt = DAY / N, rate = [], sum = 0;
         for (var k = 0; k < N; k++) {
-          var tt = (k + 0.5) * dt, v = 1.2, prev = 1.2;
+          var tt = (k + 0.5) * dt, v = 2, prev = 2;
           edges.forEach(function (e) { v += (e[1] - prev) * sm((tt - e[0] + 0.125) / 0.25); prev = e[1]; });
           rate.push(v); sum += v * dt;
         }
@@ -1265,36 +1296,57 @@
         return SKY[0][1];
       }
       function dark(h) { return h < 5 || h > 21 ? 1 : h < 7 ? 1 - (h - 5) / 2 : h > 19 ? (h - 19) / 2 : 0; }
-      // the floor's unit (FL-1, tools/robokit/robots.js), 48 by 40 cm and 10 high, its equipment bay at its back, and
-      // its dock: a plate on the floor, its contacts on the back wall, which it meets nose first. Its runs keep to the
-      // floor that nothing in the room stands before: between the bench and the standing desk (the desk's top passes
-      // over what is that far from it) and along the front, short of the desk's near legs. With the night it backs out
-      // of its dock (0.5 s) and turns about (0.4 s); along the bench its edge module, folded along its left side (two
-      // lengths of 12 and 10 cm lying flat and a flat shoe 14 cm long), swings out square to its side (0.45 s) so its
-      // shoe runs under the bench's edge, the unit going straight on, its sweep 22 cm wider; it folds them again
-      // (0.45 s) before it turns; out to the front and along it (4.4 s in all), its corners round (20 cm); it turns
-      // about (0.5 s), goes back (2 s) and into its dock (0.7 s) before dawn
-      var X0 = L.glass[0] + 18, Y0 = cy + 24, wy = cy - 4, YO = Y0 + 30;
+      // the floor's units (FL-1, tools/robokit/robots.js), 48 by 40 cm and 10 high, their equipment bays at their backs,
+      // three of them (round 41; before it, one), each with its dock: a plate on the floor, its contacts on the back
+      // wall, which it meets nose first, the three docks side by side along the back wall, under the high window. Their
+      // runs keep to the floor that nothing in the room stands before: between the bench and the standing desk (the
+      // desk's top passes over what is that far from it) and along the front, short of the desk's near legs. With the
+      // night they back out of their docks half a second apart (0.5 s each), turn (0.4 s) and go out in file: the
+      // second and the third along the back wall to the first's line, then all along the bench and round to the front
+      // (4.4 s each, their corners round, 20 cm). Along the bench the first two carry their edge module, folded along
+      // the left side (two lengths of 12 and 10 cm lying flat and a flat shoe 14 cm long), swung out square to the side
+      // (0.45 s) so the shoe runs under the bench's edge, the unit going straight on, its sweep 22 cm wider, and fold
+      // it again (0.45 s) before they turn. They stop in file, the first far along the front, the second behind it, the
+      // third at the end of the bench; turn about together (0.5 s); go back the way they came (2 s), the third now
+      // leading; the two that came along the wall turn to it (0.35 s), and each goes into its own dock (0.7 s) before
+      // dawn
+      var X0 = L.glass[0] + 18, Y0 = cy + 24, wy = cy - 4, YO = Y0 + 30, DX = 58;
+      var XD = [X0, X0 + DX, X0 + 2 * DX], NU = XD.length;      // the docks: the first on the bench's line, the others on to its right
       var rb = mk('g', { 'class': 'rk' }, g);
       behindWall(svg, rb, T, L.wall);
       var ren = new RK.Renderer(rb, T, T.k || 1), FL = RK_MACHINES.M.floor, mach = new RK.Machine(FL);
-      var dock = [RK.box(X0 - 30, wy + 0.5, F0, X0 + 30, wy + 58, F0 + 0.5, { w: 0.55, tone: 'top', link: 'plate' }),
-                  RK.box(X0 - 9, wy, F0 + 0.5, X0 + 9, wy + 4, F0 + 15, { w: 0.85, link: 'contacts' })];
-      var out = Route([[X0, YO], [X0, 300], [X0 + 108, 300]], 20), home = Route([[X0 + 108, 300], [X0, 300], [X0, YO]], 20);
-      var T0 = 8.5, T1 = T0 + 0.5, T1b = T1 + 0.4, T2 = T1b + 4.4, T3 = T2 + 0.5, T4 = T3 + 2.0, T5 = T4 + 0.7;
-      var dOut = drive(out.len, 4.4), dHome = drive(home.len, 2.0);
-      function heading(rt, d) { var a = rt.at(Math.max(0, d - 1)), b = rt.at(Math.min(rt.len, d + 1)); return Math.atan2(b[1] - a[1], b[0] - a[0]); }
-      // where the unit is and which way its front looks at u: docked facing the wall (-y), out along +y, then +x
-      function where(u) {
-        var N = -Math.PI / 2, d;
-        if (u < T0 || u >= T5) return [X0, Y0, N];
-        if (u < T1) return [X0, Y0 + 30 * std((u - T0) / 0.5), N];                       // backs out
-        if (u < T1b) return [X0, YO, N + Math.PI * std((u - T1) / 0.4)];                 // turns about
-        if (u < T2) { d = out.len * dOut((u - T1b) / 4.4); var p = out.at(d); return [p[0], p[1], heading(out, d)]; }
-        if (u < T3) { var e = out.at(out.len); return [e[0], e[1], Math.PI * std((u - T2) / 0.5)]; }   // +x, about to -x
-        if (u < T4) { d = home.len * dHome((u - T3) / 2.0); var h = home.at(d); return [h[0], h[1], heading(home, d)]; }
-        return [X0, YO - 30 * std((u - T4) / 0.7), N];                                 // in, nose first
+      var docks = [];
+      for (var n = 0; n < NU; n++) {
+        docks.push(RK.box(XD[n] - 30, wy + 0.5, F0, XD[n] + 30, wy + 58, F0 + 0.5, { w: 0.55, tone: 'top', link: 'plate' }),
+                   RK.box(XD[n] - 9, wy, F0 + 0.5, XD[n] + 9, wy + 4, F0 + 15, { w: 0.85, link: 'contacts' }));
       }
+      var WAY = [[[X0, YO], [X0, 300], [X0 + 108, 300]],
+                 [[XD[1], YO], [X0, YO], [X0, 300], [X0 + 108 - DX, 300]],
+                 [[XD[2], YO], [X0, YO], [X0, 250]]];
+      var T0 = 6.6, TA = T0 + 0.5 * (NU - 1) + 0.5 + 0.4 + 4.4 + 0.1, TH = TA + 0.5, NORTH = -Math.PI / 2;
+      function heading(rt, d) { var a = rt.at(Math.max(0, d - 1)), b = rt.at(Math.min(rt.len, d + 1)); return Math.atan2(b[1] - a[1], b[0] - a[0]); }
+      function turn(a, b, f) { var d = b - a; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return a + d * f; }
+      var units = WAY.map(function (w, n) {
+        var out = Route(w, 20), home = Route(w.slice().reverse(), 20), xd = XD[n];
+        var dOut = drive(out.len, 4.4), dHome = drive(home.len, 2.0);
+        var t0 = T0 + 0.5 * n, t1 = t0 + 0.5, t2 = t1 + 0.4, t3 = t2 + 4.4, t5 = TH + 2.0 + (n === 1 ? 0.3 : 0), t6 = t5 + (n ? 0.35 : 0), t7 = t6 + 0.7;
+        var h0 = heading(out, 0), h1 = heading(out, out.len), h2 = heading(home, home.len);
+        // where the unit is and which way its front looks at u: docked facing the wall (-y)
+        return function (u) {
+          var d, p;
+          if (u < t0 || u >= t7) return [xd, Y0, NORTH, 0];
+          if (u < t1) return [xd, Y0 + 30 * std((u - t0) / 0.5), NORTH, 0];             // backs out
+          if (u < t2) return [xd, YO, turn(NORTH, h0, std((u - t1) / 0.4)), 0];          // turns to its way
+          if (u < t3) { d = out.len * dOut((u - t2) / 4.4); p = out.at(d); return [p[0], p[1], heading(out, d), 1]; }
+          p = out.at(out.len);
+          if (u < TA) return [p[0], p[1], h1, 0];                                       // stands in file
+          if (u < TH) return [p[0], p[1], h1 + Math.PI * std((u - TA) / 0.5), 0];       // about
+          if (u < TH + 2.0) { d = home.len * dHome((u - TH) / 2.0); p = home.at(d); return [p[0], p[1], heading(home, d), 0]; }
+          if (u < t5) return [xd, YO, h2, 0];                                           // (the second waits for the third's turn)
+          if (u < t6) return [xd, YO, turn(h2, NORTH, std((u - t5) / 0.35)), 0];         // to the wall
+          return [xd, YO - 30 * std((u - t6) / 0.7), NORTH, 0];                          // in, nose first
+        };
+      });
       function sm(v, a, b) { v = clamp((v - a) / (b - a), 0, 1); return v * v * (3 - 2 * v); }
       return function (t) {
         var h = hourAt(t), dk = inout(dark(h));
@@ -1303,34 +1355,45 @@
         var a = (90 - 30 * h) * Math.PI / 180;
         hd.setAttribute('d', line([T(cx, cy, cz), T(cx + hand * r * Math.cos(a), cy, cz + hand * r * Math.sin(a))]));
         if (dim) dim.style.opacity = dk.toFixed(3);
-        var u = t % DAY, p = where(u), x = p[0], y = p[1];
-        // the edge module: out along the bench, by where the unit is on its way out
-        var m = u >= T1b && u < T2 && Math.abs(x - X0) < 0.5 ? sm(y, 112, 146) * (1 - sm(y, 236, 270)) : 0;
-        var q = { e_sh: -90 * m, e_el: 180 + 180 * m, e_wr: -180 - 90 * m, lit: m > 0.98 ? 1 : 0.15 };
-        ren.draw(mach.place(q, RK.mul(RK.move(x, y, F0), RK.rot('z', p[2]))).concat(dock));
+        var u = t % DAY, all = docks.slice();
+        units.forEach(function (where, n) {
+          var p = where(u), x = p[0], y = p[1];
+          // the edge module: out along the bench, by where the unit is on its way out (the first two)
+          var m = n < 2 && p[3] && Math.abs(x - X0) < 0.5 ? sm(y, 112, 146) * (1 - sm(y, 236, 270)) : 0;
+          var q = { e_sh: -90 * m, e_el: 180 + 180 * m, e_wr: -180 - 90 * m, lit: m > 0.98 ? 1 : 0.15 };
+          mach.place(q, RK.mul(RK.move(x, y, F0), RK.rot('z', p[2])), all);
+        });
+        ren.draw(all);
       };
     },
 
-    // Records, a turn of about 52 s: the store's runner (RN-3, tools/robokit/robots.js: its body 56 by 50 cm and 28
-    // high, a guide near its side toward the racks, a carriage on the guide's far face) works with three arms on the
-    // carriage, the carriage set at the marked row's height: D, the drawer arm (16 and 14 cm, low on the carriage's
-    // left), its hook a bar across to the pull; the carrier, a slide under a tray; P, the picker (20 and 18 cm, from the
-    // carriage's top at its right), a bar across to a pair of fingers over the middle. It goes along the racks from the
-    // left, to each drawer of the marked row in turn, the two of a rack together: D's hook comes to the pull (0.3 s; the
-    // drawer's sealed edge lights as it is called) and draws the drawer out on its slides 11 cm (0.6 s), where it holds
-    // it; the tray goes out to the drawer's front (0.65 s); at the rack's first drawer P comes over the card, goes down,
-    // takes it by its head, lifts it 4 cm clear of the drawer, carries it over the drawer's front and sets it on the
-    // tray against its stop; at the second it takes it from the tray and sets it in; P goes back to rest while the tray
-    // comes back (0.65 s), and only then is the drawer run back (0.55 s) and let go. The card rides on the tray between
-    // them. After the eighth the runner goes back to its place at the left of the racks, its carriage let down to 55 cm,
-    // and stands. Its lights are on the hook's lock and on the fingers' block. Drawn from its parts by robokit.
+    // Records, four runners at four racks (round 41; before it one runner went along all the racks in a turn of 52 s).
+    // The store's runner (RN-3, tools/robokit/robots.js: its body 56 by 50 cm and 28 high, a guide near its side toward
+    // the racks, a carriage on the guide's far face) works with three arms on the carriage: D, the drawer arm (16 and
+    // 14 cm, low on the carriage's left), its hook a bar across to the pull; the carrier, a slide under a tray; P, the
+    // picker (20 and 18 cm, from the carriage's top at its right), a bar across to a pair of fingers over the middle.
+    // Each rack has its runner, which keeps before it. A turn (about 14 s): the carriage goes to the row that is called
+    // while the runner runs to the rack's first drawer; D's hook comes to the pull (0.3 s; the drawer's edge lights as
+    // it is called) and draws the drawer out on its slides 11 cm (0.6 s), where it holds it; the tray goes out to the
+    // drawer's front (0.65 s); P comes over the card, goes down, takes it by its head, lifts it 4 cm clear of the
+    // drawer, carries it over the drawer's front and sets it on the tray against its stop; P goes back to rest while
+    // the tray comes back (0.65 s), and only then is the drawer run back (0.55 s) and let go. The card rides on the tray
+    // to the rack's second drawer in the same row, where it is set in the same way. Four turns, each at another row,
+    // make a runner's round; the four runners keep the one round, each a quarter of a turn after its neighbour on the
+    // left and each with its own order of rows, so that at any moment four drawers of the store are at some stage of
+    // the same work. A runner's lights are on the hook's lock and on the fingers' block. Drawn from their parts by
+    // robokit, all together.
     records: function (L, T, g, dim, svg) {
-      var yf = L.yf, BAY = L.bay, MOD = L.mod, OUT = 11, F0 = L.floor;
+      var yf = L.yf, BAY = L.bay, MOD = L.mod, OUT = 11, F0 = L.floor, Z0 = L.drawers[0][1];
       behindWall(svg, g, T, L.wall);
-      var ds = L.drawers.map(function (dw) {
-        var o = { x0: dw[0], z0: dw[1] }, sz = dw[1] + MOD - 0.6, sy = yf + 2.3;
-        o.sig = mk('path', { 'class': 'lv-fill', fill: LIT, d: poly([T(dw[0] + 0.8, sy, sz - 3.4), T(dw[0] + BAY - 0.8, sy, sz - 3.4),
-                                                                      T(dw[0] + BAY - 0.8, sy, sz), T(dw[0] + 0.8, sy, sz)]) }, g);
+      var R = RK_MACHINES.M.runner, Q = R.poses, mach = new RK.Machine(R);
+      var YB = yf + 32, CY = YB + 25;                            // the body's far face; its middle (the machine's frame)
+      var CIN = CY + Q.HOOK, HOFF = CY + Q.HOFF;                 // the hook: at a closed drawer's pull; off, clear of it
+      var ROWS = [[0, -2, 1, -4], [-3, 0, 2, -1], [1, -4, 0, -2], [-1, 2, -3, 0]];   // each runner's rows, from the marked one
+      var NR = L.drawers.length >> 1, TURN = 0;
+      function drawer(x0) {
+        var o = { x0: x0, z0: Z0, ev: null };
+        o.sig = mk('path', { 'class': 'lv-fill', fill: LIT }, g);
         o.g = mk('g', {}, g);
         o.right = mk('path', { 'class': 'lv-fill', fill: INK.right }, o.g);
         o.slide = mk('path', { 'class': 'lv-fill', fill: '#a3aeb5' }, o.g);         // its slide, under its side
@@ -1343,98 +1406,115 @@
         o.folds = mk('path', { 'class': 'lv-line', fill: 'none', stroke: INK.ink, 'stroke-width': 0.55, 'stroke-linejoin': 'round' }, o.g);
         o.sil = mk('path', { 'class': 'lv-line', fill: 'none', stroke: INK.ink, 'stroke-width': 0.85, 'stroke-linejoin': 'round' }, o.g);
         return o;
-      });
-      var R = RK_MACHINES.M.runner, Q = R.poses, mach = new RK.Machine(R);
-      var YB = yf + 32, CY = YB + 25;                            // the body's far face; its middle (the machine's frame)
-      var CIN = CY + Q.HOOK, HOFF = CY + Q.HOFF;                 // the hook: at a closed drawer's pull; off, clear of it
-      var XD = L.drawers.map(function (dw) { return dw[0] + BAY / 2; });
-      var DOCK = XD[0] - 39, ZW = L.drawers[0][1] + 1, ZR = F0 + Q.LOW;
-      var P = Plan({ x: DOCK, cz: ZR, cf: HOFF, ce: 0, py: Q.PY_R, pz: Q.PZ_R, pf: 0 }), held = [], pick = [], put = [];
-      P.wait(0.5);
-      P.go({ cz: ZW }, 0.7);
-      XD.forEach(function (x, i) {
-        if (i) P.run('x', x, i % 2 ? 1.1 : 1.2); else P.run('x', x, 0.9);
-        var tc = P.go({ cf: CIN }, 0.3);                         // the hook to the pull
-        P.go({ cf: CIN + OUT }, 0.6);                            // the drawer drawn out, and held
-        P.go({ ce: 1 }, 0.65);                                   // the tray out to it
-        var from = i % 2 ? [Q.PY_T, Q.PZ_T] : [Q.PY_D, Q.PZ_D], to = i % 2 ? [Q.PY_D, Q.PZ_D] : [Q.PY_T, Q.PZ_T];
-        P.also({ pf: -Q.OPEN }, P.at() + 0.3, 0.2);
-        P.go({ py: from[0], pz: Q.PZ_UP }, 0.6);                 // P over the card
-        P.go({ pz: from[1] }, 0.25);                             // down to its head
-        pick[i] = P.go({ pf: Q.SHUT }, 0.15);                    // takes it
-        P.go({ pz: Q.PZ_UP }, 0.35);                             // lifts it clear
-        P.go({ py: to[0] }, 0.4);                                // over the drawer's front
-        P.go({ pz: to[1] }, 0.25);                               // down onto the tray, or into the drawer
-        put[i] = P.go({ pf: -Q.OPEN }, 0.15);                    // lets it go
-        P.go({ pz: Q.PZ_UP }, 0.3);
-        P.also({ py: Q.PY_R, pz: Q.PZ_R }, P.at(), 0.55);        // P back to rest
-        P.also({ pf: 0 }, P.at() + 0.2, 0.3);
-        P.go({ ce: 0 }, 0.65);                                   // the tray back
-        var tr = P.go({ cf: CIN }, 0.55);                        // the drawer run back
-        P.go({ cf: HOFF }, 0.25);                                // the hook off
-        held.push([tc, tr]);
-      });
-      P.go({ cz: ZR }, 0.7);
-      P.run('x', DOCK, 3.4);
-      var TURN = P.wait(2.6);
+      }
+      var runners = [];
+      for (var r = 0; r < NR; r++) {
+        var xa = L.drawers[2 * r][0], xb = L.drawers[2 * r + 1][0], XD = [xa + BAY / 2, xb + BAY / 2];
+        var rows = ROWS[r % ROWS.length], last = Z0 + rows[rows.length - 1] * MOD + 1;
+        var P = Plan({ x: XD[1], cz: last, cf: HOFF, ce: 0, py: Q.PY_R, pz: Q.PZ_R, pf: 0 }), ev = [];
+        rows.forEach(function (row) {
+          [0, 1].forEach(function (i) {
+            if (!i) P.also({ cz: Z0 + row * MOD + 1 }, P.at() + 0.15, 0.8);   // the carriage to the row, on the way
+            P.run('x', XD[i], 1.15);
+            var e = { i: i, z0: Z0 + row * MOD };
+            e.tc = P.go({ cf: CIN }, 0.3);                       // the hook to the pull
+            P.go({ cf: CIN + OUT }, 0.6);                        // the drawer drawn out, and held
+            P.go({ ce: 1 }, 0.65);                               // the tray out to it
+            var from = i ? [Q.PY_T, Q.PZ_T] : [Q.PY_D, Q.PZ_D], to = i ? [Q.PY_D, Q.PZ_D] : [Q.PY_T, Q.PZ_T];
+            P.also({ pf: -Q.OPEN }, P.at() + 0.3, 0.2);
+            P.go({ py: from[0], pz: Q.PZ_UP }, 0.6);             // P over the card
+            P.go({ pz: from[1] }, 0.25);                         // down to its head
+            e.pick = P.go({ pf: Q.SHUT }, 0.15);                 // takes it
+            P.go({ pz: Q.PZ_UP }, 0.35);                         // lifts it clear
+            P.go({ py: to[0] }, 0.4);                            // over the drawer's front
+            P.go({ pz: to[1] }, 0.25);                           // down onto the tray, or into the drawer
+            e.put = P.go({ pf: -Q.OPEN }, 0.15);                 // lets it go
+            P.go({ pz: Q.PZ_UP }, 0.3);
+            P.also({ py: Q.PY_R, pz: Q.PZ_R }, P.at(), 0.55);    // P back to rest
+            P.also({ pf: 0 }, P.at() + 0.2, 0.3);
+            P.go({ ce: 0 }, 0.65);                               // the tray back
+            e.tr = P.go({ cf: CIN }, 0.55);                      // the drawer run back
+            P.go({ cf: HOFF }, 0.25);                            // the hook off
+            P.wait(0.3);
+            ev.push(e);
+          });
+        });
+        TURN = P.at();
+        runners.push({ P: P, ev: ev, d: [drawer(xa), drawer(xb)] });
+      }
+      var STEP = TURN / ROWS[0].length / NR;                     // a quarter of a turn between neighbours
       var rb = mk('g', { 'class': 'rk' }, g);
       var ren = new RK.Renderer(rb, T, T.k || 1);
-      // where the card is: in a drawer, held by P (what of it is below a drawer's top while over it is in it), on the tray
-      function card(t, x, cz, py, pz, out) {
-        for (var j = 0; j < 4; j++) {
-          var a = 2 * j, b = 2 * j + 1;
-          if (t >= pick[a] && t < put[a] || t >= pick[b] && t < put[b]) {
-            var k = t < put[a] ? a : b, dw = L.drawers[k], y = CY + py, z0 = cz + pz - Q.CARD[0], z1 = cz + pz - Q.CARD[1];
-            var front = yf + 2.2 + (t >= held[k][0] && t <= held[k][1] ? clamp(P.val('cf', t) - CIN, 0, OUT) : 0);
-            if (y < front) z0 = Math.max(z0, dw[1] + MOD - 0.6);
+      // where a runner's card is: in a drawer, held by P (what of it is below a drawer's top while over it is in it),
+      // on the tray
+      function card(rn, t, x, cz, py, pz, out) {
+        for (var m = 0; m < rn.ev.length; m += 2) {
+          var A = rn.ev[m], B = rn.ev[m + 1];
+          if (t >= A.pick && t < A.put || t >= B.pick && t < B.put) {
+            var e = t < A.put ? A : B, y = CY + py, z0 = cz + pz - Q.CARD[0], z1 = cz + pz - Q.CARD[1];
+            var front = yf + 2.2 + (t >= e.tc && t <= e.tr ? clamp(rn.P.val('cf', t) - CIN, 0, OUT) : 0);
+            if (y < front) z0 = Math.max(z0, e.z0 + MOD - 0.6);
             if (z1 - z0 > 0.05) out.push(RK.box(x - 13, y - 0.25, z0, x + 13, y + 0.25, z1, { tone: 'paper', link: 'card' }));
             return 0;
           }
-          if (t >= put[a] && t < pick[b]) return 1;              // on the tray between them
+          if (t >= A.put && t < B.pick) return 1;                // on the tray between them
         }
         return 0;
       }
       return function (t) {
-        t = t % TURN;
-        var x = P.val('x', t), cz = P.val('cz', t), cf = P.val('cf', t);
-        ds.forEach(function (o, i) {
-          var h = held[i], d = t >= h[0] && t <= h[1] ? clamp(cf - CIN, 0, OUT) : 0;
-          // its sealed edge lights as the runner reaches it, and goes out after it is let go
-          o.sig.style.opacity = (t < h[0] - 0.3 ? 0 : t < h[0] ? out3((t - h[0] + 0.3) / 0.3) : t < h[1] ? 1 : 1 - clamp((t - h[1]) / 0.5, 0, 1)).toFixed(3);
-          if (d < 0.3) { o.g.style.display = 'none'; return; }
-          o.g.style.display = '';
-          var xa = o.x0 + 0.8, xb = o.x0 + BAY - 0.8, za = o.z0 + 0.6, zb = o.z0 + MOD - 0.6, yb = yf + 2.2 + d, yp = yf + d;
-          var y1 = yf + 1.0, y3 = yf + 3.5, sd = yb > y3;
-          o.right.setAttribute('d', sd ? poly([T(xb, y3, za), T(xb, yb, za), T(xb, yb, zb), T(xb, y3, zb)]) : '');
-          o.slide.setAttribute('d', sd ? poly([T(xb + 0.05, y3, za), T(xb + 0.05, yb - 0.6, za), T(xb + 0.05, yb - 0.6, za + 1.6), T(xb + 0.05, y3, za + 1.6)]) : '');
-          o.tray.setAttribute('d', yp > y1 ? poly([T(xa, y1, zb), T(xb, y1, zb), T(xb, yp, zb), T(xa, yp, zb)]) : '');
-          o.top.setAttribute('d', poly([T(xa, Math.max(y1, yp), zb), T(xb, Math.max(y1, yp), zb), T(xb, yb, zb), T(xa, yb, zb)]));
-          o.front.setAttribute('d', poly([T(xa, yb, za), T(xb, yb, za), T(xb, yb, zb), T(xa, yb, zb)]));
-          o.seal.setAttribute('d', poly([T(xa, yb + 0.05, zb - 3.4), T(xb, yb + 0.05, zb - 3.4), T(xb, yb + 0.05, zb), T(xa, yb + 0.05, zb)]));
-          var xm = o.x0 + BAY / 2, zm = o.z0 + MOD / 2 - 0.8;
-          o.pull.setAttribute('d', poly([T(xm - 6, yb + 1.2, zm - 0.6), T(xm + 6, yb + 1.2, zm - 0.6), T(xm + 6, yb + 1.2, zm + 0.6), T(xm - 6, yb + 1.2, zm + 0.6)]));
-          // the cards standing in the drawer, their heads seen from above (the one to be lifted, or set in, the nearest)
-          var sh = '', inCard = i % 2 ? t >= put[i] : t < pick[i];
-          for (var k = inCard ? 0.5 : 1; k <= 3; k += k < 1 ? 0.5 : 1) { var ys = yp - 5.5 * k; if (ys > y1 + 0.5) sh += line([T(xa + 2.5, ys, zb), T(xb - 2.5, ys, zb)]); }
-          o.sheets.setAttribute('d', sh);
-          // the folds: the front's head and its side; the panel's back, on the top and on the side; the tray's rim
-          o.folds.setAttribute('d', line([T(xa, yb, zb), T(xb, yb, zb)]) +
-            (sd ? line([T(xb, yb, zb), T(xb, yb, za)]) + line([T(xb, y3, zb), T(xb, yb, zb)]) : '') +
-            (yp > y1 ? line([T(xa, yp, zb), T(xb, yp, zb)]) + line([T(xa + 1.2, y1, zb), T(xa + 1.2, yp, zb)]) : '') +
-            (yp > y3 ? line([T(xb, yp, zb), T(xb, yp, za)]) : ''));
-          // the outline of what is seen of it
-          o.sil.setAttribute('d', sd
-            ? poly([T(xa, y1, zb), T(xb, y1, zb), T(xb, y3, zb), T(xb, y3, za), T(xb, yb, za), T(xa, yb, za), T(xa, yb, zb)])
-            : poly([T(xa, y1, zb), T(xb, y1, zb), T(xb, yb, zb), T(xb, yb, za), T(xa, yb, za), T(xa, yb, zb)]));
+        var all = [];
+        runners.forEach(function (rn, n) {
+          var P = rn.P, u = (t + n * STEP) % TURN;
+          var x = P.val('x', u), cz = P.val('cz', u), cf = P.val('cf', u);
+          rn.d.forEach(function (o, i) {
+            var e = null;
+            for (var k = i; k < rn.ev.length; k += 2) if (u >= rn.ev[k].tc - 0.3 && u <= rn.ev[k].tr + 0.5) { e = rn.ev[k]; break; }
+            if (!e) { o.sig.style.opacity = '0'; o.g.style.display = 'none'; return; }
+            if (o.ev !== e) {                                    // called at this row: its edge, where it lights
+              o.ev = e; o.z0 = e.z0;
+              var sz = e.z0 + MOD - 0.6, sy = yf + 2.3;
+              o.sig.setAttribute('d', poly([T(o.x0 + 0.8, sy, sz - 3.4), T(o.x0 + BAY - 0.8, sy, sz - 3.4), T(o.x0 + BAY - 0.8, sy, sz), T(o.x0 + 0.8, sy, sz)]));
+            }
+            var d = u >= e.tc && u <= e.tr ? clamp(cf - CIN, 0, OUT) : 0;
+            // its edge lights as the runner reaches it, and goes out after it is let go
+            o.sig.style.opacity = (u < e.tc ? out3((u - e.tc + 0.3) / 0.3) : u < e.tr ? 1 : 1 - clamp((u - e.tr) / 0.5, 0, 1)).toFixed(3);
+            if (d < 0.3) { o.g.style.display = 'none'; return; }
+            o.g.style.display = '';
+            var xa = o.x0 + 0.8, xb = o.x0 + BAY - 0.8, za = o.z0 + 0.6, zb = o.z0 + MOD - 0.6, yb = yf + 2.2 + d, yp = yf + d;
+            var y1 = yf + 1.0, y3 = yf + 3.5, sd = yb > y3;
+            o.right.setAttribute('d', sd ? poly([T(xb, y3, za), T(xb, yb, za), T(xb, yb, zb), T(xb, y3, zb)]) : '');
+            o.slide.setAttribute('d', sd ? poly([T(xb + 0.05, y3, za), T(xb + 0.05, yb - 0.6, za), T(xb + 0.05, yb - 0.6, za + 1.6), T(xb + 0.05, y3, za + 1.6)]) : '');
+            o.tray.setAttribute('d', yp > y1 ? poly([T(xa, y1, zb), T(xb, y1, zb), T(xb, yp, zb), T(xa, yp, zb)]) : '');
+            o.top.setAttribute('d', poly([T(xa, Math.max(y1, yp), zb), T(xb, Math.max(y1, yp), zb), T(xb, yb, zb), T(xa, yb, zb)]));
+            o.front.setAttribute('d', poly([T(xa, yb, za), T(xb, yb, za), T(xb, yb, zb), T(xa, yb, zb)]));
+            o.seal.setAttribute('d', poly([T(xa, yb + 0.05, zb - 3.4), T(xb, yb + 0.05, zb - 3.4), T(xb, yb + 0.05, zb), T(xa, yb + 0.05, zb)]));
+            var xm = o.x0 + BAY / 2, zm = o.z0 + MOD / 2 - 0.8;
+            o.pull.setAttribute('d', poly([T(xm - 6, yb + 1.2, zm - 0.6), T(xm + 6, yb + 1.2, zm - 0.6), T(xm + 6, yb + 1.2, zm + 0.6), T(xm - 6, yb + 1.2, zm + 0.6)]));
+            // the cards standing in the drawer, their heads seen from above (the one to be lifted, or set in, the nearest)
+            var sh = '', inCard = i ? u >= e.put : u < e.pick;
+            for (var k2 = inCard ? 0.5 : 1; k2 <= 3; k2 += k2 < 1 ? 0.5 : 1) { var ys = yp - 5.5 * k2; if (ys > y1 + 0.5) sh += line([T(xa + 2.5, ys, zb), T(xb - 2.5, ys, zb)]); }
+            o.sheets.setAttribute('d', sh);
+            // the folds: the front's head and its side; the panel's back, on the top and on the side; the tray's rim
+            o.folds.setAttribute('d', line([T(xa, yb, zb), T(xb, yb, zb)]) +
+              (sd ? line([T(xb, yb, zb), T(xb, yb, za)]) + line([T(xb, y3, zb), T(xb, yb, zb)]) : '') +
+              (yp > y1 ? line([T(xa, yp, zb), T(xb, yp, zb)]) + line([T(xa + 1.2, y1, zb), T(xa + 1.2, yp, zb)]) : '') +
+              (yp > y3 ? line([T(xb, yp, zb), T(xb, yp, za)]) : ''));
+            // the outline of what is seen of it
+            o.sil.setAttribute('d', sd
+              ? poly([T(xa, y1, zb), T(xb, y1, zb), T(xb, y3, zb), T(xb, y3, za), T(xb, yb, za), T(xa, yb, za), T(xa, yb, zb)])
+              : poly([T(xa, y1, zb), T(xb, y1, zb), T(xb, yb, zb), T(xb, yb, za), T(xa, yb, za), T(xa, yb, zb)]));
+          });
+          // the runner: its arms posed from their points, its card where it is
+          var py = P.val('py', u), pz = P.val('pz', u), held1 = rn.ev.some(function (e) { return u >= e.tc && u <= e.tr; });
+          var q = R.pose({ lift: cz - F0, hy: cf - CY, ce: -OUT * P.val('ce', u), py: py, pz: pz, pf: P.val('pf', u), dw: 0, dr: 0,
+                           cin: 0, cp: 0, h_lit: held1 ? 1 : 0.15 });
+          var boxes = [];
+          q.con = card(rn, u, x, cz, py, pz, boxes);
+          q.p_lit = boxes.length ? 1 : 0.15;
+          mach.place(q, RK.move(x, CY, F0), all);
+          for (var b = 0; b < boxes.length; b++) all.push(boxes[b]);
         });
-        // the runner: its arms posed from their points, the card where it is
-        var py = P.val('py', t), pz = P.val('pz', t), held1 = held.some(function (h) { return t >= h[0] && t <= h[1]; });
-        var q = R.pose({ lift: cz - F0, hy: cf - CY, ce: -OUT * P.val('ce', t), py: py, pz: pz, pf: P.val('pf', t), dw: 0, dr: 0,
-                         cin: 0, cp: 0, h_lit: held1 ? 1 : 0.15 });
-        var boxes = [];
-        q.con = card(t, x, cz, py, pz, boxes);
-        q.p_lit = boxes.length ? 1 : 0.15;
-        ren.draw(mach.place(q, RK.move(x, CY, F0)).concat(boxes));
+        ren.draw(all);
       };
     },
   };

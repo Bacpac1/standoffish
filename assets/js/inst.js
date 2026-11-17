@@ -189,7 +189,7 @@
     jobs: function (el) {
       var S = data(el, 'data-steps'), box = el.querySelector('.ijb__rows');
       if (!S || !box) return null;
-      var rows = slice(box.querySelectorAll('.ijb__row')), next = rows.length % S.length;
+      var rows = slice(box.querySelectorAll('.ijb__row')), next = rows.length % S.length, KEEP = parseInt(el.getAttribute('data-rows'), 10) || 3;
       var seat = function () { rows.forEach(function (r, j) { r.style.setProperty('--i', j); }); };
       var row = function (j) {
         var r = document.createElement('span'); r.className = 'ijb__row is-new';
@@ -205,8 +205,8 @@
         box.insertBefore(r, box.firstChild); rows.unshift(r);
         void r.offsetWidth; r.classList.remove('is-new');
         seat();
-        if (rows.length > 4) { var old = rows.pop(); if (old.parentNode) old.parentNode.removeChild(old); }
-        if (rows.length > 3) rows[3].classList.add('is-old');
+        if (rows.length > KEEP + 1) { var old = rows.pop(); if (old.parentNode) old.parentNode.removeChild(old); }
+        if (rows.length > KEEP) rows[KEEP].classList.add('is-old');
         return 2400;
       } };
     }
