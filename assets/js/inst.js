@@ -111,6 +111,25 @@
       } };
     },
 
+    /* a figure of a page's own entries (round 45): its entries taken in turn. The mark of the one taken is lit (the
+       element whose data-i is the step's i, or the step's place in the list), what is written of it stands in the
+       slots (data-out names the step's field), and --at carries its place for what moves (the step's at, or its
+       number). Where the round begins again, what moves is put back out of sight (is-wrap), never run backward. */
+    pick: function (el) {
+      var S = data(el, 'data-steps'), items = slice(el.querySelectorAll('[data-i]')), outs = slice(el.querySelectorAll('[data-out]'));
+      if (!S || !S.length) return null;
+      var i = parseInt(el.getAttribute('data-at'), 10) || 0;
+      var show = function (first) {
+        var st = S[i], id = String(st.i != null ? st.i : i);
+        items.forEach(function (t) { t.classList.toggle('is-on', t.getAttribute('data-i') === id); });
+        if (!first) outs.forEach(function (o, k) { put(o, st[o.getAttribute('data-out')], k ? (k === 1 ? 'land-2' : 'land-3') : 'land'); });
+        if (i === 0 && !first) { el.classList.add('is-wrap'); el.style.setProperty('--at', st.at != null ? st.at : i); void el.offsetWidth; el.classList.remove('is-wrap'); }
+        else el.style.setProperty('--at', st.at != null ? st.at : i);
+      };
+      show(true);
+      return { wait: 2200, step: function () { i = (i + 1) % S.length; show(false); return 2600; } };
+    },
+
     /* the seat: the year's light. Across, the days of the year; down, the hours of the day at Longyearbyen (UTC+1). */
     visit: function (el) {
       var cv = el.querySelector('.ivs__c'), ctx = cv.getContext && cv.getContext('2d');

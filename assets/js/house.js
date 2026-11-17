@@ -1801,6 +1801,50 @@
     };
   }
 
+  // A machine at work on its plate (round 45): <canvas data-plate="runner"> on a page that has no room of its own (a
+  // role's page: the machine it works beside). robokit's machine by that name through its own round of work
+  // (machine.work), with the things it works at (machine.props) and a plate under them; fitted to the canvas by what
+  // it reaches over a whole round, so that it never leaves it. It runs while in view, as the rooms do; under reduced
+  // motion it stands at rest. In the drawings' tones, and the night's.
+  (function () {
+    var cvs = slice(document.querySelectorAll('canvas[data-plate]'));
+    if (!cvs.length) return;
+    machines(function () {
+      cvs.forEach(function (cv) {
+        var m = RK_MACHINES.M[cv.getAttribute('data-plate')], ctx = cv.getContext && cv.getContext('2d');
+        if (!m || !ctx) return;
+        var mach = new RK.Machine(m), P0 = RK.iso(1, [0, 0]), T0 = parseFloat(cv.getAttribute('data-t')) || 0, last = 0;
+        var props = (m.props || []).map(function (b) { return RK.box(b.at[0], b.at[1], b.at[2], b.at[0] + b.size[0], b.at[1] + b.size[1], b.at[2] + b.size[2], { w: b.w || 0.55, tone: b.tone, link: 'prop' }); }).filter(Boolean);
+        var pose = function (t) { return m.work && !mq.matches ? m.work(t + T0) : m.rest; };
+        var boxes = function (t) { var q = pose(t); return mach.place(q, RK.move(q.dx || 0, q.dy || 0, q.dz || 0)).concat(props); };
+        // what it reaches: in the room's own units (for the plate) and in the picture's
+        var lo = [1e9, 1e9], hi = [-1e9, -1e9], N = m.work && !mq.matches ? 32 : 1, per = m.period || 8, e;
+        for (var i = 0; i < N; i++) boxes(i * per / N - T0).forEach(function (b) {
+          b.c.forEach(function (c) { if (c[0] < lo[0]) lo[0] = c[0]; if (c[1] < lo[1]) lo[1] = c[1]; if (c[0] > hi[0]) hi[0] = c[0]; if (c[1] > hi[1]) hi[1] = c[1]; });
+        });
+        var plate = RK.box(lo[0] - 14, lo[1] - 14, -1.6, hi[0] + 14, hi[1] + 14, 0, { w: 0.85, tone: 'paper', link: 'plate' });
+        e = [[1e9, 1e9], [-1e9, -1e9]];
+        for (var k = 0; k < N; k++) { var ex = RK.extent(boxes(k * per / N - T0).concat([plate]), P0); for (var a = 0; a < 2; a++) { e[0][a] = Math.min(e[0][a], ex[0][a]); e[1][a] = Math.max(e[1][a], ex[1][a]); } }
+        var draw = function (t) {
+          var w = cv.clientWidth, h = cv.clientHeight, d = Math.min(2, window.devicePixelRatio || 1);
+          last = t;
+          if (!w || !h) return;
+          if (cv.width !== Math.round(w * d) || cv.height !== Math.round(h * d)) { cv.width = Math.round(w * d); cv.height = Math.round(h * d); }
+          var sc = Math.min((w - 20) / (e[1][0] - e[0][0]), (h - 20) / (e[1][1] - e[0][1]), 3.6);
+          var P = RK.iso(sc, [w / 2 - sc * (e[0][0] + e[1][0]) / 2, h / 2 - sc * (e[0][1] + e[1][1]) / 2]);
+          ctx.setTransform(d, 0, 0, d, 0, 0); ctx.clearRect(0, 0, w, h);
+          var pen = new RK.Painter(ctx, P, 1);
+          pen.tint = LIGHT.night ? tint : null;
+          pen.draw(boxes(t).concat([plate]));
+        };
+        cv.hidden = false;
+        lights(function () { draw(last); });
+        if (mq.matches || !m.work) { draw(0); window.addEventListener('resize', function () { draw(0); }); }
+        else runner(cv, draw);
+      });
+    });
+  })();
+
   (function () {
     var pics = slice(document.querySelectorAll('picture[data-live]'));
     if (!pics.length || mq.matches) return;
