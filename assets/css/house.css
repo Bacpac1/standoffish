@@ -1504,10 +1504,15 @@ p.fine sup { font: 500 10.5px/1 var(--mono); margin-right: .2em; }
 
 /* ------------------------------------------------------------------- the line between the rooms (round 42, 2026-11-17)
    house.js draws it over the home's three works where they stand side by side: the same rail that runs in the rooms,
-   from one to the next, in the drawings' own directions and tones (and their night). */
+   from one to the next, in the drawings' own directions and tones (and their night: round 44, below). */
 .work__stage { position: relative; }
-.work__line { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 1;
-              filter: var(--draw); }
+.work__line { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 1; }
 /* (round 43) what stands still is one picture, painted once; what moves is another, over it */
 .work__line:not(.work__line--live) { will-change: transform; }
 .work__line--live { z-index: 2; will-change: transform; }
+/* (round 44) no filter lies over what is drawn between the rooms (a filter over so large a picture was worked again
+   at every frame): house.js turns each tone itself as --draw would, in the still picture's attributes and on the
+   canvases where things move (it knows invert(.92) hue-rotate(180deg); if the night's filter changes, so must it). A
+   machine that flies has a canvas of its own, moved as a whole */
+.work__cv, .work__spr { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 2; }
+.work__spr { z-index: 3; transform-origin: 0 0; will-change: transform; }

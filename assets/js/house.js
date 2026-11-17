@@ -1127,6 +1127,48 @@
     var u = ((t % P) + P) % P;
     for (var b = 0; b < 3; b++) for (var j = 0; j < LINE.N; j++) { var age = u - j * LINE.GAP + b * P; if (age >= 0) f(age); }
   }
+  // A canvas over a drawing for what robokit draws there (round 44). Several hundred boxes redrawn as an <svg>'s paths
+  // at each frame cost the page its evenness; the same boxes are painted on a canvas in a fraction of the time. T: the
+  // drawing's projection (its viewBox's units); wall: a box that stands before the room's far end, behind which nothing
+  // is painted. The canvas lies over the live <svg> and a margin round it; the page's own filter turns it with the night.
+  function Canvas(svg, T, wall) {
+    var cv = document.createElement('canvas'), ctx = cv.getContext('2d'), vb = svg.viewBox.baseVal, M = 24, hp = null, o = { cv: cv, s: 0 };
+    cv.className = 'draw__live draw__cv'; cv.setAttribute('aria-hidden', 'true');
+    svg.parentNode.insertBefore(cv, svg.nextSibling);
+    if (wall) {
+      hp = [];
+      for (var i = 0; i < 8; i++) hp.push(T(i & 1 ? wall[3] : wall[0], i & 2 ? wall[4] : wall[1], i & 4 ? wall[5] : wall[2]));
+      hp = hull(hp);
+    }
+    o.fit = function () {
+      var w = parseFloat(svg.style.width), h = parseFloat(svg.style.height);
+      if (!(w > 0) || !(h > 0)) return;
+      var d = Math.min(2, window.devicePixelRatio || 1);
+      cv.style.left = (parseFloat(svg.style.left) - M) + 'px'; cv.style.top = (parseFloat(svg.style.top) - M) + 'px';
+      cv.style.width = (w + 2 * M) + 'px'; cv.style.height = (h + 2 * M) + 'px';
+      var W = Math.round((w + 2 * M) * d), H = Math.round((h + 2 * M) * d);
+      if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+      o.kd = w / vb.width; o.s = o.kd * d; o.m = M * d;
+    };
+    o.draw = function (boxes) {
+      if (!o.s) o.fit();
+      if (!o.s) return;
+      ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cv.width, cv.height);
+      ctx.setTransform(o.s, 0, 0, o.s, o.m, o.m);
+      if (hp) {
+        ctx.save(); ctx.beginPath(); ctx.rect(-M / o.kd - 10, -M / o.kd - 10, vb.width + 2 * M / o.kd + 20, vb.height + 2 * M / o.kd + 20);
+        ctx.moveTo(hp[0][0], hp[0][1]);
+        for (var j = 1; j < hp.length; j++) ctx.lineTo(hp[j][0], hp[j][1]);
+        ctx.closePath(); ctx.clip('evenodd');
+      }
+      new RK.Painter(ctx, T, (T.k || 1) / o.kd).draw(boxes);
+      if (hp) ctx.restore();
+    };
+    (svg._cv = svg._cv || []).push(o);
+    o.fit();
+    return o;
+  }
+  function gone(svg) { if (!svg) return; (svg._cv || []).forEach(function (o) { o.cv.remove(); }); svg.remove(); }
   var SCENES = {
     // Replies, a round of four couriers on one beat (round 41; before it one courier served the three positions in a
     // turn of 34 s). The courier (RC-4, tools/robokit/robots.js) works with four arms, none like another, two of them
@@ -1251,9 +1293,7 @@
       // the couriers and the berth, drawn after the positions: they stand before them. The supply against the end
       // wall by the front, its hood over the berth and the hood's lip, with the couriers' parts, in the order what
       // hides what
-      var rb = mk('g', { 'class': 'rk' }, g);
-      behindWall(svg, rb, T, L.wall);
-      var ren = new RK.Renderer(rb, T, T.k || 1);
+      var ren = Canvas(svg, T, L.wall);
       var fixed = [RK.box(12, FR - 8, F0, 44, FR + 48, F0 + 118, { w: 0.85, link: 'supply' }),
                    RK.box(12, FR - 4, F0 + 51, 88, FR + 24, F0 + 57, { w: 0.85, link: 'hood' }),
                    RK.box(44, FR + 22.5, F0 + 48, 88, FR + 24, F0 + 51, { w: 0.55, link: 'lip' })];
@@ -1407,9 +1447,7 @@
       // dawn
       var X0 = L.glass[0] + 18, Y0 = cy + 24, wy = cy - 4, YO = Y0 + 30, DX = 58;
       var XD = [X0, X0 + DX, X0 + 2 * DX], NU = XD.length;      // the docks: the first on the bench's line, the others on to its right
-      var rb = mk('g', { 'class': 'rk' }, g);
-      behindWall(svg, rb, T, L.wall);
-      var ren = new RK.Renderer(rb, T, T.k || 1), FL = RK_MACHINES.M.floor, mach = new RK.Machine(FL);
+      var ren = Canvas(svg, T, L.wall), FL = RK_MACHINES.M.floor, mach = new RK.Machine(FL);
       var docks = [];
       for (var n = 0; n < NU; n++) {
         docks.push(RK.box(XD[n] - 30, wy + 0.5, F0, XD[n] + 30, wy + 58, F0 + 0.5, { w: 0.55, tone: 'top', link: 'plate' }),
@@ -1555,23 +1593,27 @@
         runners.push({ P: P, ev: ev, d: [drawer(xa), drawer(xb)] });
       }
       var STEP = TURN / ROWS[0].length / NR;                     // a quarter of a turn between neighbours
-      var rb = mk('g', { 'class': 'rk' }, g);
-      var ren = new RK.Renderer(rb, T, T.k || 1);
+      var ren = Canvas(svg, T, L.wall);
       // the line ends here (round 42): in through the left end wall, along the back wall over the racks, across the
       // aisle on a beam and down a post into the receiving cabinet at the front, three carriers every ten seconds; the
       // cabinet's mark lights as each comes in. The steward (ST-6: six arms in three pairs down its column's front)
-      // stands at the cabinet and works at its top, its own turn of 8 s. Over the racks the tally flyer (FY-1: a plank
-      // 54 by 32 cm that moves level on its own wind, its dock a shelf on the left end wall) leaves its dock, stops
-      // over each rack in turn, comes down to it, reads (its mark lit) and goes on; from the last it comes back to
-      // the dock, is held and made live: two rounds to the runners' one
+      // stands at the cabinet and works at its top, its own turn of 8 s. Over the racks the tally flyer (FY-2, round 44: a
+      // pod between two rings that lean into each move; its perch a shelf on the left end wall, live while it sits
+      // there) leaves its perch, stops over each rack in turn, comes down to it, reads (its light lit) and goes on;
+      // from the last it comes back to the perch: two rounds to the runners' one
       var WT = yf - 76, ZL = F0 + 242, YL = WT + 4, XC = 320, YC = 226, PT = 10;
       var way = Way([[WT, YL, ZL], [XC, YL, ZL], [XC, YC, ZL], [XC, YC, F0 + 60]]);
       var fixed = way.rail([]);
       fixed.push(RK.box(XC - 20, YC - 30, F0, XC + 20, YC + 30, F0 + 58, { w: 0.85, link: 'cabinet' }));
       [120, 230].forEach(function (x) { fixed.push(RK.box(x - 2, WT, ZL - 9, x + 2, WT + 6, ZL - 3, { w: 0.55, link: 'bracket' })); });
       var ST = RK_MACHINES.M.steward, stew = new RK.Machine(ST), SB_ = RK.move(XC - 98, YC, F0);
-      var FY = RK_MACHINES.M.flyer, fly = new RK.Machine(FY), XF = 60, YF = (yf - 46 + yf) / 2, ZF = F0 + 224;
-      var FB = RK.mul(RK.move(XF, YF, ZF), RK.rot('z', Math.PI)), PF = TURN / 2;
+      var FY = RK_MACHINES.M.flyer, SC = RK_MACHINES.M.scout, fly = new RK.Machine(SC), XF = 68, YF = (yf - 46 + yf) / 2, ZF = F0 + 224;
+      var PF = TURN / 2, BIG = [1.15, 0, 0, 0, 0, 1.15, 0, 0, 0, 0, 1.15, 0];
+      // its perch: a shelf off the wall, two rails for its skids, the contact's block behind (its light: live)
+      fixed.push(RK.box(22, YF - 26, ZF - 3.6, XF + 24, YF + 26, ZF - 1.6, { w: 0.85, link: 'perch' }));
+      fixed.push(RK.box(XF - 12, YF - 5.6, ZF - 1.6, XF + 12, YF - 4, ZF, { w: 0.55, tone: 'dark', link: 'perch' }));
+      fixed.push(RK.box(XF - 12, YF + 4, ZF - 1.6, XF + 12, YF + 5.6, ZF, { w: 0.55, tone: 'dark', link: 'perch' }));
+      fixed.push(RK.box(22, YF - 9, ZF - 1.6, 31, YF + 9, ZF + 9, { w: 0.85, link: 'perch' }));
       var flight = (function () {
         var K = { mx: [[0, 0]], my: [[0, 0], [PF, 0]], mz: [[0, 0], [1.5, 0], [2.3, 3]], fork: [[0, 0], [PF, 0]], probe: [[0, 0], [PF, 0]], lit: [[0, 0.15]],
                   live: [[0, 1], [0.8, 1], [1.0, 0]], gate: [[0, 0], [1.0, 0], [1.4, -3.6]], wipe: [[0, 0], [PF, 0]] };
@@ -1611,7 +1653,9 @@
         passing(t, PT, function (age) { var d = age * LINE.V; way.car(all, d); if (d >= way.len) in0 = Math.min(in0, (d - way.len) / LINE.V); });
         all.push(RK.box(XC + 6, YC - 12, F0 + 58, XC + 14, YC + 12, F0 + 58.4, { lit: in0 < 0.5 ? 1 : 0.15, link: 'mark' }));
         stew.place(ST.work(t), SB_, all);
-        fly.place(FY.vanes(flight(t)), FB, all);
+        var fq = flight(t);
+        all.push(RK.box(31, YF - 3, ZF + 5, 31.2, YF + 3, ZF + 7, { lit: fq.live, link: 'perch' }));
+        fly.place(SC.pose({ fwd: -fq.acc.mx, climb: fq.acc.mz, lit: fq.lit }), RK.mul(RK.move(XF - fq.mx, YF, ZF + fq.mz), BIG), all);
         runners.forEach(function (rn, n) {
           var P = rn.P, u = (t + n * STEP) % TURN;
           var x = P.val('x', u), cz = P.val('cz', u), cf = P.val('cf', u);
@@ -1739,15 +1783,18 @@
     //   the walls and from one room's to the next's;
     // - a main along the front of each room under its floor, with its stubs up to the floor's edge; a cabinet on each
     //   end wall's face, its conduit up to the tray;
-    // - the yard's flyers (FY-4: a plank 130 by 80 cm, the tally flyer's kind made large, a case slung under it): five
-    //   of them go round from a pad off Replies' left wall, down the first shaft's side to a pad behind Certification's
-    //   back wall, over that room and down to a pad off the records' left wall, and back up a lane beside, a case
-    //   carried down and none up; each stops where it means to (every length eased), and its mark is lit on a pad.
+    // - the yard's flyers (FY-4, round 44: a hull on four rings that lean, robokit's freighter): four of them (three
+    //   where the page is narrow) go round from Replies' pad down the first shaft's side to a pad behind
+    //   Certification's back wall, on over that room and down to a pad off the records' left wall, and up again by a
+    //   lane beside, a case carried down and none up. Each turns to its lane in the air over a pad, leans into every
+    //   start and against every stop, lets its legs down for a pad, and has its light lit on one;
+    // - two tally flyers (FY-2, the freighter's small kin) along the trays on Replies' and the records' back walls.
     // Every length keeps to the drawings' own three directions (along a room, across it, upright), each from a point of
     // one room to a point of the next, so the whole is one thing in one space with the rooms. What goes in behind a wall
     // stops at the wall (each group is cut by the shape of the room it goes behind). The line's carriers are the rooms'
     // own (what a room has sent out, by that room's clock); the flyers keep the page's clock. Drawn by robokit over the
-    // stage, in the drawings' tones and their night.
+    // stage, in the drawings' tones and their night: what stands still as one <svg> painted once, what moves on
+    // canvases (round 44), a flying machine on a canvas of its own that is moved as a whole.
     var rooms = {}, stage = document.querySelector('.work__stage'), plant = null, linkT = 0;
     function between() { clearTimeout(linkT); linkT = setTimeout(link, 120); }
     function put(out, b) { if (b) out.push(b); }
@@ -1788,21 +1835,6 @@
           put(out, RK.box(rl[0], rl[1], rl[2], rh[0], rh[1], rh[2], { w: 0.55, tone: 'recess', link: 'rung' }));
         }
       }
-    }
-    // FY-4 at p (its middle, the underside of its plank), its length along ax (0 or 1)
-    function freighter(out, p, ax, load, lit) {
-      var x = p[0], y = p[1], z = p[2], hx = ax ? 40 : 65, hy = ax ? 65 : 40;
-      out.push(RK.box(x - hx, y - hy, z, x + hx, y + hy, z + 4, { w: 1.4, link: 'fy' }));
-      for (var k = -2; k <= 2; k += 1) {                         // its louvres: five bands across, either side of the spine
-        var d = k * 23;
-        [-1, 1].forEach(function (e) {
-          out.push(ax ? RK.box(x + e * 21 - 13, y + d - 7, z + 4, x + e * 21 + 13, y + d + 7, z + 4.3, { w: 0.55, tone: 'recess', link: 'fy' })
-                      : RK.box(x + d - 7, y + e * 21 - 13, z + 4, x + d + 7, y + e * 21 + 13, z + 4.3, { w: 0.55, tone: 'recess', link: 'fy' }));
-        });
-      }
-      out.push(ax ? RK.box(x - 4, y - 62, z + 4, x + 4, y + 62, z + 8.5, { w: 0.85, link: 'fy' }) : RK.box(x - 62, y - 4, z + 4, x + 62, y + 4, z + 8.5, { w: 0.85, link: 'fy' }));
-      out.push(ax ? RK.box(x - 8, y + 65, z + 0.6, x + 8, y + 65.2, z + 2.4, { lit: lit, link: 'fy' }) : RK.box(x + 65, y - 8, z + 0.6, x + 65.2, y + 8, z + 2.4, { lit: lit, link: 'fy' }));
-      if (load) out.push(RK.box(x - (ax ? 17 : 25), y - (ax ? 25 : 17), z - 11.5, x + (ax ? 17 : 25), y + (ax ? 25 : 17), z - 0.5, { w: 0.85, tone: 'paper', link: 'fy' }));
     }
     function link() {
       if (!stage || !window.RK || !rooms.reply || !rooms.certify || !rooms.records) return;
@@ -1858,14 +1890,108 @@
         o.C0 = mk('g', {}, o.L1); o.L2 = behind('records', Lx); o.X0 = mk('g', {}, o.L2); o.Top = mk('g', {}, el); o.Fly = mk('g', {}, el);
         return o;
       }
-      // (what moves is two pictures, one to a shaft, each no larger than what moves in it)
-      var ZP = 268, HV = 4;                                      // the pads' tops, above each room's floor; a flyer's underside over a pad it stands on
-      var pR = at('reply', -110, 190, FR + ZP + HV), pX = at('records', -73, 87, FX + ZP + HV);
-      var pC = { d: at('certify', 340, -52, FC + ZP + HV), u: at('certify', 268, -114, FC + ZP + HV) };
-      var SS = sheet('s'), SM = { L1: sheet('m', [A, B, pR, pC.d, pC.u]), L2: sheet('m', [Cc, D, pC.d, pC.u, pX]) }, el = SS.el;
+      // What moves is painted on two canvases, one to a shaft, each no larger than what moves in it (round 44: as
+      // <svg> it cost the page its evenness). A canvas is cleared only where it was painted; what goes behind the room
+      // at a shaft's foot is cut by that room's shape on the page
+      // No filter lies over these canvases (a filter over a canvas is worked again at every picture, over all of it):
+      // at night each tone is turned here as the page's filter over the drawings turns it, invert(.92) then
+      // hue-rotate(180deg) (house.css, --draw)
+      var root = document.documentElement, night = false, tones = {}, ntones = 0;
+      function light() {
+        var was = night;
+        night = (getComputedStyle(root).getPropertyValue('--draw') || 'none').trim() !== 'none';
+        if (plant && plant.draw && was !== night) { plant.lit++; retone(); if (!plant.on) plant.draw(plant.t); }
+      }
+      // what stands still is an <svg> painted once: its tones are turned in its own attributes
+      function retone() {
+        slice(SS.el.querySelectorAll('path')).forEach(function (e) {
+          ['fill', 'stroke'].forEach(function (a) {
+            var v = e.getAttribute('data-' + a) || e.getAttribute(a);
+            if (!v || v === 'none') return;
+            if (!e.hasAttribute('data-' + a)) e.setAttribute('data-' + a, v);
+            e.setAttribute(a, night ? tint(v) : v);
+          });
+        });
+      }
+      function tint(c) {
+        var o = tones[c];
+        if (o) return o;
+        var m = /^#(..)(..)(..)$/.exec(c), r, g, b;
+        if (m) { r = parseInt(m[1], 16); g = parseInt(m[2], 16); b = parseInt(m[3], 16); }
+        else { m = /(\d+)[ ,]+(\d+)[ ,]+(\d+)/.exec(c); if (!m) return c; r = +m[1]; g = +m[2]; b = +m[3]; }
+        r = 0.92 - 0.84 * r / 255; g = 0.92 - 0.84 * g / 255; b = 0.92 - 0.84 * b / 255;
+        o = 'rgb(' + Math.round(255 * clamp(-0.574 * r + 1.430 * g + 0.144 * b, 0, 1)) + ' ' + Math.round(255 * clamp(0.426 * r + 0.430 * g + 0.144 * b, 0, 1)) + ' ' +
+            Math.round(255 * clamp(0.426 * r + 1.430 * g - 0.856 * b, 0, 1)) + ')';
+        if (++ntones > 8000) { tones = {}; ntones = 0; }
+        return (tones[c] = o);
+      }
+      // one machine on a canvas of its own, moved over the stage as a whole and painted again only when its pose has
+      // changed: reach, up, down (cm): how far its picture goes to either side of its origin, above it, below it
+      function sprite(reach, up, down, S0) {
+        var w = Math.ceil(2 * reach * S0) + 8, h = Math.ceil((up + down) * S0) + 8, d = 2, cv = document.createElement('canvas'), ctx = cv.getContext('2d');
+        var ox = w / 2, oy = up * S0 + 4, pen = new RK.Painter(ctx, null, 1), o;
+        cv.className = 'work__spr'; cv.setAttribute('aria-hidden', 'true');
+        cv.style.width = w + 'px'; cv.style.height = h + 'px'; cv.width = w * d; cv.height = h * d;
+        stage.appendChild(cv);
+        return (o = { cv: cv, S0: S0, P: proj([ox, oy], S0), z: -1,
+          paint: function (list) {
+            ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cv.width, cv.height); ctx.setTransform(d, 0, 0, d, 0, 0);
+            pen.tint = night ? tint : null; pen.paint(list);
+          },
+          at: function (x, y, k, z) {
+            cv.style.transform = 'translate(' + (x - ox * k).toFixed(2) + 'px,' + (y - oy * k).toFixed(2) + 'px) scale(' + k.toFixed(4) + ')';
+            if (z !== o.z) { cv.style.zIndex = String(3 + z); o.z = z; }
+          } });
+      }
+      function layer(pts, kind, Lv) {
+        var x0 = Math.floor(Math.min.apply(null, pts.map(function (q) { return q[0]; })) - 190), y0 = Math.floor(Math.min.apply(null, pts.map(function (q) { return q[1]; })) - 190);
+        var w = Math.ceil(Math.max.apply(null, pts.map(function (q) { return q[0]; })) + 190) - x0, h = Math.ceil(Math.max.apply(null, pts.map(function (q) { return q[1]; })) + 190) - y0;
+        var cv = document.createElement('canvas'), ctx = cv.getContext('2d'), d = Math.min(2, window.devicePixelRatio || 1);
+        if (w * h * d * d > 6e6) d = Math.max(1, Math.sqrt(6e6 / (w * h)));
+        cv.className = 'work__cv'; cv.setAttribute('aria-hidden', 'true');
+        cv.style.left = x0 + 'px'; cv.style.top = y0 + 'px'; cv.style.width = w + 'px'; cv.style.height = h + 'px';
+        cv.width = Math.round(w * d); cv.height = Math.round(h * d);
+        stage.appendChild(cv);
+        var hp = [], dirty = [], pen = new RK.Painter(ctx, null, 1);
+        for (var i = 0; i < 8; i++) { var p = at(kind, i & 1 ? Lv.wall[3] : 0, i & 2 ? Lv.wall[4] : 0, i & 4 ? Lv.wall[5] : Lv.floor - 25); hp.push([p[0], p[1]]); }
+        hp = hull(hp);
+        return { cv: cv,
+          begin: function () {
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            for (var i = 0; i < dirty.length; i++) ctx.clearRect(dirty[i][0], dirty[i][1], dirty[i][2], dirty[i][3]);
+            dirty.length = 0;
+            ctx.setTransform(d, 0, 0, d, -x0 * d, -y0 * d);
+            pen.tint = night ? tint : null;
+          },
+          // boxes in order, each with its picture; behind: cut by the room at the shaft's foot
+          put: function (list, behind) {
+            if (!list.length) return;
+            var a0 = Infinity, b0 = Infinity, a1 = -Infinity, b1 = -Infinity;
+            for (var i = 0; i < list.length; i++) { var r = list[i].r; if (r[0] < a0) a0 = r[0]; if (r[1] < b0) b0 = r[1]; if (r[2] > a1) a1 = r[2]; if (r[3] > b1) b1 = r[3]; }
+            dirty.push([Math.floor((a0 - x0 - 3) * d), Math.floor((b0 - y0 - 3) * d), Math.ceil((a1 - a0 + 6) * d) + 1, Math.ceil((b1 - b0 + 6) * d) + 1]);
+            if (behind) {
+              ctx.save(); ctx.beginPath(); ctx.rect(x0, y0, w, h);
+              ctx.moveTo(hp[0][0], hp[0][1]);
+              for (var j = 1; j < hp.length; j++) ctx.lineTo(hp[j][0], hp[j][1]);
+              ctx.closePath(); ctx.clip('evenodd');
+            }
+            pen.paint(list);
+            if (behind) ctx.restore();
+          } };
+      }
+      // the pads' tops, above each room's floor. Replies' is long enough for two flyers side by side, SIDE apart along
+      // the room: one place for those going down, one for those come up, so that in the first shaft the lane up runs
+      // beside the lane down all the way. Certification's and the records' have the one place: those coming up go by
+      // Certification without setting down (pC.u is where they turn, in the air beside its pad)
+      var ZP = 268, SIDE = 150, KR = at('reply', 0, 0, 0)[2], KC = at('certify', 0, 0, 0)[2], KX = at('records', 0, 0, 0)[2];
+      var pR = { d: at('reply', -110, 190, FR + ZP), u: at('reply', -110 - SIDE, 190, FR + ZP) }, pX = at('records', -73, 29, FX + ZP);
+      var pC = { d: at('certify', 284, -84, FC + ZP), u: at('certify', 284 - SIDE, -84, FC + ZP) };
+      // in order up the page's layers: what stands still; what moves along each shaft; the machines that have a canvas
+      // each
+      var SS = sheet('s'), LY = { L1: layer([A, B], 'certify', Lc), L2: layer([Cc, D], 'records', Lx) }, el = SS.el, sprites = [];
       var gR0 = 'R0', gL1 = 'L1', gC0 = 'C0', gL2 = 'L2', gX0 = 'X0', gTop = 'Top';
       function still(g, P, boxes) { var q = mk('g', { 'class': 'rk' }, SS[g]); new RK.Renderer(q, P, 1).draw(boxes); return q; }
-      function moving(g, P, fly) { return new RK.Renderer(mk('g', { 'class': 'rk' }, fly ? SM[g].Fly : SM[g][g]), P, 1); }
+      function show(g, P, boxes) { LY[g].put(RK.order(boxes, P), true); }
 
       // ---- the first shaft: Replies' front, down, to Certification's back wall (lanes side by side along a room)
       var t1 = lane(at('reply', 6, DR, FR + 253), at('certify', 34, 0, FC + 253), s1, 1, A1 + 12 + 46);
@@ -1873,12 +1999,8 @@
       var d1 = lane(at('reply', 66, DR + 3, FR - 26), at('certify', 120, 0, ZC - 40), s1, 1, A1 + 9);
       var d2 = lane(at('reply', 112, DR + 3, FR - 26), at('certify', 166, 0, ZC - 40), s1, 1, A1 + 9);
       var w1 = Way(l1.pts, [1, 0]), o;
-      // along each shaft's tray, on its open side, a tally flyer (FY-1) goes down and up, a length of 150 cm at a time,
-      // stopping at each to read (its mark lit)
-      var tal = [{ ln: t1, off: [-38, 0, 2], r: moving(gL1, t1.P) }];
       o = []; ladder(o, t1.pts, 20, 0); still(gL1, t1.P, o);
       still(gL1, l1.P, w1.rail([], 0, null, 0.85));
-      var r1 = moving(gL1, l1.P);
       // on the outer duct's drop a fan unit, its mark lit, and beside it a deck where a steward (ST-6) stands and works
       // at the unit's head, at its own turn of 8 s
       var ST = RK_MACHINES.M.steward, stew = new RK.Machine(ST), tend = [];
@@ -1891,7 +2013,7 @@
           put(o, RK.box(30, d.a1 - 46, zm - 22, 148, d.a1 + 46, zm - 18, { w: 0.85, link: 'deck' }));
         }
         still(gL1, d.P, o);
-        if (fan) tend.push({ r: moving(gL1, d.P), B: RK.mul(RK.move(108, d.a1, zm - 18), RK.rot('z', Math.PI)), t0: 0 });
+        if (fan) tend.push({ g: gL1, P: d.P, B: RK.mul(RK.move(108, d.a1, zm - 18), RK.rot('z', Math.PI)), t0: 0 });
       });
       // ---- the second: Certification's end wall, down, to the records' left wall (lanes side by side across a room)
       var t2 = lane(at('certify', LC, WC / 2, FC + 253), at('records', 0, WX / 2, FX + 253), s2, 0, B1 + 44);
@@ -1899,10 +2021,8 @@
       var e1 = lane(at('certify', LC, 52, ZC - 40), at('records', 0, 62, ZX - 40), s2, 0, B1);
       var e2 = lane(at('certify', LC, 92, ZC - 40), at('records', 0, 102, ZX - 40), s2, 0, B1);
       var w2 = Way(l2.pts, [0, 1]);
-      tal.push({ ln: t2, off: [0, -38, 2], r: moving(gL2, t2.P) });
       o = []; ladder(o, t2.pts, 20, 1); still(gL2, t2.P, o);
       still(gL2, l2.P, w2.rail([], 0, null, 0.85));
-      var r2 = moving(gL2, l2.P);
       [e1, e2].forEach(function (d, n) {
         o = []; duct(o, d.pts, 34);
         var zm = -d.v * 0.72, fan = n && d.v > 300;              // low on its drop, under the level of Certification's steps
@@ -1912,7 +2032,7 @@
           put(o, RK.box(d.a1 - 46, 30, zm - 22, d.a1 + 46, 148, zm - 18, { w: 0.85, link: 'deck' }));
         }
         still(gL2, d.P, o);
-        if (fan) tend.push({ r: moving(gL2, d.P), B: RK.mul(RK.move(d.a1, 108, zm - 18), RK.rot('z', -Math.PI / 2)), t0: 4 });
+        if (fan) tend.push({ g: gL2, P: d.P, B: RK.mul(RK.move(d.a1, 108, zm - 18), RK.rot('z', -Math.PI / 2)), t0: 4 });
       });
       // ---- on the rooms themselves: the trays on the walls' heads, the main along the front under the floor with its
       // stubs, the cabinet on the end wall's face and its conduit up
@@ -1947,95 +2067,194 @@
         arms.forEach(function (a) { put(b, RK.box(a[0], a[1], z - 10, a[2], a[3], z - 4, { w: 0.55, link: 'arm' })); });
         still(g, P, b);
       }
-      pad(gR0, 'reply', -200, 136, -22, 244, FR + ZP, [[-22, 150, 6, 156], [-22, 224, 6, 230]]);
-      pad(gC0, 'certify', 216, -150, 392, -18, FC + ZP, [[236, -18, 242, 6], [366, -18, 372, 6]]);
-      pad(gX0, 'records', -124, 22, -22, 152, FX + ZP, [[-22, 40, 6, 46], [-22, 128, 6, 134]]);
+      pad(gR0, 'reply', -200 - SIDE, 136, -22, 244, FR + ZP, [[-22, 150, 6, 156], [-22, 224, 6, 230]]);
+      pad(gL1, 'certify', 196, -150, 372, -18, FC + ZP, [[216, -18, 222, 6], [346, -18, 352, 6]]);   // (over the shafts' heads: after them)
+      pad(gL2, 'records', -124, -36, -22, 94, FX + ZP, [[-22, 4, 6, 10], [-22, 70, 6, 76]]);
       // (Certification's pad has two places, one for those going down and one for those going up; at the ends of the
       // round a flyer comes in and goes out by the one place)
       // a lane's drop stands beside its shaft, clear of the words: the first's left of the tray, as far as its pad
       // below lets it; the second's right of the tray, short of Certification's words
       var heads = slice(stage.querySelectorAll('.wk__head')), box2 = heads[1] ? heads[1].getBoundingClientRect() : null;
-      var x1 = t1.P(0, t1.a1, 0)[0], x2 = t2.P(t2.a1, 0, 0)[0], lim2 = box2 && box2.left - s0.left > x2 ? box2.left - s0.left - 62 : x2 + 70;
+      var x1 = t1.P(0, t1.a1, 0)[0], x2 = t2.P(t2.a1, 0, 0)[0], lim2 = box2 && box2.left - s0.left > x2 ? box2.left - s0.left - 52 : x2 + 70;
       function dropY(S, x) { return (S[0] - x) / (C * s1); }     // for a lane across the rooms: how far along before it drops at x on the page
       function dropX(S, x) { return (x - S[0]) / (C * s2); }
+      // The lanes. In the first shaft the lane up is the lane down moved SIDE along the room: two flyers pass with air
+      // between them everywhere. In the second the two lanes have the one upright over the records' pad, a single
+      // track; from its head the lane up runs back SIDE over the lane down and past Certification's pad to where the
+      // first shaft's lane up begins, and a flyer turns there in the air and goes on up. The flyers are few enough
+      // that one has gone up the single track before the next comes to it. On Replies' pad a flyer come up hops across
+      // to the place it goes down from
       var LIFT = 46, lanes = [
-        lane(pR, pC.d, s1, 1, dropY(pR, x1 - 70)), lane(pC.d, pX, s2, 0, dropX(pC.d, Math.max(x2 + 34, lim2))),
-        lane(pC.u, pX, s2, 0, dropX(pC.u, Math.max(x2 + 34, lim2) - 0)), lane(pR, pC.u, s1, 1, dropY(pR, x1 - 118))];
-      // a lane as a flight: up off the pad, its lengths one after another (each eased, a pause between), down on the next
-      function flight(ln, back) {
-        var p = ln.pts.map(function (q) { return [q[0], q[1], q[2] + LIFT]; });
-        p.unshift(ln.pts[0].slice()); p.push(ln.pts[ln.pts.length - 1].slice());
-        p = uniq(p);
-        if (back) p.reverse();
-        var legs = [], t = 0, V = 170;
-        for (var i = 1; i < p.length; i++) {
-          var a = p[i - 1], b = p[i], ax = a[0] !== b[0] ? 0 : a[1] !== b[1] ? 1 : 2, l = Math.abs(b[ax] - a[ax]), d = l / V + 0.5;
-          legs.push({ a: a, b: b, ax: ax, t0: t, d: d }); t += d + 0.12;
-        }
-        return { P: ln.P, legs: legs, T: t, at: function (u) {
-          var g = legs[legs.length - 1], hd = ln.pts.length > 1 && ln.pts[0][0] !== ln.pts[1][0] ? 0 : 1;
-          for (var i = 0; i < legs.length; i++) if (u < legs[i].t0 + legs[i].d + 0.12) { g = legs[i]; break; }
-          var e = clamp((u - g.t0) / g.d, 0, 1); e = e * e * e * (10 + e * (-15 + 6 * e));
-          return [[g.a[0] + (g.b[0] - g.a[0]) * e, g.a[1] + (g.b[1] - g.a[1]) * e, g.a[2] + (g.b[2] - g.a[2]) * e], hd];
+        lane(pR.d, pC.d, s1, 1, dropY(pR.d, x1 - 70)), lane(pC.d, pX, s2, 0, dropX(pC.d, Math.max(x2 + 34, lim2))),
+        lane(pC.u, pX, s2, 0, dropX(pC.u, Math.max(x2 + 34, lim2))), lane(pR.u, pC.u, s1, 1, dropY(pR.u, x1 - 70 - SIDE * C * s1)),
+        lane(pR.u, pR.d, KR, 0, 1e4)];
+      // way from rest to rest over a length l: gathered over ta, held at V, lost over ta (short of V where l is short).
+      // At t: how far, and the acceleration
+      function run(l, V, ta) {
+        var v = Math.min(V, l / ta), tc = l / v - ta, T = 2 * ta + tc;
+        return { T: T, at: function (t) {
+          var u;
+          if (t <= 0) return [0, 0];
+          if (t >= T) return [l, 0];
+          if (t < ta) { u = t / ta; return [v * ta * u * u * u * (1 - u / 2), v / ta * 6 * u * (1 - u)]; }
+          if (t > T - ta) { u = (T - t) / ta; return [l - v * ta * u * u * u * (1 - u / 2), -v / ta * 6 * u * (1 - u)]; }
+          return [v * ta / 2 + v * (t - ta), 0];
         } };
       }
-      // the round: from Replies' pad down to Certification's, to the records'; and up again by the lanes beside
-      var HOLD = 1.6, round = [flight(lanes[0]), flight(lanes[1]), flight(lanes[2], true), flight(lanes[3], true)];
-      var TR = round.reduce(function (a, f2) { return a + f2.T + HOLD; }, 0), NF = 5;
-      var rf = round.map(function (f2, k) { return moving(k === 0 || k === 3 ? gL1 : gL2, f2.P, true); });
-      function flyers(t) {
-        var lists = round.map(function () { return []; });
-        for (var n = 0; n < NF; n++) {
-          var u = (t + n * TR / NF) % TR;
-          for (var k = 0; k < round.length; k++) {
-            var f2 = round[k];
-            if (u < f2.T + HOLD) {
-              var hold = u >= f2.T, q = f2.at(hold ? f2.T : u);
-              freighter(lists[k], q[0], q[1], k < 2 ? 1 : 0, hold || u < 0.3 ? 1 : 0.15);
-              break;
-            }
-            u -= f2.T + HOLD;
-          }
+      function ease5(e) { e = clamp(e, 0, 1); return e * e * e * (10 + e * (-15 + 6 * e)); }
+      // a lane as a flight (FY-4): up off the pad, turning there to the lane's heading (h0 to h1, degrees: 0 along a
+      // room, 90 across the rooms); its lengths one after another, each from rest to rest, a pause between; down on the
+      // next pad, its legs let down on the way. At u: where it is, its heading, its acceleration along it, its legs
+      function flight(ln, back, h0, h1, lt, lb, air) {            // air: 'from' or 'to': it begins, or ends, in the air (no pad there)
+        var p = ln.pts.map(function (q) { return [q[0], q[1], q[2] + (q[2] === 0 ? lt : lb)]; });   // lt, lb: how high over its upper end's pad, its lower end's
+        var from = air !== 'from', to = air !== 'to';
+        if (back ? to : from) p.unshift(ln.pts[0].slice());
+        if (back ? from : to) p.push(ln.pts[ln.pts.length - 1].slice());
+        p = uniq(p);
+        p = p.filter(function (q, i) {                           // a point on the way from the one before to the one after: no stop there
+          if (!i || i === p.length - 1) return true;
+          var a = p[i - 1], b = p[i + 1], n = 0;
+          for (var j = 0; j < 3; j++) if (Math.abs(a[j] - q[j]) > 0.5 || Math.abs(b[j] - q[j]) > 0.5) n++;
+          return n !== 1;
+        });
+        if (back) p.reverse();
+        var legs = [], t = 0, Y0 = 0.3, TY = Math.abs(h1 - h0) > 100 ? 1.5 : 1.0;
+        for (var i = 1; i < p.length; i++) {
+          var a = p[i - 1], b = p[i], ax = a[0] !== b[0] ? 0 : a[1] !== b[1] ? 1 : 2, l = Math.abs(b[ax] - a[ax]);
+          var r = ax === 2 ? run(l, 240, 0.6) : run(l, 170, 0.7);
+          if (ax !== 2 && !legs.some(function (g) { return g.ax !== 2; })) t = Math.max(t, Y0 + TY - 0.1);   // its first length waits for the turn
+          legs.push({ a: a, b: b, ax: ax, l: l, t0: t, r: r }); t += r.T + 0.12;
         }
-        rf.forEach(function (r, k) { r.draw(lists[k]); });
+        t -= 0.12;
+        var last = legs.length - 1;
+        return { P: ln.P, legs: legs, T: t, from: from, to: to, at: function (u) {
+          var k = 0;
+          while (k < last && u >= legs[k + 1].t0) k++;
+          var g = legs[k], m = g.r.at(u - g.t0), e = g.l ? m[0] / g.l : 1;
+          return { p: [g.a[0] + (g.b[0] - g.a[0]) * e, g.a[1] + (g.b[1] - g.a[1]) * e, g.a[2] + (g.b[2] - g.a[2]) * e],
+                   yaw: h0 + (h1 - h0) * ease5((u - Y0) / TY), acc: g.ax === 2 ? 0 : m[1],
+                   down: k === 0 && from ? 1 - ease5(m[0] / 34) : k === last && to ? ease5(1 - (g.l - m[0] - 6) / 50) : 0 };
+        } };
+      }
+      // the round: from Replies' pad down to Certification's, to the records'; up again by the lanes beside; and across
+      // Replies' pad. A case is taken up there (it comes up through the pad under the flyer; the fingers shut on it)
+      // and let go on the records' (the fingers open; it goes down through the pad)
+      var round = [flight(lanes[0], false, 0, 90, LIFT, LIFT), flight(lanes[1], false, 90, 0, LIFT, LIFT),
+                   flight(lanes[2], true, 0, -180, LIFT + SIDE, LIFT, 'to'), flight(lanes[3], true, -180, -90, LIFT, (LIFT + SIDE) * s2 / s1, 'from'),
+                   flight(lanes[4], false, -90, 0, LIFT, LIFT)];
+      var HOLD = [2.0, 1.4, 0.2, 1.0, 2.6];
+      // how near the eye a flyer is, from where it is on its lane (the lanes' own frames set on one: Certification's
+      // place for those going down): the farther are painted first, so that one passing before another hides it
+      var NEAR = [lanes[0].v - lanes[0].a, 0, -SIDE, lanes[3].v - lanes[3].a - SIDE, lanes[3].v - lanes[3].a - SIDE];
+      var SCL = [[KR, KC], [KC, KX], [KX, KC], [KC, KR], [KR, KR]];
+      var TR = round.reduce(function (a, f2, k) { return a + f2.T + HOLD[k]; }, 0), NF = 4;
+      // the single track: a flyer comes to the upright's head, on its way down, no sooner than 1.8 s after the one
+      // before it has gone up past it. Where the round is too short for that with four flyers, they wait a little
+      // longer on the two pads before; where that would be long, three go round
+      (function () {
+        var f1 = round[1], f2 = round[2], k = 0;
+        while (k < f1.legs.length - 1 && !(f1.legs[k].ax === 2 && k > 0)) k++;
+        var need = f1.T - f1.legs[k].t0 + HOLD[1] + f2.legs[0].t0 + f2.legs[0].r.T + 1.8, more = need * NF - TR;
+        if (more > 3) { NF = 3; more = need * NF - TR; }
+        if (more > 0) { HOLD[0] += more / 2; HOLD[4] += more / 2; TR += more; }
+      })();
+      var FY = RK_MACHINES.M.freighter, fym = new RK.Machine(FY), kept = [];
+      // one flyer at u of the round: what it is doing
+      function doing(u) {
+        for (var k = 0; k < round.length; k++) {
+          var f2 = round[k], H = HOLD[k];
+          if (u < f2.T + H) {
+            var hold = u >= f2.T, h = u - f2.T, q = f2.at(hold ? f2.T : u), sc = SCL[k], w = ease5(u / f2.T);
+            q.k = k; q.s = sc[0] + (sc[1] - sc[0]) * w; q.lit = (hold && f2.to) || (u < 0.3 && f2.from) ? 1 : 0.15;
+            q.load = k === 0 ? 1 : k === 1 ? (hold ? 1 - ease5((h - 0.45) / 0.6) : 1) : k < 4 ? 0 : (hold ? ease5((h - 0.3) / 0.8) : 0);
+            q.grip = k === 0 ? 0 : k === 1 ? (hold ? ease5((h - 0.2) / 0.25) : 0) : k < 4 ? 1 : (hold ? 1 - ease5((h - 1.2) / 0.3) : 1);
+            q.near = q.p[0] + q.p[1] + q.p[2] + NEAR[k];
+            return q;
+          }
+          u -= f2.T + H;
+        }
+        return null;
+      }
+      // A flyer is painted again only when its pose has changed by a step (its heading by 2 degrees, its rings' lean
+      // by 2), and its parts put in order again only then: while it only moves, its canvas is moved
+      var S0 = Math.max(KR, KC, KX);
+      function flyers(t) {
+        var all = [], n;
+        for (n = 0; n < NF; n++) { var q0 = doing((t + n * TR / NF) % TR); if (q0) { q0.n = n; all.push(q0); } }
+        all.sort(function (a, b) { return a.near - b.near; });
+        for (var m = 0; m < all.length; m++) {
+          var q = all[m], c = kept[q.n] || (kept[q.n] = { sp: sprite(92, 98, 56, S0) });
+          if (!c.on) { sprites.push(c.sp); c.on = true; }
+          var nav = 0.15 + 0.85 * Math.min(1, Math.abs(q.acc) / 240);
+          var pose = FY.pose({ acc: q.acc, down: q.down, load: q.load, grip: q.grip, lit: q.lit, nav: nav });
+          var ok = Math.round(q.yaw / 2) + '/' + Math.round(pose.tf / 2) + '/' + Math.round(q.down * 7) + '/' + Math.round(q.load * 5) + '/' + Math.round(q.grip * 2);
+          var key = ok + '/' + q.lit + '/' + Math.round(nav * 4) + '/' + plant.lit;
+          if (c.key !== key) {
+            var boxes = fym.place(pose, RK.rot('z', q.yaw * Math.PI / 180)), list;
+            if (c.ok === ok && c.perm.length === boxes.length) { RK.picture(boxes, c.sp.P); list = c.perm.map(function (i) { return boxes[i]; }); }
+            else { list = RK.order(boxes, c.sp.P); c.perm = list.map(function (b) { return b.k; }); c.ok = ok; }
+            c.sp.paint(list); c.key = key;
+          }
+          var o = round[q.k].P(q.p[0], q.p[1], q.p[2]);
+          c.sp.at(o[0], o[1], q.s / S0, m + 1);
+        }
       }
 
+      // the tally flyers (FY-2): one along the tray on Replies' back wall's head, one along the records', each outside
+      // the wall and faced to its tray: a length of 150 cm at a time (it leans into the start and against the stop),
+      // then its feeler out to read, its light lit
+      var SC = RK_MACHINES.M.scout, scm = new RK.Machine(SC), BIG = [1.3, 0, 0, 0, 0, 1.3, 0, 0, 0, 0, 1.3, 0];
+      var tal = [{ kind: 'reply', K: KR, x0: 60, x1: LR - 60, y: WR / 2 - 54, z: FR + 255 }, { kind: 'records', K: KX, x0: 70, x1: LX - 70, y: WX / 2 - 54, z: FX + 255 }];
       tal.forEach(function (q, n) {
-        var pts = q.ln.pts, len = 0, seg = [];
-        for (var i = 1; i < pts.length; i++) { var a = pts[i - 1], b = pts[i], l = Math.abs(b[0] - a[0]) + Math.abs(b[1] - a[1]) + Math.abs(b[2] - a[2]); seg.push([a, b, len, l]); len += l; }
-        var N = Math.max(1, Math.floor((len - 60) / 150)), STEP = 1.9;
+        var N = Math.max(1, Math.floor((q.x1 - q.x0) / 150)), STEP = 2.1, GO = 0.6, P = proj(at(q.kind, 0, 0, 0), q.K), B0 = RK.mul(RK.rot('z', Math.PI / 2), BIG);
+        q.sp = sprite(78, 64, 48, q.K); sprites.push(q.sp);
         q.draw = function (t) {
-          var u = (t / STEP + n * 3.5) % (2 * N), i = Math.floor(u), f = u - i, e = clamp(f / 0.62, 0, 1);
-          e = e * e * (3 - 2 * e);
-          var k = u < N ? i + e : 2 * N - i - e, d = 30 + k * 150, g = seg[seg.length - 1];
-          for (var j = 0; j < seg.length; j++) if (d <= seg[j][2] + seg[j][3]) { g = seg[j]; break; }
-          var w = g[3] ? clamp((d - g[2]) / g[3], 0, 1) : 0, x = g[0][0] + (g[1][0] - g[0][0]) * w + q.off[0], y = g[0][1] + (g[1][1] - g[0][1]) * w + q.off[1], z = g[0][2] + (g[1][2] - g[0][2]) * w + q.off[2];
-          var ax = q.off[0] ? 1 : 0, hx = ax ? 16 : 27, hy = ax ? 27 : 16;
-          q.r.draw([RK.box(x - hx, y - hy, z, x + hx, y + hy, z + 2.6, { w: 0.85, link: 'fy1' }),
-                    ax ? RK.box(x + 11, y - 23, z + 2.6, x + 15, y + 23, z + 5.4, { w: 0.55, link: 'fy1' }) : RK.box(x - 23, y + 11, z + 2.6, x + 23, y + 15, z + 5.4, { w: 0.55, link: 'fy1' }),
-                    ax ? RK.box(x + 16, y - 5, z + 0.5, x + 16.2, y + 5, z + 2.1, { lit: f > 0.66 ? 1 : 0.15, link: 'fy1' }) : RK.box(x - 5, y + 16, z + 0.5, x + 5, y + 16.2, z + 2.1, { lit: f > 0.66 ? 1 : 0.15, link: 'fy1' })]);
+          var u = (t / STEP + n * 3.5) % (2 * N), i = Math.floor(u), f = u - i, w0 = clamp(f / GO, 0, 1), e = ease5(w0), up = u < N;
+          var x = q.x0 + 150 * (up ? i + e : 2 * N - i - e);
+          // its acceleration along the wall (the fifth-degree step's), as it feels it: it faces the wall, so a move
+          // along the room is to its right
+          var acc = w0 > 0 && w0 < 1 ? (up ? 1 : -1) * 150 * w0 * (60 + w0 * (-180 + 120 * w0)) / (GO * STEP * GO * STEP) : 0;
+          var rd = clamp((f - GO - 0.06) / 0.1, 0, 1) - clamp((f - 0.9) / 0.08, 0, 1);
+          var pose = SC.pose({ side: -acc, probe: 9 * rd, lit: rd > 0.95 ? 1 : 0.15 });
+          var key = Math.round(pose.roll * 2) + '/' + Math.round(pose.probe * 2) + '/' + pose.lit + '/' + plant.lit;
+          if (key !== q.key) { q.sp.paint(RK.order(scm.place(pose, B0), q.sp.P)); q.key = key; }
+          var o = P(x, q.y, q.z);
+          q.sp.at(o[0], o[1], 1, 0);
         };
       });
-      plant = { svg: el, on: false, raf: 0, t: 0, last: 0, odd: false, n: 0, k: 0, w0: 0, wn: 0, slow: false };
+      plant = { svg: el, on: false, raf: 0, t: 0, last: 0, n: 0, k: 0, w0: 0, wn: 0, slow: false, lit: 0, was: -1 };
+      light();
+      if (night) retone();
+      var eye = new MutationObserver(light);
+      eye.observe(root, { attributes: true, attributeFilter: ['data-light', 'class', 'style'] });
       // each of the line's lengths carries what the room behind it has sent out, by that room's own clock: a carrier
       // leaves a room and is on the line outside in the same moment, and where a room stands still so does what it has sent
       plant.draw = function (t) {
         var x1 = [], x2 = [];
+        LY.L1.begin(); LY.L2.begin();
         (Lr.out || []).forEach(function (d) { w1.car(x1, d); });
         (Lc.out || []).forEach(function (d) { w2.car(x2, d); });
-        r1.draw(x1); r2.draw(x2);
-        if (!(plant.n++ % 3)) tend.forEach(function (o2) { o2.r.draw(stew.place(ST.work(t + o2.t0), o2.B)); });   // the stewards: every third picture
+        show(gL1, l1.P, x1); show(gL2, l2.P, x2);
+        if (!(plant.n++ % 3) || plant.lit !== plant.was) tend.forEach(function (o2) {   // the stewards: every third picture
+          if (!o2.sp) {
+            var c0 = o2.P(o2.B[3], o2.B[7], o2.B[11]);
+            o2.sp = sprite(105, 190, 60, 1); sprites.push(o2.sp);
+            o2.sp.at(c0[0], c0[1], 1, 0);
+            o2.Q = function (x, y, z) { var q = o2.P(x, y, z); return [q[0] - c0[0] + o2.sp.cv.width / 4, q[1] - c0[1] + 190 + 4]; };
+          }
+          o2.sp.paint(RK.order(stew.place(ST.work(t + o2.t0), o2.B), o2.Q));
+        });
         tal.forEach(function (q) { q.draw(t); });
         flyers(t);
+        plant.was = plant.lit;
       };
       var step = function (ts) {
         if (!plant || !plant.on) return;
         if (plant.last) plant.t += Math.min(0.1, (ts - plant.last) / 1000);
         plant.last = ts;
-        plant.odd = !plant.odd;
-        if (ts - plant.w0 > 2000) { plant.slow = plant.wn < 48; plant.w0 = ts; plant.wn = 0; }   // under 24 frames a second: the plant draws a quarter of them
+        if (ts - plant.w0 > 2000) { plant.slow = plant.wn < 48; plant.w0 = ts; plant.wn = 0; }   // under 24 frames a second: the plant draws every second one
         plant.wn++; plant.k++;
-        if (plant.slow ? !(plant.k % 4) : plant.odd) plant.draw(plant.t);   // thirty pictures a second at most: the rooms keep their own
+        if (!plant.slow || plant.k % 2) plant.draw(plant.t);
         plant.raf = requestAnimationFrame(step);
       };
       var sync = function () {
@@ -2048,7 +2267,7 @@
       var io = null;
       if (!plant.seen) { io = new IntersectionObserver(function (es) { if (plant) { plant.seen = es[0].isIntersecting; sync(); } }, { rootMargin: '100px' }); io.observe(stage); }
       document.addEventListener('visibilitychange', sync);
-      plant.stop = function () { this.on = false; cancelAnimationFrame(this.raf); if (io) io.disconnect(); document.removeEventListener('visibilitychange', sync); SS.el.remove(); SM.L1.el.remove(); SM.L2.el.remove(); };
+      plant.stop = function () { this.on = false; cancelAnimationFrame(this.raf); if (io) io.disconnect(); document.removeEventListener('visibilitychange', sync); eye.disconnect(); SS.el.remove(); LY.L1.cv.remove(); LY.L2.cv.remove(); sprites.forEach(function (sp) { sp.cv.remove(); }); };
       plant.draw(plant.t);
       sync();
     }
@@ -2065,6 +2284,7 @@
           e.style.left = (r.left - f.left) + 'px'; e.style.top = (r.top - f.top) + 'px';
           e.style.width = r.width + 'px'; e.style.height = r.height + 'px';
         });
+        (svg._cv || []).forEach(function (o) { o.fit(); });
         between();
       }
       function build() {
@@ -2072,7 +2292,7 @@
         if (svg && s === small) { place(); return; }
         if (run) { base += run.now(); run.stop(); }
         var t0 = base;
-        if (svg) svg.remove();
+        gone(svg);
         if (dim) dim.remove();
         small = s;
         var F = L.frames[s ? 's' : 'l'];
@@ -2123,7 +2343,7 @@
         pre.onload = function () { if (isBare) go(); };
         pre.src = swap(img.currentSrc || img.src);
       }
-      function start() { build(); live.push({ stop: function () { if (run) run.stop(); if (svg) svg.remove(); if (dim) dim.remove(); fig.classList.remove('is-live'); bare(false); } }); }
+      function start() { build(); live.push({ stop: function () { if (run) run.stop(); gone(svg); if (dim) dim.remove(); fig.classList.remove('is-live'); bare(false); } }); }
       var robo = L.canvas || L.kind === 'reply' || L.kind === 'certify' || L.kind === 'records';   // drawn by robokit
       function ready() { if (robo) machines(start); else start(); }
       if (img.complete && img.naturalWidth) ready(); else img.addEventListener('load', ready, { once: true });

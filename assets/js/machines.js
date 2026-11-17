@@ -154,7 +154,8 @@ var RK = (function () {
     return false;
   }
   // the boxes far to near, each with its picture (pc), its picture's bounds (r) and outline (h)
-  function order(boxes, P) {
+  // each box's picture: its corners (pc), their bounds (r) and outline (h), its place in the list (k)
+  function picture(boxes, P) {
     var n = boxes.length, i, j;
     for (i = 0; i < n; i++) {
       var b = boxes[i], pc = new Array(8), x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
@@ -164,6 +165,11 @@ var RK = (function () {
       }
       b.pc = pc; b.r = [x0, y0, x1, y1]; b.k = i; b.h = hull(pc);
     }
+    return boxes;
+  }
+  function order(boxes, P) {
+    var n = boxes.length, i, j;
+    picture(boxes, P);
     var idx = boxes.slice().sort(function (p, q) { return p.r[0] - q.r[0]; });
     var succ = [], pred = [], indeg = new Array(n);
     for (i = 0; i < n; i++) { succ.push([]); pred.push([]); indeg[i] = 0; }
@@ -300,16 +306,19 @@ var RK = (function () {
   };
   // a 2d canvas context to draw in, the same way
   function Painter(ctx, project, k) { this.ctx = ctx; this.P = project; this.k = k || 1; }
-  Painter.prototype.draw = function (boxes, hl) {
-    var ctx = this.ctx, k = this.k, list = order(boxes, this.P);
-    ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.strokeStyle = INK.ink;
+  Painter.prototype.draw = function (boxes, hl) { return this.paint(order(boxes, this.P), hl); };
+  // boxes already in order, each with its picture (order's or picture's); tint, if set on the painter, turns each tone
+  // (the page at night, where no filter lies over the canvas)
+  Painter.prototype.paint = function (list, hl) {
+    var ctx = this.ctx, k = this.k, tint = this.tint;
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.strokeStyle = tint ? tint(INK.ink) : INK.ink;
     for (var i = 0; i < list.length; i++) {
       var L = look(list[i], hl), q, p;
       for (q = 0; q < L.faces.length; q++) {
         p = L.faces[q].p;
         ctx.beginPath(); ctx.moveTo(p[0][0], p[0][1]);
         for (var m = 1; m < p.length; m++) ctx.lineTo(p[m][0], p[m][1]);
-        ctx.closePath(); ctx.fillStyle = L.faces[q].fill; ctx.fill();
+        ctx.closePath(); ctx.fillStyle = tint ? tint(L.faces[q].fill) : L.faces[q].fill; ctx.fill();
       }
       if (L.folds.length) {
         ctx.beginPath();
@@ -384,7 +393,7 @@ var RK = (function () {
     return out;
   }
 
-  return { Machine: Machine, Renderer: Renderer, Painter: Painter, order: order, cmp: cmp, apart: apart, iso: iso, extent: extent, box: box,
+  return { Machine: Machine, Renderer: Renderer, Painter: Painter, order: order, picture: picture, cmp: cmp, apart: apart, iso: iso, extent: extent, box: box,
            svg: svg, crossings: crossings, mul: mul, rot: rot, move: move, at: at, INK: INK };
 })();
 /* The house's machines, each from its parts (robokit.js), in its own frame: x forward, y to its left, z up; its foot
@@ -1073,6 +1082,161 @@ var RK_MACHINES = (function () {
       return M.runner.pose(q);
     };
     M.runner.period = P; M.runner.rest = M.runner.work(0); M.runner.rest.dr = 0; M.runner.rest.cin = 0;   // at rest: itself alone
+  })();
+
+  // --------------------------------------------------------------------------------------------- the freighter
+  // FY-4, the works' freight flyer (round 44): it carries a case from one room's pad to the next and comes back light.
+  // The house's thrust as the tally flyer has it, ion wind and nothing turning, in four rings held off the hull on
+  // short swept arms: each ring eight lengths round a field of slats, on a pivot at its inner rim, so that the rings
+  // lean into a start and against a stop while the hull stays near level, their slats opening as they lean. The hull a
+  // keel stepped down to the nose, where its feeler is (it touches, it never looks); a fairing along its back with the
+  // mast and its one working light; cells along each flank; a block at the stern with its cooling plates, and over it
+  // two fins leaned apart. Under the belly four legs that fold out flat in flight and come down for a pad, and two
+  // pairs of fingers that hold the case by its long sides. Frame: x forward, y to its left, z up from its feet.
+  M.freighter = (function () {
+    // eight lengths round (0, yc), r to their middle line, t through, h high: each turned in the ring by a set angle
+    function ring(yc, r, t, h, lw) {
+      var b = [], l = 2 * (r + t / 2) * Math.tan(Math.PI / 8);
+      for (var k = 0; k < 8; k++) {
+        var a = k * Math.PI / 4;
+        b.push(C(r * Math.cos(a), yc + r * Math.sin(a), -h / 2, t, l, h, W(lw, { spin: ['z', 'one', k * 45] })));
+      }
+      return b;
+    }
+    var BZ = 14, RT = 2.6, RH = 4.4;
+    var hull = [
+      B(-40, -10, BZ, 76, 20, 10, W(FIRM)),                                            // the keel
+      B(36, -8, BZ + 1, 10, 16, 7.5, W(THIN)), B(46, -6, BZ + 1, 8, 12, 5.5, W(THIN)),  // stepped down to the nose
+      B(54, -4, BZ + 1, 6, 8, 3.5, W(THIN)),
+      B(60, -0.5, BZ + 2, 9, 1, 1, W(FINE)),                                           // the feeler
+      B(22, -11.5, BZ + 3, 10, 1.5, 5, W(FINE, { tone: 'recess' })), B(22, 10, BZ + 3, 10, 1.5, 5, W(FINE, { tone: 'recess' })),   // the shoulders' grilles
+      B(-30, -5.5, BZ + 10, 50, 11, 4, W(THIN)),                                       // the fairing along its back
+      B(-24, -3.5, BZ + 14, 30, 7, 0.1, W(FINE, { tone: 'paper' })),                   // its hatch
+      B(14, -3, BZ + 14, 4, 6, 0.12, { lamp: 'lit' }),                                 // its light
+      B(8, -0.5, BZ + 14, 1, 1, 11, W(FINE)), B(7, -1.5, BZ + 25, 3, 3, 0.8, W(FINE)), // the mast, its cap
+      B(-30, 10, BZ + 1.5, 42, 3.5, 7, W(FINE)),                                       // cells along each flank
+      B(-30, -13.5, BZ + 1.5, 42, 3.5, 7, W(FINE)),
+      B(-27, 13.5, BZ + 3, 36, 0.1, 4, W(FINE, { tone: 'recess' })), B(-27, -13.6, BZ + 3, 36, 0.1, 4, W(FINE, { tone: 'recess' })),
+      B(-48, -8, BZ + 1, 8, 16, 8, W(THIN)),                                           // the stern's block
+      B(-52, -6.5, BZ + 2, 4, 1, 6, W(FINE, { tone: 'recess' })), B(-52, -0.5, BZ + 2, 4, 1, 6, W(FINE, { tone: 'recess' })),
+      B(-52, 5.5, BZ + 2, 4, 1, 6, W(FINE, { tone: 'recess' })),                       // its cooling plates
+      shown(B(-22, -11, 3, 44, 22, 10, W(THIN, { tone: 'paper' })), 'load')            // the case it carries
+    ];
+    var links = { base: { boxes: [] }, hull: { boxes: hull } }, joints = [{ name: 'pitch', parent: 'base', child: 'hull', type: 'rev', axis: 'y', at: [0, 0, 0] }];
+    // the rings: fore and aft, left and right; an arm from the flank to each pivot
+    [['f', 27, 15, 9], ['r', -30, -19, 12]].forEach(function (e) {
+      [1, -1].forEach(function (s) {
+        var n = 'n' + e[0] + (s > 0 ? 'L' : 'R'), dx = e[1] - e[2], dy = 12, len = Math.hypot(dx, dy), R = e[3];
+        hull.push(C((e[1] + e[2]) / 2, s * 17, BZ + 3.4, len + 2, 3.2, 3.2, W(THIN, { spin: ['z', 'one', s * Math.atan2(dy, dx) * 180 / Math.PI] })));
+        var yc = s * (2.2 + R + RT / 2), b = [C(0, 0, -2.2, 4.4, 4.4, 4.4, W(THIN))].concat(ring(yc, R, RT, RH, THIN));
+        b.push(B(-0.7, Math.min(0, 2 * yc), -0.7, 1.4, Math.abs(2 * yc), 1.4, W(FINE, { tone: 'paper' })));        // the emitter's bar, through
+        [-R * 0.46, R * 0.46].forEach(function (x) {
+          var c = Math.sqrt((R - RT / 2) * (R - RT / 2) - x * x) - 0.3;
+          b.push(B(x - 0.4, yc - c, -1.7, 0.8, 2 * c, 3.4, W(FINE, { tone: 'recess', spin: ['y', 'vn', 1] })));     // the slats
+        });
+        b.push(C(0, yc + s * R, RH / 2, 4.6, 1.6, 0.12, { lamp: 'nav' }));                                          // a mark on its outer rim
+        links[n] = { boxes: b };
+        joints.push({ name: 't' + e[0], parent: 'hull', child: n, type: 'rev', axis: 'y', at: [e[1], s * 23, BZ + 5] });
+      });
+    });
+    [1, -1].forEach(function (s) {
+      var S = s > 0 ? 'L' : 'R';
+      // a fin, leaned out and raked back
+      links['fin' + S] = { boxes: [B(-8, -0.8, 0, 14, 1.6, 7, W(THIN)), B(-8, -0.8, 7, 10, 1.6, 5, W(THIN)), B(-8, -0.8, 12, 6, 1.6, 3.5, W(FINE))] };
+      joints.push({ name: 'fin' + S, parent: 'hull', child: 'fin' + S, type: 'set', at: [-42, s * 6, BZ + 9], turn: [-s * 38, -14, 0] });
+      // the fingers on the case's long side, a pair: out to let it go
+      links['grip' + S] = { boxes: [B(-15, s > 0 ? 0 : -1.2, 2.4, 3, 1.2, 11.6, W(FINE)), B(12, s > 0 ? 0 : -1.2, 2.4, 3, 1.2, 11.6, W(FINE))] };
+      joints.push({ name: 'grip' + S, parent: 'hull', child: 'grip' + S, type: 'pri', axis: 'y', at: [0, s * 11, 0] });
+      // the legs: down for a pad, out flat under the arms in flight
+      [28, -33].forEach(function (x, k) {
+        var n = 'leg' + S + k;
+        links[n] = { boxes: [B(-0.9, -0.9, -12, 1.8, 1.8, 12, W(FINE)), C(0, s * 0.6, -13, 5, 3.6, 1, W(FINE, { tone: 'dark' }))] };
+        joints.push({ name: 'leg' + S, parent: 'hull', child: n, type: 'rev', axis: 'x', at: [x, s * 8.6, 13] });
+      });
+    });
+    return { name: 'freighter', root: 'base', links: links, joints: joints, props: [],
+             info: { code: 'FY-4', en: 'Freighter', mobile: true } };
+  })();
+  (function () {
+    function lim(v, m) { return Math.max(-m, Math.min(m, v)); }
+    // its pose from what it is doing. o: { acc: along its heading, cm/s/s; down: its legs, 0 (folded) to 1; load: the
+    // case, 0 to 1 (how much of it stands over the pad's lift); grip: its fingers, 0 (shut on the case) to 1; lit: its
+    // light; nav: the rings' marks }. The rings lean with the acceleration (0.06 degrees a cm/s/s, at most 22), the
+    // fore pair a little more than the aft; the hull a fifth of that; the slats open as the rings lean
+    M.freighter.pose = function (o) {
+      var a = lim(0.06 * (o.acc || 0), 22), d = o.down == null ? 0 : o.down, fold = 84 * (1 - d), g = o.grip == null ? (o.load ? 0 : 1) : o.grip;
+      return { one: 1, pitch: a * 0.2, tf: a, tr: a * 0.8, vn: 24 + Math.abs(a) * 1.2,
+               legL: fold, legR: -fold, gripL: 3.4 * g, gripR: -3.4 * g, load: +o.load || 0,
+               lit: o.lit == null ? 0.15 : o.lit, nav: o.nav == null ? 0.15 : o.nav };
+    };
+    // on its plate: up off its feet, forward and stopped, down again; 8 s
+    var P = 8, f = M.flyer.flight({ x: [[0, 0], [1.6, 0], [4.0, 90], [6.4, 0], [P, 0]], z: [[0, 0], [1.4, 26], [6.6, 26], [P, 0]] }, P);
+    M.freighter.work = function (t) {
+      var q = f(t), o = M.freighter.pose({ acc: q.acc.x, down: 1 - Math.min(1, q.z / 18), load: 1, lit: q.z < 1 ? 1 : 0.15 });
+      o.dx = q.x; o.dz = q.z;
+      return o;
+    };
+    M.freighter.period = P; M.freighter.rest = M.freighter.pose({ down: 1, load: 1 });
+  })();
+
+  // --------------------------------------------------------------------------------------------- the scout
+  // FY-2, the works' tally flyer (round 44): the freighter's small kin, for the shafts and the racks' heads. A pod with
+  // its feeler run out forward to a tag (its light on the pod's back, lit while it reads); a ring either side on a
+  // pivot; a boom behind with a fin across it and one upright. It goes sideways and up and down along what it reads,
+  // faced to it, and leans a little into each move. Frame: x forward, y to its left, z up from its skids.
+  M.scout = (function () {
+    function ring(yc, r, t, h) {
+      var b = [], l = 2 * (r + t / 2) * Math.tan(Math.PI / 8);
+      for (var k = 0; k < 8; k++) {
+        var a = k * Math.PI / 4;
+        b.push(C(r * Math.cos(a), yc + r * Math.sin(a), -h / 2, t, l, h, W(FINE, { spin: ['z', 'one', k * 45] })));
+      }
+      return b;
+    }
+    var pod = [
+      B(-10, -5, 2, 22, 10, 6, W(THIN)), B(12, -3, 3, 5, 6, 4, W(FINE)),               // the pod, its nose
+      B(-6, -3, 8, 12, 6, 0.1, W(FINE, { tone: 'paper' })),                            // its hatch
+      B(7.5, -1.2, 8, 2.6, 2.4, 0.12, { lamp: 'lit' }),                                // its light
+      B(17, -0.4, 4.6, 0, 0.8, 0.8, W(FINE, { grow: [0, 'probe', 0, 1] })),            // the feeler, run out
+      B(-24, -0.8, 4.2, 14, 1.6, 1.6, W(FINE)),                                        // the boom
+      B(-26, -5.5, 5.8, 3, 11, 0.8, W(FINE)), B(-26, -0.6, 6.6, 3, 1.2, 5, W(FINE)),   // its fins
+      B(-8, 3.6, 0, 16, 0.8, 0.8, W(FINE, { tone: 'dark' })), B(-8, -4.4, 0, 16, 0.8, 0.8, W(FINE, { tone: 'dark' })),   // skids
+      B(-5, 3.6, 0.8, 0.8, 0.8, 1.2, W(FINE)), B(4, 3.6, 0.8, 0.8, 0.8, 1.2, W(FINE)),
+      B(-5, -4.4, 0.8, 0.8, 0.8, 1.2, W(FINE)), B(4, -4.4, 0.8, 0.8, 0.8, 1.2, W(FINE))
+    ];
+    var links = { base: { boxes: [] }, pod: { boxes: pod }, tip: { boxes: [B(0, -1.2, -1.2, 0.9, 2.4, 2.4, W(FINE))] } };
+    var joints = [{ name: 'roll', parent: 'base', child: 'pod', type: 'rev', axis: 'x', at: [0, 0, 5] },
+                  { name: 'probe', parent: 'pod', child: 'tip', type: 'pri', axis: 'x', at: [17, 0, 5] }];
+    pod.forEach(function (b) { b.at[2] -= 5; });                                        // (the pod's boxes about its roll's line)
+    joints[1].at[2] = 0;
+    [1, -1].forEach(function (s) {
+      var r = 7.4, t = 2, yc = s * (1.4 + r + t / 2), b = ring(yc, r, t, 3.2);
+      b.push(B(-0.6, Math.min(0, 2 * yc), -0.6, 1.2, Math.abs(2 * yc), 1.2, W(FINE, { tone: 'paper' })));
+      [-3.4, 3.4].forEach(function (x) {
+        var c = Math.sqrt((r - t / 2) * (r - t / 2) - x * x) - 0.3;
+        b.push(B(x - 0.3, yc - c, -1.2, 0.6, 2 * c, 2.4, W(FINE, { tone: 'recess', spin: ['y', 'vn', 1] })));
+      });
+      links['n' + (s > 0 ? 'L' : 'R')] = { boxes: b };
+      joints.push({ name: 'tilt', parent: 'pod', child: 'n' + (s > 0 ? 'L' : 'R'), type: 'rev', axis: 'y', at: [0, s * 5, 0.4] });
+    });
+    return { name: 'scout', root: 'base', links: links, joints: joints, props: [],
+             info: { code: 'FY-2', en: 'Scout', mobile: true } };
+  })();
+  (function () {
+    function lim(v, m) { return Math.max(-m, Math.min(m, v)); }
+    // o: { side: its acceleration to its left, cm/s/s (it leans 0.02 degrees for each, at most 12); climb: upward (its
+    // slats); fwd: forward (its rings); probe: the feeler's run (cm); lit }
+    M.scout.pose = function (o) {
+      return { one: 1, roll: lim(-0.02 * (o.side || 0), 12), tilt: lim(0.06 * (o.fwd || 0), 20), vn: 24 + lim(0.04 * (o.climb || 0), 30),
+               probe: o.probe || 0, lit: o.lit == null ? 0.15 : o.lit };
+    };
+    var P = 6, f = M.flyer.flight({ y: [[0, 0], [1.2, 30], [3.0, 30], [4.2, 0], [P, 0]], probe: [[0, 0], [1.3, 0], [1.7, 9], [2.6, 9], [3.0, 0], [P, 0]] }, P);
+    M.scout.work = function (t) {
+      var q = f(t), o = M.scout.pose({ side: q.acc.y, probe: q.probe, lit: q.probe > 8.5 ? 1 : 0.15 });
+      o.dy = q.y;
+      return o;
+    };
+    M.scout.period = P; M.scout.rest = M.scout.pose({});
   })();
 
   return { M: M, reach: reach, track: track, tracks: tracks, B: B, C: C, W: W, gear: gear, shown: shown };
