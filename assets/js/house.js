@@ -1127,10 +1127,38 @@
     var u = ((t % P) + P) % P;
     for (var b = 0; b < 3; b++) for (var j = 0; j < LINE.N; j++) { var age = u - j * LINE.GAP + b * P; if (age >= 0) f(age); }
   }
+  // The night's tones (round 44). No filter lies over a canvas here (a filter over a canvas is worked again at every
+  // picture, over all of it): at night each tone is turned in the script as the page's filter over the drawings turns
+  // it, invert(.92) then hue-rotate(180deg) (house.css, --draw). LIGHT.subs: what is to be painted again when the
+  // light changes
+  var LIGHT = { night: false, n: 0, subs: [], eye: null }, tones = {}, ntones = 0;
+  function tint(c) {
+    var o = tones[c];
+    if (o) return o;
+    var m = /^#(..)(..)(..)$/.exec(c), r, g, b;
+    if (m) { r = parseInt(m[1], 16); g = parseInt(m[2], 16); b = parseInt(m[3], 16); }
+    else { m = /(\d+)[ ,]+(\d+)[ ,]+(\d+)/.exec(c); if (!m) return c; r = +m[1]; g = +m[2]; b = +m[3]; }
+    r = 0.92 - 0.84 * r / 255; g = 0.92 - 0.84 * g / 255; b = 0.92 - 0.84 * b / 255;
+    o = 'rgb(' + Math.round(255 * clamp(-0.574 * r + 1.430 * g + 0.144 * b, 0, 1)) + ' ' + Math.round(255 * clamp(0.426 * r + 0.430 * g + 0.144 * b, 0, 1)) + ' ' +
+        Math.round(255 * clamp(0.426 * r + 1.430 * g - 0.856 * b, 0, 1)) + ')';
+    if (++ntones > 8000) { tones = {}; ntones = 0; }
+    return (tones[c] = o);
+  }
+  function light() {
+    var was = LIGHT.night;
+    LIGHT.night = (getComputedStyle(document.documentElement).getPropertyValue('--draw') || 'none').trim() !== 'none';
+    if (was !== LIGHT.night) { LIGHT.n++; LIGHT.subs.slice().forEach(function (f) { f(); }); }
+  }
+  function lights(f) {                                           // f is told of each change of the light; returns how to leave
+    if (!LIGHT.eye) { LIGHT.eye = new MutationObserver(light); LIGHT.eye.observe(document.documentElement, { attributes: true, attributeFilter: ['data-light', 'class', 'style'] }); }
+    light();
+    LIGHT.subs.push(f);
+    return function () { var i = LIGHT.subs.indexOf(f); if (i >= 0) LIGHT.subs.splice(i, 1); };
+  }
   // A canvas over a drawing for what robokit draws there (round 44). Several hundred boxes redrawn as an <svg>'s paths
   // at each frame cost the page its evenness; the same boxes are painted on a canvas in a fraction of the time. T: the
   // drawing's projection (its viewBox's units); wall: a box that stands before the room's far end, behind which nothing
-  // is painted. The canvas lies over the live <svg> and a margin round it; the page's own filter turns it with the night.
+  // is painted. The canvas lies over the live <svg> and a margin round it, in the night's own tones at night.
   function Canvas(svg, T, wall) {
     var cv = document.createElement('canvas'), ctx = cv.getContext('2d'), vb = svg.viewBox.baseVal, M = 24, hp = null, o = { cv: cv, s: 0 };
     cv.className = 'draw__live draw__cv'; cv.setAttribute('aria-hidden', 'true');
@@ -1161,14 +1189,18 @@
         for (var j = 1; j < hp.length; j++) ctx.lineTo(hp[j][0], hp[j][1]);
         ctx.closePath(); ctx.clip('evenodd');
       }
-      new RK.Painter(ctx, T, (T.k || 1) / o.kd).draw(boxes);
+      var pen = new RK.Painter(ctx, T, (T.k || 1) / o.kd);
+      pen.tint = LIGHT.night ? tint : null;
+      pen.draw(boxes);
       if (hp) ctx.restore();
+      o.last = boxes;
     };
+    o.leave = lights(function () { if (o.last) o.draw(o.last); });
     (svg._cv = svg._cv || []).push(o);
     o.fit();
     return o;
   }
-  function gone(svg) { if (!svg) return; (svg._cv || []).forEach(function (o) { o.cv.remove(); }); svg.remove(); }
+  function gone(svg) { if (!svg) return; (svg._cv || []).forEach(function (o) { o.leave(); o.cv.remove(); }); svg.remove(); }
   var SCENES = {
     // Replies, a round of four couriers on one beat (round 41; before it one courier served the three positions in a
     // turn of 34 s). The courier (RC-4, tools/robokit/robots.js) works with four arms, none like another, two of them
@@ -1893,17 +1925,9 @@
       // What moves is painted on two canvases, one to a shaft, each no larger than what moves in it (round 44: as
       // <svg> it cost the page its evenness). A canvas is cleared only where it was painted; what goes behind the room
       // at a shaft's foot is cut by that room's shape on the page
-      // No filter lies over these canvases (a filter over a canvas is worked again at every picture, over all of it):
-      // at night each tone is turned here as the page's filter over the drawings turns it, invert(.92) then
-      // hue-rotate(180deg) (house.css, --draw)
-      var root = document.documentElement, night = false, tones = {}, ntones = 0;
-      function light() {
-        var was = night;
-        night = (getComputedStyle(root).getPropertyValue('--draw') || 'none').trim() !== 'none';
-        if (plant && plant.draw && was !== night) { plant.lit++; retone(); if (!plant.on) plant.draw(plant.t); }
-      }
       // what stands still is an <svg> painted once: its tones are turned in its own attributes
       function retone() {
+        var night = LIGHT.night;
         slice(SS.el.querySelectorAll('path')).forEach(function (e) {
           ['fill', 'stroke'].forEach(function (a) {
             var v = e.getAttribute('data-' + a) || e.getAttribute(a);
@@ -1912,18 +1936,6 @@
             e.setAttribute(a, night ? tint(v) : v);
           });
         });
-      }
-      function tint(c) {
-        var o = tones[c];
-        if (o) return o;
-        var m = /^#(..)(..)(..)$/.exec(c), r, g, b;
-        if (m) { r = parseInt(m[1], 16); g = parseInt(m[2], 16); b = parseInt(m[3], 16); }
-        else { m = /(\d+)[ ,]+(\d+)[ ,]+(\d+)/.exec(c); if (!m) return c; r = +m[1]; g = +m[2]; b = +m[3]; }
-        r = 0.92 - 0.84 * r / 255; g = 0.92 - 0.84 * g / 255; b = 0.92 - 0.84 * b / 255;
-        o = 'rgb(' + Math.round(255 * clamp(-0.574 * r + 1.430 * g + 0.144 * b, 0, 1)) + ' ' + Math.round(255 * clamp(0.426 * r + 0.430 * g + 0.144 * b, 0, 1)) + ' ' +
-            Math.round(255 * clamp(0.426 * r + 1.430 * g - 0.856 * b, 0, 1)) + ')';
-        if (++ntones > 8000) { tones = {}; ntones = 0; }
-        return (tones[c] = o);
       }
       // one machine on a canvas of its own, moved over the stage as a whole and painted again only when its pose has
       // changed: reach, up, down (cm): how far its picture goes to either side of its origin, above it, below it
@@ -1936,7 +1948,7 @@
         return (o = { cv: cv, S0: S0, P: proj([ox, oy], S0), z: -1,
           paint: function (list) {
             ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cv.width, cv.height); ctx.setTransform(d, 0, 0, d, 0, 0);
-            pen.tint = night ? tint : null; pen.paint(list);
+            pen.tint = LIGHT.night ? tint : null; pen.paint(list);
           },
           at: function (x, y, k, z) {
             cv.style.transform = 'translate(' + (x - ox * k).toFixed(2) + 'px,' + (y - oy * k).toFixed(2) + 'px) scale(' + k.toFixed(4) + ')';
@@ -1961,7 +1973,7 @@
             for (var i = 0; i < dirty.length; i++) ctx.clearRect(dirty[i][0], dirty[i][1], dirty[i][2], dirty[i][3]);
             dirty.length = 0;
             ctx.setTransform(d, 0, 0, d, -x0 * d, -y0 * d);
-            pen.tint = night ? tint : null;
+            pen.tint = LIGHT.night ? tint : null;
           },
           // boxes in order, each with its picture; behind: cut by the room at the shaft's foot
           put: function (list, behind) {
@@ -2223,10 +2235,8 @@
         };
       });
       plant = { svg: el, on: false, raf: 0, t: 0, last: 0, n: 0, k: 0, w0: 0, wn: 0, slow: false, lit: 0, was: -1 };
-      light();
-      if (night) retone();
-      var eye = new MutationObserver(light);
-      eye.observe(root, { attributes: true, attributeFilter: ['data-light', 'class', 'style'] });
+      var leave = lights(function () { if (plant && plant.draw) { plant.lit++; retone(); if (!plant.on) plant.draw(plant.t); } });
+      if (LIGHT.night) retone();
       // each of the line's lengths carries what the room behind it has sent out, by that room's own clock: a carrier
       // leaves a room and is on the line outside in the same moment, and where a room stands still so does what it has sent
       plant.draw = function (t) {
@@ -2267,7 +2277,7 @@
       var io = null;
       if (!plant.seen) { io = new IntersectionObserver(function (es) { if (plant) { plant.seen = es[0].isIntersecting; sync(); } }, { rootMargin: '100px' }); io.observe(stage); }
       document.addEventListener('visibilitychange', sync);
-      plant.stop = function () { this.on = false; cancelAnimationFrame(this.raf); if (io) io.disconnect(); document.removeEventListener('visibilitychange', sync); eye.disconnect(); SS.el.remove(); LY.L1.cv.remove(); LY.L2.cv.remove(); sprites.forEach(function (sp) { sp.cv.remove(); }); };
+      plant.stop = function () { this.on = false; cancelAnimationFrame(this.raf); if (io) io.disconnect(); document.removeEventListener('visibilitychange', sync); leave(); SS.el.remove(); LY.L1.cv.remove(); LY.L2.cv.remove(); sprites.forEach(function (sp) { sp.cv.remove(); }); };
       plant.draw(plant.t);
       sync();
     }
