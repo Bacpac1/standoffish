@@ -1501,3 +1501,10 @@ p.fine sup { font: 500 10.5px/1 var(--mono); margin-right: .2em; }
   .pstage .inst--read, .pstage .inst--one { padding-top: 52px; }
   .pstage .inst--read { height: 330px; }
 }
+
+/* ------------------------------------------------------------------- the line between the rooms (round 42, 2026-11-17)
+   house.js draws it over the home's three works where they stand side by side: the same rail that runs in the rooms,
+   from one to the next, in the drawings' own directions and tones (and their night). */
+.work__stage { position: relative; }
+.work__line { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 1;
+              filter: var(--draw); }

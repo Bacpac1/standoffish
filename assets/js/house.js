@@ -953,12 +953,18 @@
   }
   document.addEventListener('visibilitychange', function () { crowd.forEach(function (r) { r.sync(); }); });
   function runner(watch, frame) {
-    var r = { ratio: 0, area: 0, on: false, gone: false }, running = false, t = 0, last = 0, raf = 0;
+    var r = { ratio: 0, area: 0, on: false, gone: false }, running = false, t = 0, last = 0, raf = 0, cost = 0, odd = false;
+    var now = function () { return window.performance ? performance.now() : Date.now(); };
     function step(ts) {
       if (!running) return;
       if (last) t += Math.min(0.1, (ts - last) / 1000);
       last = ts;
-      frame(t);
+      odd = !odd;
+      if (cost < 9 || odd) {                                     // a picture that costs more than 9 ms: every other frame (round 42)
+        var a = now();
+        frame(t);
+        cost = cost ? cost * 0.9 + (now() - a) * 0.1 : now() - a;
+      }
       raf = requestAnimationFrame(step);
     }
     r.sync = function () {
@@ -1069,6 +1075,57 @@
     for (var i = 0; i < 8; i++) hp.push(T(i & 1 ? w[3] : w[0], i & 2 ? w[4] : w[1], i & 4 ? w[5] : w[2]));
     mk('path', { 'clip-rule': 'evenodd', d: 'M-10 -10H' + f1(vb.width + 10) + 'V' + f1(vb.height + 10) + 'H-10Z' + poly(hull(hp)) }, cp);
     g.setAttribute('clip-path', 'url(#' + cp.id + ')');
+  }
+  // The line (round 42): the house's one conveyor, through the three rooms and between them. A flat rail (8 cm wide, 3
+  // thick) on the walls, and carriers (16 by 10, 7 high) that ride it, a paper on each: what is lodged, certified or
+  // sent goes by it to the records. A way is a list of points, each joined to the next along one axis; along a level
+  // length the carriers ride on the rail's top, up or down an upright on its face toward the eye (n: [1, 0] or [0, 1]).
+  var LINE = { W: 4, TH: 3, V: 110, GAP: 2.2, N: 3 };
+  function Way(pts, n) {
+    var seg = [], len = 0;
+    n = n || [0, 1];
+    for (var i = 1; i < pts.length; i++) {
+      var a = pts[i - 1], b = pts[i], ax = a[0] !== b[0] ? 0 : a[1] !== b[1] ? 1 : 2, l = Math.abs(b[ax] - a[ax]);
+      seg.push({ a: a, ax: ax, s: b[ax] > a[ax] ? 1 : -1, l: l, d: len }); len += l;
+    }
+    return {
+      len: len,
+      // the rail of its lengths i0 to i1 (all of them by default); a level length runs on W past its ends, to meet the next
+      rail: function (out, i0, i1, lw) {
+        for (var i = i0 || 0; i < (i1 == null ? seg.length : i1); i++) {
+          var g = seg[i], p = g.a.slice(), q = g.a.slice(); q[g.ax] += g.s * g.l;
+          var lo = [Math.min(p[0], q[0]), Math.min(p[1], q[1]), Math.min(p[2], q[2])], hi = [Math.max(p[0], q[0]), Math.max(p[1], q[1]), Math.max(p[2], q[2])];
+          if (g.ax === 2) {
+            var u = n[0] ? 0 : 1, w = 1 - u;
+            lo[u] -= LINE.W; lo[w] -= LINE.W; hi[w] += LINE.W;
+          } else { lo[2] -= LINE.TH; lo[1 - g.ax] -= LINE.W; hi[1 - g.ax] += LINE.W; lo[g.ax] -= LINE.W; hi[g.ax] += LINE.W; }
+          out.push(RK.box(lo[0], lo[1], lo[2], hi[0], hi[1], hi[2], { w: lw || 0.55, link: 'rail' }));
+        }
+        return out;
+      },
+      // a carrier d along the way, with its paper
+      car: function (out, d) {
+        if (d < 0 || d >= len) return;
+        var g = seg[seg.length - 1];
+        for (var i = 0; i < seg.length; i++) if (d < seg[i].d + seg[i].l) { g = seg[i]; break; }
+        var p = g.a.slice(); p[g.ax] += g.s * (d - g.d);
+        var x = p[0], y = p[1], z = p[2];
+        if (g.ax === 2) {
+          if (n[0]) { out.push(RK.box(x, y - 5, z - 8, x + 7, y + 5, z + 8, { w: 0.85, link: 'car' }), RK.box(x + 7, y - 3, z - 6, x + 7.8, y + 3, z + 6, { w: 0.55, tone: 'paper', link: 'car' })); }
+          else { out.push(RK.box(x - 5, y, z - 8, x + 5, y + 7, z + 8, { w: 0.85, link: 'car' }), RK.box(x - 3, y + 7, z - 6, x + 3, y + 7.8, z + 6, { w: 0.55, tone: 'paper', link: 'car' })); }
+        } else if (g.ax === 0) {
+          out.push(RK.box(x - 8, y - 5, z, x + 8, y + 5, z + 7, { w: 0.85, link: 'car' }), RK.box(x - 6, y - 3, z + 7, x + 6, y + 3, z + 7.8, { w: 0.55, tone: 'paper', link: 'car' }));
+        } else {
+          out.push(RK.box(x - 5, y - 8, z, x + 5, y + 8, z + 7, { w: 0.85, link: 'car' }), RK.box(x - 3, y - 6, z + 7, x + 3, y + 6, z + 7.8, { w: 0.55, tone: 'paper', link: 'car' }));
+        }
+      }
+    };
+  }
+  // the carriers that pass a point of the line: three, 2.2 s apart, every P seconds; each one's age at t (for a way of
+  // any length: those of the turn before are still on it)
+  function passing(t, P, f) {
+    var u = ((t % P) + P) % P;
+    for (var b = 0; b < 3; b++) for (var j = 0; j < LINE.N; j++) { var age = u - j * LINE.GAP + b * P; if (age >= 0) f(age); }
   }
   var SCENES = {
     // Replies, a round of four couriers on one beat (round 41; before it one courier served the three positions in a
@@ -1202,13 +1259,51 @@
                    RK.box(44, FR + 22.5, F0 + 48, 88, FR + 24, F0 + 51, { w: 0.55, link: 'lip' })];
       var YAW = RK.rot('z', -Math.PI / 2);                       // its front to the counters
       var CH = ['a_sh', 'a_el', 'a_wr', 'b_sh', 'b_el', 'b_wr', 'c', 'd', 'p0', 'p1', 'p2'];
+      // the line begins here (round 42): behind each slot a riser up the back wall from the counter's top, the three
+      // into one rail along the wall and round along the left wall to the front, where it leaves the room (on the home,
+      // on to Certification; alone, down a spout under the floor). What a slot has drawn in goes up its riser on a
+      // carrier 0.35 s after the bezel has answered
+      var WT = L.pos[0].slot[1] - 10, ZL = F0 + 208, ZC = L.pos[0].slot[4] + 1.6, XL = WT + 4, YL = WT + 4, YX = L.wall[4] + 12;
+      var ways = L.pos.map(function (p) {
+        var x = p.slot[0] - 14;
+        return Way([[x, YL, ZC], [x, YL, ZL], [XL, YL, ZL], [XL, YX, ZL], [XL, YX, F0 - 44]]);
+      });
+      var last = ways[ways.length - 1], rails = [];
+      ways.forEach(function (w) { w.rail(rails, 0, 1); });
+      last.rail(rails, 1, 3);
+      var spout = last.rail([], 3, 4), spoutLen = F0 - 44 - ZL < 0 ? ZL - F0 + 44 : 0;
+      var dep = SB.map(function (v) { return v + IN + 0.35; });
+      [150, 360, 440].forEach(function (x) { rails.push(RK.box(x - 2, WT, ZL - 9, x + 2, WT + 6, ZL - 3, { w: 0.55, link: 'bracket' })); });
+      [70, 214].forEach(function (y) { rails.push(RK.box(WT, y - 2, ZL - 9, WT + 6, y + 2, ZL - 3, { w: 0.55, link: 'bracket' })); });
+      // the desk's stamp, on the left wall over the line: each carrier stops under it (0.4 s) and the head comes down
+      // on its paper (0.1 s down, held 0.15, 0.15 up), its mark lit
+      var YS = 140, STAMP = 0.4;
+      rails.push(RK.box(WT, YS - 12, ZL + 18, WT + 18, YS + 12, ZL + 32, { w: 0.85, link: 'stamp' }));
+      var stop = ways.map(function (w, q) { return (ZL - ZC) + (L.pos[q].slot[0] - 14 - XL) + (YS - YL); });
+      function along(q, age) {                                   // how far a carrier of position q has come, its stop counted
+        var ts = stop[q] / LINE.V;
+        return age < ts ? age * LINE.V : age < ts + STAMP ? stop[q] : stop[q] + (age - ts - STAMP) * LINE.V;
+      }
       // when the record of position p reaches the display of position q: the own display first, then the nearer
       function at(p, q) {
         var n = [0, 1, 2].sort(function (a, b) { return Math.abs(a - p) - Math.abs(b - p) || a - b; }).indexOf(q);
         return SB[p] + IN + ANS + STEP * n;
       }
       return function (t) {
-        var all = fixed.slice(), k;
+        var all = fixed.concat(rails), k, tb = t % D;
+        if (!L.linked) all = all.concat(spout);
+        var press = 0;
+        L.out = [];                                              // those that have left the room: how far beyond it (the home's line goes on with them)
+        ways.forEach(function (w, q) {                           // the carriers on the line: this beat's and the last's
+          for (var b = 0; b < 2; b++) {
+            var age = since(tb, dep[q]) + b * D, d = along(q, age), e = age - stop[q] / LINE.V;
+            if (d < w.len - (L.linked ? spoutLen : 0)) w.car(all, d);
+            else if (L.linked) L.out.push(d - w.len + spoutLen);
+            if (e >= 0 && e < STAMP) press = Math.max(press, e < 0.1 ? std(e / 0.1) : e < 0.25 ? 1 : 1 - std((e - 0.25) / 0.15));
+          }
+        });
+        all.push(RK.box(XL - 3, YS - 6, ZL + 12.4 - 4.4 * press, XL + 3, YS + 6, ZL + 18, { w: 0.55, tone: 'recess', link: 'head' }),
+                 RK.box(WT + 18, YS - 5, ZL + 23, WT + 18.2, YS + 5, ZL + 26, { lit: press > 0.5 ? 1 : 0.15, link: 'mark' }));
         for (var n = 0; n < NC; n++) {                           // the couriers, a beat apart on the one round
           var u = (t + n * D) % TURN, q = { run: 0 };
           for (k = 0; k < CH.length; k++) q[CH[k]] = P.val(CH[k], u);
@@ -1224,7 +1319,7 @@
         }
         ren.draw(all);
         // the positions, by the beat
-        var tb = t % D, sW = since(tb, WIN);
+        var sW = since(tb, WIN);
         pos.forEach(function (o, q) {
           var d = o.d, y = d[4];
           // the envelope in the slot: set there by its courier, drawn in once the jaw has let it go
@@ -1348,6 +1443,16 @@
         };
       });
       function sm(v, a, b) { v = clamp((v - a) / (b - a), 0, 1); return v * v * (3 - 2 * v); }
+      // the line goes through (round 42): in through the back wall near its left end, along the wall over the high
+      // window and the clock, out through the end wall; three carriers every ten seconds, as Replies sends them. On
+      // the back wall, between the window and the clock, the room's own sender: once a day, in the morning, its mark
+      // lights and a carrier goes up its riser and on with the rest
+      var WT = cy - 4, ZL = F0 + 236, YL = WT + 4, XE = 70, XS = 311, PT = 10, SEND = 17.9;
+      var thru = Way([[XE, WT, ZL], [XE, YL, ZL], [L.wall[3], YL, ZL]]), send = Way([[XS, YL, F0 + 143], [XS, YL, ZL], [L.wall[3], YL, ZL]]);
+      var rails = thru.rail([]);
+      send.rail(rails, 0, 1);
+      rails.push(RK.box(XS - 15, WT, F0 + 100, XS + 15, WT + 12, F0 + 140, { w: 0.85, link: 'sender' }));
+      [150, 250, 400, 480].forEach(function (x) { rails.push(RK.box(x - 2, WT, ZL - 9, x + 2, WT + 6, ZL - 3, { w: 0.55, link: 'bracket' })); });
       return function (t) {
         var h = hourAt(t), dk = inout(dark(h));
         glass.setAttribute('fill', sky(h));
@@ -1355,7 +1460,14 @@
         var a = (90 - 30 * h) * Math.PI / 180;
         hd.setAttribute('d', line([T(cx, cy, cz), T(cx + hand * r * Math.cos(a), cy, cz + hand * r * Math.sin(a))]));
         if (dim) dim.style.opacity = dk.toFixed(3);
-        var u = t % DAY, all = docks.slice();
+        var u = t % DAY, all = docks.concat(rails);
+        L.out = [];                                              // those gone out through the end wall: how far beyond it
+        passing(t, PT, function (age) { var d = age * LINE.V; thru.car(all, d); if (d >= thru.len) L.out.push(d - thru.len); });
+        var sd = u - SEND;
+        if (sd < -DAY / 2) sd += DAY;
+        send.car(all, sd * LINE.V);
+        if (sd * LINE.V >= send.len) L.out.push(sd * LINE.V - send.len);
+        all.push(RK.box(XS - 7, WT + 12, F0 + 130, XS + 7, WT + 12.2, F0 + 133, { lit: sd > -0.9 && sd < 0.5 ? 1 : 0.15, link: 'mark' }));
         units.forEach(function (where, n) {
           var p = where(u), x = p[0], y = p[1];
           // the edge module: out along the bench, by where the unit is on its way out (the first two)
@@ -1384,7 +1496,7 @@
     // the same work. A runner's lights are on the hook's lock and on the fingers' block. Drawn from their parts by
     // robokit, all together.
     records: function (L, T, g, dim, svg) {
-      var yf = L.yf, BAY = L.bay, MOD = L.mod, OUT = 11, F0 = L.floor, Z0 = L.drawers[0][1];
+      var yf = L.yf, BAY = L.bay, MOD = L.mod, UPR = L.up, OUT = 11, F0 = L.floor, Z0 = L.drawers[0][1];
       behindWall(svg, g, T, L.wall);
       var R = RK_MACHINES.M.runner, Q = R.poses, mach = new RK.Machine(R);
       var YB = yf + 32, CY = YB + 25;                            // the body's far face; its middle (the machine's frame)
@@ -1445,6 +1557,39 @@
       var STEP = TURN / ROWS[0].length / NR;                     // a quarter of a turn between neighbours
       var rb = mk('g', { 'class': 'rk' }, g);
       var ren = new RK.Renderer(rb, T, T.k || 1);
+      // the line ends here (round 42): in through the left end wall, along the back wall over the racks, across the
+      // aisle on a beam and down a post into the receiving cabinet at the front, three carriers every ten seconds; the
+      // cabinet's mark lights as each comes in. The steward (ST-6: six arms in three pairs down its column's front)
+      // stands at the cabinet and works at its top, its own turn of 8 s. Over the racks the tally flyer (FY-1: a plank
+      // 54 by 32 cm that moves level on its own wind, its dock a shelf on the left end wall) leaves its dock, stops
+      // over each rack in turn, comes down to it, reads (its mark lit) and goes on; from the last it comes back to
+      // the dock, is held and made live: two rounds to the runners' one
+      var WT = yf - 76, ZL = F0 + 242, YL = WT + 4, XC = 320, YC = 226, PT = 10;
+      var way = Way([[WT, YL, ZL], [XC, YL, ZL], [XC, YC, ZL], [XC, YC, F0 + 60]]);
+      var fixed = way.rail([]);
+      fixed.push(RK.box(XC - 20, YC - 30, F0, XC + 20, YC + 30, F0 + 58, { w: 0.85, link: 'cabinet' }));
+      [120, 230].forEach(function (x) { fixed.push(RK.box(x - 2, WT, ZL - 9, x + 2, WT + 6, ZL - 3, { w: 0.55, link: 'bracket' })); });
+      var ST = RK_MACHINES.M.steward, stew = new RK.Machine(ST), SB_ = RK.move(XC - 98, YC, F0);
+      var FY = RK_MACHINES.M.flyer, fly = new RK.Machine(FY), XF = 60, YF = (yf - 46 + yf) / 2, ZF = F0 + 224;
+      var FB = RK.mul(RK.move(XF, YF, ZF), RK.rot('z', Math.PI)), PF = TURN / 2;
+      var flight = (function () {
+        var K = { mx: [[0, 0]], my: [[0, 0], [PF, 0]], mz: [[0, 0], [1.5, 0], [2.3, 3]], fork: [[0, 0], [PF, 0]], probe: [[0, 0], [PF, 0]], lit: [[0, 0.15]],
+                  live: [[0, 1], [0.8, 1], [1.0, 0]], gate: [[0, 0], [1.0, 0], [1.4, -3.6]], wipe: [[0, 0], [PF, 0]] };
+        var at = 2.3, x = 0;
+        K.mx.push([at, 0]);
+        for (var r = 0; r < NR; r++) {
+          var xr = -(L.drawers[2 * r][0] + BAY + UPR / 2 - XF), hop = Math.max(1.6, Math.abs(xr - x) / 78);
+          at += hop; K.mx.push([at, xr]); K.mz.push([at, 3]); x = xr;                 // over the rack
+          at += 0.55; K.mz.push([at, -10]); K.lit.push([at - 0.02, 0.15], [at, 1]);  // down to it: read
+          at += 0.8; K.mz.push([at, -10]); K.lit.push([at, 1], [at + 0.02, 0.15]);
+          at += 0.55; K.mz.push([at, 3]); K.mx.push([at, xr]);
+        }
+        at += Math.abs(x) / 130; K.mx.push([at, 0]); K.mz.push([at, 3]);              // back to the dock
+        at += 0.8; K.mz.push([at, 0]);
+        K.gate.push([at, -3.6], [at + 0.5, 0], [PF, 0]); K.live.push([at + 0.7, 0], [at + 1.0, 1], [PF, 1]);
+        K.mx.push([PF, 0]); K.mz.push([PF, 0]); K.lit.push([PF, 0.15]);
+        return FY.flight(K, PF);
+      })();
       // where a runner's card is: in a drawer, held by P (what of it is below a drawer's top while over it is in it),
       // on the tray
       function card(rn, t, x, cz, py, pz, out) {
@@ -1462,7 +1607,11 @@
         return 0;
       }
       return function (t) {
-        var all = [];
+        var all = fixed.slice(), in0 = 99;
+        passing(t, PT, function (age) { var d = age * LINE.V; way.car(all, d); if (d >= way.len) in0 = Math.min(in0, (d - way.len) / LINE.V); });
+        all.push(RK.box(XC + 6, YC - 12, F0 + 58, XC + 14, YC + 12, F0 + 58.4, { lit: in0 < 0.5 ? 1 : 0.15, link: 'mark' }));
+        stew.place(ST.work(t), SB_, all);
+        fly.place(FY.vanes(flight(t)), FB, all);
         runners.forEach(function (rn, n) {
           var P = rn.P, u = (t + n * STEP) % TURN;
           var x = P.val('x', u), cz = P.val('cz', u), cf = P.val('cf', u);
@@ -1580,6 +1729,71 @@
     var pics = slice(document.querySelectorAll('picture[data-live]'));
     if (!pics.length || mq.matches) return;
     var C = Math.cos(Math.PI / 6), live = [];
+    // The line between the rooms (round 42), where the three stand on one page with room beside them (the home, on a
+    // desk): from where it leaves Replies at the front, down and on into Certification through its back wall; from
+    // Certification's end wall down and on into the records' left end wall. Each length keeps to the drawings' own
+    // three directions (along a room, across it, upright), so the line is one thing in one space with the rooms.
+    // Drawn by robokit over the stage, in the drawings' tones.
+    var rooms = {}, stage = document.querySelector('.work__stage'), links = null, linkT = 0;
+    function between() { clearTimeout(linkT); linkT = setTimeout(link, 120); }
+    function link() {
+      if (!stage || !window.RK || !rooms.reply || !rooms.certify || !rooms.records) return;
+      var s0 = stage.getBoundingClientRect();
+      function at(kind, x, y, z) {
+        var R = rooms[kind], r = R.img.getBoundingClientRect(), p = R.T(x, y, z), k = r.width / R.F[4];
+        return [r.left - s0.left + p[0] * k, r.top - s0.top + p[1] * k, R.F[2] * k];
+      }
+      var Lr = rooms.reply.L, Lc = rooms.certify.L, Lx = rooms.records.L;
+      var A = at('reply', Lr.pos[0].slot[1] - 6, Lr.wall[4] + 12, Lr.floor + 208);
+      var B = at('certify', 70, -Lc.clock[1] + 4, Lc.floor + 236), Cc = at('certify', Lc.wall[3], Lc.clock[1], Lc.floor + 236);
+      var D = at('records', -8, Lx.yf - 72, Lx.floor + 242);
+      var s1 = (A[2] + B[2]) / 2, s2 = (Cc[2] + D[2]) / 2;
+      var a = -(B[0] - A[0]) / s1 / C, va = (B[1] - A[1]) / s1 - a / 2;
+      var b = (D[0] - Cc[0]) / s2 / C, vb = (D[1] - Cc[1]) / s2 - b / 2;
+      var ok = a > 60 && b > 24 && matchMedia('(min-width: 901px)').matches;
+      Lr.linked = ok;
+      if (!ok) { if (links) { links.svg.remove(); links.stop(); links = null; } return; }
+      var a1 = Math.min(110, a * 0.4), b1 = Math.min(70, b * 0.4);
+      var w1 = Way([[0, 0, 0], [0, a1, 0], [0, a1, -va], [0, a, -va]], [1, 0]), w2 = Way([[0, 0, 0], [b1, 0, 0], [b1, 0, -vb], [b, 0, -vb]], [0, 1]);
+      if (!links) {
+        var el = mk('svg', { 'class': 'work__line', 'aria-hidden': 'true', focusable: 'false' });
+        stage.appendChild(el);
+        links = { svg: el, g1: mk('g', { 'class': 'rk' }, el), g2: mk('g', { 'class': 'rk' }, el), on: false, raf: 0, t: 0, last: 0 };
+        var step = function (ts) {
+          if (!links || !links.on) return;
+          if (links.last) links.t += Math.min(0.1, (ts - links.last) / 1000);
+          links.last = ts;
+          links.draw(links.t);
+          links.raf = requestAnimationFrame(step);
+        };
+        var sync = function () {
+          if (!links) return;
+          var go = links.seen && !document.hidden && !mq.matches;
+          if (go && !links.on) { links.on = true; links.last = 0; links.raf = requestAnimationFrame(step); }
+          else if (!go && links.on) { links.on = false; cancelAnimationFrame(links.raf); }
+        };
+        links.stop = function () { links.on = false; cancelAnimationFrame(links.raf); if (links.io) links.io.disconnect(); document.removeEventListener('visibilitychange', sync); };
+        links.seen = !('IntersectionObserver' in window);
+        if (!links.seen) { links.io = new IntersectionObserver(function (es) { links.seen = es[0].isIntersecting; sync(); }, { rootMargin: '100px' }); links.io.observe(stage); }
+        document.addEventListener('visibilitychange', sync);
+        links.sync = sync;
+      }
+      var P1 = function (x, y, z) { return [A[0] + (x - y) * C * s1, A[1] + ((x + y) / 2 - z) * s1]; };
+      var P2 = function (x, y, z) { return [Cc[0] + (x - y) * C * s2, Cc[1] + ((x + y) / 2 - z) * s2]; };
+      var r1 = new RK.Renderer(links.g1, P1, 1), r2 = new RK.Renderer(links.g2, P2, 1), f1_ = w1.rail([], 0, null, 0.85), f2_ = w2.rail([], 0, null, 0.85);
+      while (links.g1.firstChild) links.g1.removeChild(links.g1.firstChild);
+      while (links.g2.firstChild) links.g2.removeChild(links.g2.firstChild);
+      // each length carries on what the room behind it has sent out, by that room's own clock: a carrier leaves a room
+      // and is on the line outside in the same moment, and where a room stands still so does what it has sent
+      links.draw = function () {
+        var x1 = f1_.slice(), x2 = f2_.slice();
+        (Lr.out || []).forEach(function (d) { w1.car(x1, d); });
+        (Lc.out || []).forEach(function (d) { w2.car(x2, d); });
+        r1.draw(x1); r2.draw(x2);
+      };
+      links.draw(links.t);
+      links.sync();
+    }
     pics.forEach(function (pic) {
       var img = pic.querySelector('img'), fig = pic.parentNode, L;
       try { L = JSON.parse(pic.getAttribute('data-live')); } catch (e) { return; }
@@ -1593,6 +1807,7 @@
           e.style.left = (r.left - f.left) + 'px'; e.style.top = (r.top - f.top) + 'px';
           e.style.width = r.width + 'px'; e.style.height = r.height + 'px';
         });
+        between();
       }
       function build() {
         var src = img.currentSrc || img.src, s = /-s(-bare)?\.svg/.test(src);
@@ -1631,6 +1846,8 @@
         var frame = SCENES[L.kind](L, T, g, dim, svg);
         run = runner(img, function (t) { frame(t + t0); });
         if (L.bare) bare(true);
+        rooms[L.kind] = { img: img, T: T, F: F, L: L };
+        between();
       }
       // a picture whose moving parts the page draws over it (the seat, round 26): while they are drawn, the still
       // picture without them, fetched first so the change is not seen; back to the whole picture when they stop
@@ -1655,6 +1872,7 @@
       img.addEventListener('load', function () { if (!robo || window.RK_SEAT) build(); });   // a phone's picture and a wider one: each its frame
       if ('ResizeObserver' in window) new ResizeObserver(place).observe(img);
       window.addEventListener('resize', place);
+      live.push({ stop: function () { if (links) { links.stop(); links.svg.remove(); links = null; } } });
     });
     var off = function () { if (mq.matches) live.forEach(function (l) { l.stop(); }); };
     if (mq.addEventListener) mq.addEventListener('change', off); else if (mq.addListener) mq.addListener(off);
