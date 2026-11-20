@@ -18,10 +18,10 @@
   if (!probe.getContext || !probe.getContext("2d")) return;
 
   /* the record's frames, as the page lists them: the first in the hero, the rest in the Frames section */
-  var frames = [{ img: hero, href: link.getAttribute("href") }];
+  var frames = [{ img: hero, href: link.getAttribute("href"), alt: hero.alt }];
   Array.prototype.forEach.call(document.querySelectorAll(".frames__item img"), function (img) {
     var a = img.closest("a");
-    frames.push({ img: img, href: a ? a.getAttribute("href") : null });
+    frames.push({ img: img, href: a ? a.getAttribute("href") : null, alt: img.alt });
   });
   if (frames.length < 2) return;
   var N = frames.length;
@@ -126,7 +126,7 @@
     if (k !== current) {
       current = k;
       if (frames[k].href) link.setAttribute("href", frames[k].href);
-      hero.setAttribute("alt", frames[k].img.getAttribute("alt") || "");
+      hero.alt = frames[k].alt;
       tickEls.forEach(function (el, i) { el.className = i < k ? "is-in" : i === k ? "is-now" : ""; });
     }
     hudL.textContent = (b ? "RECEIVING " : "RECEIVED ") + code + " · FRAME " + (k + 1) + "/" + N;
